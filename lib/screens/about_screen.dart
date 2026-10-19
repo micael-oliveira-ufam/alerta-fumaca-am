@@ -5,6 +5,7 @@ import '../data/guidance_content.dart';
 import '../services/inpe_fire_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui.dart';
+import 'lgpd_screen.dart';
 
 const _instituicao = 'Faculdade de Ciências Farmacêuticas (FCF)\nUniversidade Federal do Amazonas (UFAM)';
 
@@ -48,6 +49,14 @@ class AboutScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const LgpdScreen(onlyRead: true)),
+            ),
+            icon: const Icon(Icons.privacy_tip_outlined),
+            label: const Text('Privacidade e uso dos dados (LGPD)'),
           ),
           const SizedBox(height: 20),
           const SectionTitle('DESENVOLVEDORES'),

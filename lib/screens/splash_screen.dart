@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../data/lgpd_terms.dart';
+import '../services/report_repository.dart';
 import 'home_screen.dart';
+import 'lgpd_screen.dart';
 
 /// Tela de abertura. Continua visualmente a splash nativa (mesma cor e marca),
 /// então a transição entre as duas é contínua.
@@ -31,9 +34,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Future<void>.delayed(_duration, _goHome);
   }
 
-  void _goHome() {
+  Future<void> _goHome() async {
+    var accepted = false;
+    try {
+      accepted = await ConsentStore().hasAcceptedTerms(kLgpdTermsVersion);
+    } catch (_) {
+      accepted = false; // na dúvida, mostra o termo
+    }
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
+    if (!accepted) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+        builder: (_) => LgpdScreen(onAccepted: _openHome),
+      ));
+      return;
+    }
+    _openHome();
+  }
+
+  /// Recebe o contexto da tela de quem chama: depois do termo, a splash já saiu da pilha.
+  void _openHome([BuildContext? from]) {
+    final ctx = from ?? context;
+    if (!ctx.mounted) return;
+    Navigator.of(ctx).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 500),
         pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),

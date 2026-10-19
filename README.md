@@ -78,6 +78,7 @@ Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SE
 - Coordenadas arredondadas a **2 casas (~1,1 km)** no app **e** no servidor, e só se o usuário marcar essa opção.
 - Estatísticas só são divulgadas com ao menos 5 respostas no período; áreas do mapa, com ao menos 3.
 - O log de acesso do uvicorn fica desligado (`--no-access-log`).
+- **Termo de privacidade (LGPD)** exibido na primeira abertura e a cada nova versão (`lib/data/lgpd_terms.dart`, `kLgpdTermsVersion`); sem aceitar, o app não é usado. Aceitar o termo **não** autoriza envio.
 - Três consentimentos separados: uso local da localização; envio de dados de saúde ao servidor; inclusão da localização.
 - Como os registros são anônimos, **não é possível apagar um envio depois**; o diálogo avisa isso. Dado de saúde é dado pessoal sensível: **defina a base legal, o controlador e a retenção** antes de operar o servidor com o público.
 - Publique a API **atrás de HTTPS** (proxy reverso). O Compose expõe HTTP na porta 8000.
@@ -124,6 +125,8 @@ git tag v1.0.1 && git push origin v1.0.1
 ```
 
 ## Limitações e itens a confirmar
+
+- **Termo LGPD**: redigido pela equipe técnica, **não revisado por jurídico**. A UFAM/FCF deve designar o controlador e o canal do encarregado (art. 41) e fixar a retenção; ajuste `lgpd_terms.dart` e incremente a versão.
 
 - **Telefone do CIT-AM (0800 722 6001)**: informado pela equipe e **não confirmado** em fonte oficial. Confirme com o CIT; está em `lib/data/guidance_content.dart`. Número errado em caso de intoxicação pode causar dano.
 - **Logos da UFAM e do CIT**: confirme a autorização de uso das marcas.

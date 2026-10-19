@@ -79,6 +79,20 @@ class ConsentStore {
   /// Incluir a localização aproximada (~1 km) nos envios ao servidor.
   static const _sendLocationKey = 'consent_envio_local_v1';
 
+  /// Versão do termo de privacidade (LGPD) que a pessoa leu e aceitou.
+  static const _termsKey = 'lgpd_termos_versao';
+
+  /// Aceitar o termo só confirma a leitura; NÃO autoriza envio (isso é [_sendKey]).
+  Future<bool> hasAcceptedTerms(String version) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_termsKey) == version;
+  }
+
+  Future<void> acceptTerms(String version) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_termsKey, version);
+  }
+
   Future<bool> hasConsent() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_locationKey) ?? false;
