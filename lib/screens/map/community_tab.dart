@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../logic/community_map.dart';
-import '../../logic/risk_assessment.dart';
 import '../../services/api_client.dart';
 import '../../services/location_service.dart';
 import '../../services/report_repository.dart';
