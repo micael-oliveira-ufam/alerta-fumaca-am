@@ -1,0 +1,146 @@
+# Alerta Fumaça AM
+
+App Flutter (Android e iOS) para **orientação e triagem educativa** durante episódios de fumaça no Amazonas, com focos de calor por satélite (INPE), qualidade do ar estimada e estatísticas anonimizadas dos sintomas. Acompanha um servidor (FastAPI + PostgreSQL) que sobe com um comando via Docker.
+
+Projeto da UFAM / FCF. Desenvolvedores: Micael Davi Lima de Oliveira e Elias Barros.
+
+> **Aviso.** O app **não faz diagnóstico** e não substitui atendimento médico. Em emergência, ligue **192 (SAMU)**.
+
+## Baixar o APK
+
+Em **Releases** deste repositório há o arquivo `alerta-fumaca-am-vX.Y.Z.apk` e o `SHA256SUMS.txt`.
+Confira a integridade antes de instalar: `sha256sum -c SHA256SUMS.txt`.
+
+- O APK é **assinado com a chave de depuração do Flutter**: serve para testes e distribuição direta, **não** para a Play Store.
+- Para instalar, permita "instalar apps de fontes desconhecidas" no Android.
+- Sem servidor configurado (`API_BASE_URL`, abaixo), o app roda em **modo local**: nenhuma resposta sai do aparelho.
+
+## O que o app faz
+
+| Tela | Conteúdo |
+|---|---|
+| **Início** | Acesso às funções e ao SAMU (192). |
+| **O que fazer agora** | Orientações por nível de risco. |
+| **Como estou me sentindo** | Questionário de 11 sintomas, perfil de vulnerabilidade, triagem em 4 níveis. Ao final, o usuário decide (com consentimento separado) se envia a resposta anônima ao servidor. |
+| **Mapa · Focos · INPE** | Focos de calor de **hoje** ou das **últimas 48 h**, com **Amazonas** (padrão, enfatizado) ou **Brasil**. Filtro por satélite: **MODIS (Aqua e Terra)**, **NOAA-20** e **Suomi NPP** (padrão), mais NOAA-21 opcional. Resumo (totais, parcela do Amazonas, por satélite, estado, bioma, ranking de municípios), mapa e lista. |
+| **Mapa · Qualidade do ar** | Índice de qualidade do ar (padrão EUA), PM2,5 e PM10 **estimados por modelo** para 9 sedes municipais do Amazonas. |
+| **Mapa · Comunidade** | Mapa centrado em Manaus ou no GPS (com permissão), com áreas agregadas (~1 km). Com servidor: dados coletivos; sem servidor: só os do aparelho. |
+| **Sintomas mais relatados** | Ranking dos sintomas com % das respostas, distribuição leve/moderado/intenso e gravidade média. Vem do servidor (todas as respostas coletadas) ou, sem servidor, só do aparelho. |
+| **CIT-AM** | Cartão com o Centro de Informações Toxicológicas do Amazonas. |
+| **Sobre** | Desenvolvedores, logos, fontes de dados e avisos. |
+
+## Fontes de dados e o que "tempo real" significa
+
+### Focos de calor — INPE / Programa Queimadas (TerraBrasilis, WFS 2.0.0, GeoJSON)
+
+- Camadas `dados_abertos:focos_hoje_br_todosats` e `dados_abertos:focos_48h_br_todosats` (todos os satélites; as camadas `*_satref` trazem só o satélite de referência e não permitem separar por satélite).
+- Campo `satelite` (valores conferidos por contagem no servidor do INPE): `AQUA_M-T`, `TERRA_M-T` (**MODIS**), `NOAA-20`, `NOAA-21`, `NPP-375` e `NPP-375D` (**Suomi NPP**). Satélites geoestacionários (GOES, MSG) existem na camada, mas ficaram de fora de propósito.
+- O significado do sufixo "D" em `NPP-375D` **não foi confirmado** em documentação; as duas variantes são somadas como Suomi NPP.
+- Filtro no servidor do INPE: `CQL_FILTER=estado='AMAZONAS' AND satelite IN (...)`.
+- **"Tempo real"** = o dado mais recente publicado pelo INPE, consultado ao abrir a tela, ao trocar filtros, ao tocar em atualizar e a cada 10 minutos. O INPE publica com atraso em relação à passagem do satélite; o app mostra o horário da detecção mais recente.
+- Um foco é uma detecção térmica por satélite. **Não é medição da qualidade do ar** nem confirmação de incêndio.
+- A cor/tamanho por FRP (10 e 50 MW) é uma escala de exibição escolhida para leitura, **não** um limiar de risco à saúde.
+
+### Qualidade do ar — Open-Meteo Air Quality API (modelo CAMS)
+
+- Variáveis: `us_aqi`, `pm2_5`, `pm10`, resolução do modelo da ordem de dezenas de km.
+- É **estimativa de modelo**, não medição de estação, e o índice é o **dos EUA, não o IQAr oficial brasileiro**.
+- Uso **não comercial**, com atribuição ao Open-Meteo (exibida no app). Revise os termos se o uso mudar.
+- As coordenadas das 9 cidades (`lib/services/air_quality_service.dart`) são aproximadas; revise antes de usar em pesquisa.
+
+## Servidor e banco de dados (Docker)
+
+```bash
+cp .env.example .env          # edite POSTGRES_PASSWORD e, se quiser exportar, ADMIN_TOKEN
+docker compose up -d --build  # sobe PostgreSQL 16 + API
+curl http://localhost:8000/health
+bash tool/smoke_test_api.sh   # envia 1 resposta de teste e confere os endpoints
+```
+
+- O banco **não é publicado no host**; só a API o acessa pela rede interna. Dados no volume `pgdata`.
+- `docker compose down` mantém os dados. `docker compose down -v` **apaga tudo**.
+- Documentação interativa da API: `http://localhost:8000/docs`.
+
+| Endpoint | Função |
+|---|---|
+| `POST /respostas` | Registra uma resposta. 201 novo, 200 duplicado (idempotente por `submission_id`), 422 inválido, 429 limite. |
+| `GET /estatisticas?dias=30` | Sintomas mais relatados, níveis de risco, série diária. |
+| `GET /mapa?horas=72` | Áreas (~1 km) com respostas. |
+| `GET /focos?window=today\|last48h&scope=amazonas\|brasil&satellites=...` | Focos do INPE com cache no servidor. |
+| `GET /respostas/export.csv` | Exportação completa (cabeçalho `X-Admin-Token`; desativada se `ADMIN_TOKEN` vazio). |
+| `GET /health` | Verifica API e banco. |
+
+Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SECONDS`, `RATE_LIMIT_PER_MIN`, `MIN_RESPOSTAS_PUBLICAS` (padrão 5), `MIN_RESPOSTAS_CELULA` (padrão 3).
+
+### Privacidade (LGPD)
+
+- **Não há** nome, telefone, e-mail, conta, identificador de aparelho ou IP gravados. O `submission_id` é um UUID aleatório **por envio** (só evita duplicar em reenvio).
+- Coordenadas arredondadas a **2 casas (~1,1 km)** no app **e** no servidor, e só se o usuário marcar essa opção.
+- Estatísticas só são divulgadas com ao menos 5 respostas no período; áreas do mapa, com ao menos 3.
+- O log de acesso do uvicorn fica desligado (`--no-access-log`).
+- Três consentimentos separados: uso local da localização; envio de dados de saúde ao servidor; inclusão da localização.
+- Como os registros são anônimos, **não é possível apagar um envio depois**; o diálogo avisa isso. Dado de saúde é dado pessoal sensível: **defina a base legal, o controlador e a retenção** antes de operar o servidor com o público.
+- Publique a API **atrás de HTTPS** (proxy reverso). O Compose expõe HTTP na porta 8000.
+
+## Compilar o app
+
+Requisito: Flutter 3.27 ou superior (o CI usa **3.27.4**). As pastas `android/` e `ios/` **não** são versionadas; são geradas assim:
+
+```bash
+flutter create --platforms=android,ios --org br.ufam.fcf --project-name alerta_fumaca_am .
+rm -f test/widget_test.dart
+python3 tool/apply_platform_config.py            # INTERNET, localização, discagem (idempotente)
+python3 tool/apply_platform_config.py --check
+flutter pub get
+dart run flutter_launcher_icons
+dart run flutter_native_splash:create
+flutter analyze && flutter test
+flutter build apk --release --dart-define=API_BASE_URL=https://api.seudominio.com.br
+```
+
+Omita `--dart-define` para o modo local.
+
+> **Por que o script de permissões.** Sem `INTERNET` no `AndroidManifest.xml` principal, um APK de release não acessa a rede (o Flutter só injeta essa permissão nos builds de debug). O CI confere as três permissões dentro do APK compilado.
+
+### Diagnóstico pelo próprio app
+
+| Mensagem | Causa provável | Ação |
+|---|---|---|
+| "Não foi possível baixar o mapa base" | Sem rede ou sem `INTERNET` | Reaplicar o script e reinstalar |
+| INPE com "Failed host lookup" | Mesmo motivo, ou DNS/"DNS privado" do aparelho | Idem; ou usar o servidor próprio (`API_BASE_URL`), que consulta o INPE por você |
+| "Compilado sem a permissão de localização" | `ACCESS_*_LOCATION` ausente | Reaplicar o script e reinstalar |
+| "Permissão bloqueada" | Negada em definitivo | Liberar nas configurações do Android |
+
+## CI e releases (GitHub Actions)
+
+- `ci.yml` (push, PR): pytest do servidor em SQLite **e** PostgreSQL 16; teste do Docker Compose (sobe, smoke test, reinicia a API e confere a persistência); testes do script de permissões; análise, testes e build do APK Flutter.
+- `release.yml`: ao enviar uma tag `vX.Y.Z` (que deve bater com `version:` do `pubspec.yaml`), compila o APK e o anexa ao release com `SHA256SUMS.txt`.
+- Para o APK já apontar para o seu servidor: *Settings → Secrets and variables → Actions → Variables → `API_BASE_URL`*.
+
+```bash
+# nova versão
+# 1) altere version: em pubspec.yaml e kAppVersion em lib/data/app_info.dart
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+## Limitações e itens a confirmar
+
+- **Telefone do CIT-AM (0800 722 6001)**: informado pela equipe e **não confirmado** em fonte oficial. Confirme com o CIT; está em `lib/data/guidance_content.dart`. Número errado em caso de intoxicação pode causar dano.
+- **Logos da UFAM e do CIT**: confirme a autorização de uso das marcas.
+- **Limiares da triagem** (`moderateThreshold`, `highThreshold`, pontos) são provisórios e **não foram validados clinicamente**.
+- **Qualidade do ar**: estimativa de modelo (ver acima); resposta da API não conferida ao vivo no desenvolvimento (a rede do ambiente bloqueava o host), apenas por testes com amostra sintética.
+- **Estatísticas dos sintomas** refletem quem usa o app e decide enviar: **não são amostra representativa** da população.
+- iOS: o código é compartilhado, mas **não foi compilado nem testado** (o CI gera só o APK).
+
+## Estrutura
+
+```
+lib/            app Flutter (logic/ = regras puras e testáveis; services/ = rede; screens/)
+server/         API FastAPI + SQLAlchemy + PostgreSQL (app/, tests/, Dockerfile)
+test/           testes Dart (triagem, parser INPE, estatísticas, API, qualidade do ar, mapa)
+tool/           permissões de plataforma, geração de ícones, smoke test da API
+docker-compose.yml, .env.example
+.github/workflows/
+```
+
+Regenerar ícone/logos a partir do logo da UFAM: `pip install pillow && python3 tool/generate_brand_assets.py caminho/ufam.png [caminho/cit.png]`.

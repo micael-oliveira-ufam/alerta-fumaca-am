@@ -1,0 +1,48 @@
+name: alerta_fumaca_am
+description: Orientação e triagem educativa durante episódios de fumaça no Amazonas, com focos de calor do INPE por satélite, qualidade do ar estimada e estatísticas anonimizadas dos sintomas.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  geolocator: ^13.0.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  shared_preferences: ^2.3.2
+  url_launcher: ^6.3.1
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/ufam_logo.png
+    - assets/images/cit_am_logo.png
+    - assets/icon/app_icon.png
+    - assets/icon/app_icon_foreground.png
+
+# Ícones do aplicativo (Android e iOS). Gere com: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#1B5E20"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
+# Splash nativo (antes do Flutter iniciar). Gere com: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#1B5E20"
+  image: assets/icon/app_icon_foreground.png
+  android: true
+  ios: true

@@ -1,0 +1,7 @@
+# Versões exatas usadas nos testes (reprodutibilidade). Atualize com cuidado e rode `pytest`.
+fastapi==0.146.0
+pydantic==2.14.1
+uvicorn==0.54.0
+SQLAlchemy==2.1.5
+psycopg[binary]==3.3.6
+requests==2.34.2

@@ -1,0 +1,24 @@
+# Segredos e ambiente local (NUNCA versionar)
+.env
+*.jks
+*.keystore
+key.properties
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Flutter / Dart (as pastas android/ e ios/ são geradas por `flutter create`; ver README)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+android/
+ios/
+.idea/
+.vscode/
+*.iml
+.DS_Store

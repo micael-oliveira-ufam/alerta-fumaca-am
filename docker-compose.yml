@@ -1,0 +1,48 @@
+# Sobe o banco (PostgreSQL 16) e a API.
+#
+#   cp .env.example .env        # ajuste as senhas
+#   docker compose up -d --build
+#   curl http://localhost:8000/health
+#
+# O banco NÃO é publicado no host (só a API enxerga o Postgres, pela rede interna).
+# Os dados ficam no volume `pgdata`; `docker compose down` mantém os dados,
+# `docker compose down -v` APAGA tudo.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alerta}
+      POSTGRES_USER: ${POSTGRES_USER:-alerta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-alerta_dev}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-alerta}
+      POSTGRES_USER: ${POSTGRES_USER:-alerta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-alerta_dev}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      INPE_CACHE_SECONDS: ${INPE_CACHE_SECONDS:-300}
+      RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-30}
+      MIN_RESPOSTAS_PUBLICAS: ${MIN_RESPOSTAS_PUBLICAS:-5}
+      MIN_RESPOSTAS_CELULA: ${MIN_RESPOSTAS_CELULA:-3}
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+volumes:
+  pgdata:
