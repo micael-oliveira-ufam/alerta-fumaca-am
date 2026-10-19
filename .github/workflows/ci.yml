@@ -116,9 +116,22 @@ jobs:
           dart run flutter_launcher_icons
           dart run flutter_native_splash:create
       - name: Análise estática
-        run: flutter analyze
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos > analyze.txt 2>&1
+          code=$?
+          cat analyze.txt
+          # Publica os problemas como anotações (visíveis na página da execução e na API).
+          python3 tool/ci_annotate.py analyze analyze.txt
+          exit $code
       - name: Testes
-        run: flutter test
+        run: |
+          set +e
+          flutter test --reporter expanded > test.txt 2>&1
+          code=$?
+          tail -n 200 test.txt
+          python3 tool/ci_annotate.py test test.txt
+          exit $code
       - name: Compilar APK de release
         run: |
           API_ARG=""
