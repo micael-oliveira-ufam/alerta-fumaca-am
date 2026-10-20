@@ -1,0 +1,9 @@
+# Regras de análise do Dart/Flutter. O pacote flutter_lints (dev_dependencies) traz o conjunto padrão.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - dist/**
+    - android/**
+    - ios/**
