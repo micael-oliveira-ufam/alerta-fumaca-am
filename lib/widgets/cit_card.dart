@@ -54,7 +54,7 @@ class CitCard extends StatelessWidget {
               style: FilledButton.styleFrom(backgroundColor: _teal),
               onPressed: () => launchUrl(Uri(scheme: 'tel', path: kCitPhoneDial)),
               icon: const Icon(Icons.call_rounded),
-              label: Text('Ligar $kCitPhoneDisplay'),
+              label: const Text('Ligar $kCitPhoneDisplay'),
             ),
           ),
           const SizedBox(height: 8),

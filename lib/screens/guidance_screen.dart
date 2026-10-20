@@ -33,7 +33,7 @@ class GuidanceScreen extends StatelessWidget {
               child: _LevelCard(level: level),
             ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             kDisclaimer,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),

@@ -13,6 +13,8 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 ## [Não lançado]
 
 ### Corrigido
+- Sete sugestões do analisador (`prefer_const_constructors` e `prefer_const_literals_to_create_immutables`) aplicadas em `about_screen`, `guidance_screen`, `home_screen`, `air_quality_tab`, `questionnaire_screen` e `cit_card`.
+- `tool/gerar_apk.sh` remove o `test/widget_test.dart` padrão do `flutter create`, que não compila neste projeto.
 - `tool/gerar_apk.sh` avisa quando o caminho do projeto tem acentos ou espaços, causa provável de `flutter analyze` falhar com "Unexpected end of input". O README ganhou essa linha no diagnóstico.
 - Tela de LGPD: a cor de fundo da área de aceite estava num `DecoratedBox` acima do `CheckboxListTile`, o que escondia o efeito de toque (falha em `test/lgpd_test.dart`). A cor agora fica num `Material`.
 - Adicionado `analysis_options.yaml` (estava ausente, então as regras do `flutter_lints` não eram aplicadas e o analisador não tinha configuração explícita).

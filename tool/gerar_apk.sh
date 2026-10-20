@@ -34,6 +34,13 @@ if [[ ! -d android ]]; then
   rm -f test/widget_test.dart
 fi
 
+# O flutter create gera um teste padrão (test/widget_test.dart) que referencia MyApp e
+# não compila neste projeto. Remove só se for esse modelo.
+if grep -q "MyApp" test/widget_test.dart 2>/dev/null; then
+  rm -f test/widget_test.dart
+  echo "Removido test/widget_test.dart (modelo padrão do flutter create)."
+fi
+
 python3 tool/apply_platform_config.py          # nome, INTERNET, localização, discagem
 python3 tool/apply_platform_config.py --check
 flutter pub get

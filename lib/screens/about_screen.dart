@@ -167,7 +167,7 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
+          const Text(
             kDisclaimer,
             textAlign: TextAlign.center,
             style: const TextStyle(height: 1.4, fontSize: 12, color: AppColors.muted),

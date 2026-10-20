@@ -166,8 +166,8 @@ class _SamuCard extends StatelessWidget {
     return AppCard(
       color: red.withValues(alpha: 0.06),
       onTap: () => launchUrl(Uri(scheme: 'tel', path: kSamuNumber)),
-      child: Row(
-        children: [
+      child: const Row(
+        children: const [
           const Icon(Icons.emergency_rounded, color: red, size: 30),
           const SizedBox(width: 14),
           const Expanded(

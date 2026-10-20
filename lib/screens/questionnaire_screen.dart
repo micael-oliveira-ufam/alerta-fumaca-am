@@ -412,7 +412,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                 if (_step == 3) ..._nowStep(),
                 if (isResult) ..._resultStep(),
                 const SizedBox(height: 20),
-                Text(
+                const Text(
                   kDisclaimer,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
