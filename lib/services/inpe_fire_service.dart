@@ -178,12 +178,19 @@ class InpeFireService {
     FireWindow window, {
     FireScope scope = FireScope.amazonas,
     Set<FireSatellite>? satellites,
-    Duration timeout = const Duration(seconds: 60),
+    Duration timeout = const Duration(seconds: 30),
+    int retries = 2,
+    Duration retryDelay = const Duration(seconds: 2),
   }) async {
     final sats = satellites ?? FireSatellite.defaults();
     final onlyState = scope == FireScope.amazonas ? state : null;
     try {
-      final body = await _download(endpointFor(window, scope: scope, satellites: sats), timeout);
+      final body = await _downloadWithRetry(
+        endpointFor(window, scope: scope, satellites: sats),
+        timeout: timeout,
+        retries: retries,
+        retryDelay: retryDelay,
+      );
       final hotspots = parseFeatureCollection(body, onlyState: onlyState);
       final now = DateTime.now().toUtc();
       if (scope == FireScope.amazonas) await _writeCache(window, sats, body, now);
@@ -196,6 +203,28 @@ class InpeFireService {
         if (cached != null) return cached;
       }
       rethrow;
+    }
+  }
+
+  /// Repete a consulta em falhas de rede ou do servidor (ex.: primeira conexão lenta ou
+  /// um DNS que ainda não respondeu). Espera [retryDelay] vezes o número da tentativa.
+  /// Erros de formato não são repetidos: a resposta chegou, só não é o esperado.
+  Future<String> _downloadWithRetry(
+    Uri uri, {
+    required Duration timeout,
+    required int retries,
+    required Duration retryDelay,
+  }) async {
+    var attempt = 0;
+    while (true) {
+      try {
+        return await _download(uri, timeout);
+      } on InpeException catch (e) {
+        final retryable = e.kind == InpeErrorKind.network || e.kind == InpeErrorKind.server;
+        if (!retryable || attempt >= retries) rethrow;
+        attempt++;
+        await Future<void>.delayed(retryDelay * attempt);
+      }
     }
   }
 

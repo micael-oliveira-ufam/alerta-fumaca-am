@@ -13,6 +13,7 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 ## [Não lançado]
 
 ### Corrigido
+- Focos do INPE só carregavam depois de abrir a aba de qualidade do ar. Causa: o `TabBarView` destruía a aba que não estava visível, e a consulta só era refeita ao voltar a ela; uma primeira consulta que falhava não era repetida. Agora as abas ficam vivas (`KeepAlivePage`) e a consulta do INPE é repetida automaticamente em falha de rede ou de servidor (2 novas tentativas, com espera crescente). O tempo limite caiu de 60 s para 30 s.
 - Sete sugestões do analisador (`prefer_const_constructors` e `prefer_const_literals_to_create_immutables`) aplicadas em `about_screen`, `guidance_screen`, `home_screen`, `air_quality_tab`, `questionnaire_screen` e `cit_card`.
 - `tool/gerar_apk.sh` remove o `test/widget_test.dart` padrão do `flutter create`, que não compila neste projeto.
 - `tool/gerar_apk.sh` avisa quando o caminho do projeto tem acentos ou espaços, causa provável de `flutter analyze` falhar com "Unexpected end of input". O README ganhou essa linha no diagnóstico.

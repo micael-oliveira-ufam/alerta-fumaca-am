@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/keep_alive_page.dart';
 import 'map/air_quality_tab.dart';
 import 'map/community_tab.dart';
 import 'map/official_fire_tab.dart';
@@ -34,9 +35,9 @@ class RiskMapScreen extends StatelessWidget {
           // Evita arrastar entre abas ao mover o mapa.
           physics: NeverScrollableScrollPhysics(),
           children: [
-            OfficialFireTab(),
-            AirQualityTab(),
-            CommunityTab(),
+            KeepAlivePage(child: OfficialFireTab()),
+            KeepAlivePage(child: AirQualityTab()),
+            KeepAlivePage(child: CommunityTab()),
           ],
         ),
       ),
