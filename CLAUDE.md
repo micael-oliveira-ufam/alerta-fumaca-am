@@ -232,6 +232,7 @@ docker-compose.yml       servidor + banco + túnel Cloudflare
 | Objetivo | Comando |
 |---|---|
 | Gerar APK | `bash tool/gerar_apk.sh` (saída em `dist/`, com `SHA256SUMS`) |
+| Requisitos no Linux | `bash tool/instalar_requisitos_linux.sh` |
 | Requisitos no macOS | `bash tool/instalar_requisitos_macos.sh` |
 | Abrir emulador e rodar | `bash tool/abrir_emulador.sh ios|android [URL]` |
 | Gerar iOS | `bash tool/gerar_ios.sh simulador|dispositivo [URL]` (dispositivo = .ipa sem assinatura) |
@@ -242,7 +243,7 @@ docker-compose.yml       servidor + banco + túnel Cloudflare
 | Ver/sincronizar versão | `python3 tool/versao.py mostrar|verificar|sincronizar` |
 | Nova versão | `python3 tool/versao.py nova patch|minor|major|X.Y.Z` |
 
-Ambiente do usuário (informado): macOS, Flutter 3.47.7, Dart 3.13.5. `pubspec.yaml` exige `sdk: '>=3.6.0 <4.0.0'`.
+Ambiente do usuário (informado): agora **Linux** (antes macOS, com Flutter 3.47.7 e Dart 3.13.5). `pubspec.yaml` exige `sdk: '>=3.6.0 <4.0.0'`.
 
 ### 3.3 Fontes externas (todas dependem de internet)
 
@@ -399,6 +400,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 
 ### 4.21 Porta automática com nova tentativa — versão 1.6.5
 - Pedido: publicar o servidor automaticamente numa porta livre. Já havia a detecção prévia (1.6.4); agora também há **nova tentativa** quando o Docker recusa a porta ("port is already allocated"). **Verificado** com `docker` simulado que falha na 8080 e passa na 8081 (o endereço do painel impresso é o novo). **Não testado em Docker real.** O túnel usa a porta interna da API (`api:8000`), que não muda.
+
+### 4.22 Flutter no Linux — versão 1.6.6
+- Erro do usuário: `Flutter não encontrado` ao rodar `tool/gerar_apk.sh` no Linux (o Flutter não estava instalado/no PATH). Novo `tool/instalar_requisitos_linux.sh` (dependências, JDK 17, Flutter por `git clone`, Android SDK por command-line tools, PATH) e `tool/_ambiente.sh` (detecção automática). Dependências conforme a documentação oficial do Flutter para Linux (`curl git unzip xz-utils zip libglu1-mesa`). **Não está na documentação lida:** o método `git clone`, o JDK 17 e `flutter config --android-sdk` (escolhas minhas). O número do zip das command-line tools é descoberto na página do Android, **não verificado ao vivo** (inacessível daqui). **Verificado:** `bash -n` e detecção com Flutter/SDK simulados. **Não testado:** a instalação real.
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).

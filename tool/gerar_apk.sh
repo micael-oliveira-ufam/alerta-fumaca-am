@@ -6,6 +6,7 @@
 #   tool/gerar_apk.sh https://api.seudominio.com  # aponta o app para o seu servidor
 #
 # Requisitos: Flutter 3.27+ (flutter doctor), Java 17 e Android SDK.
+# No Linux, instale tudo com:  bash tool/instalar_requisitos_linux.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -26,7 +27,8 @@ fi
 
 python3 tool/versao.py verificar || { echo 'Corrija a versão antes de gerar o APK (tool/versao.py).'; exit 1; }
 
-command -v flutter >/dev/null || { echo "Flutter não encontrado. Instale: https://docs.flutter.dev/get-started/install"; exit 1; }
+source tool/_ambiente.sh
+command -v flutter >/dev/null || { mensagem_instalar_flutter; exit 1; }
 
 # Gera android/ e ios/ se ainda não existem (não são versionadas).
 if [[ ! -d android ]]; then

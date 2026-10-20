@@ -12,7 +12,16 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.5.
+Nenhuma mudança desde a 1.6.6.
+
+## [1.6.6] - 2026-10-20
+
+### Adicionado
+- `tool/instalar_requisitos_linux.sh`: instala no Linux (apt, dnf ou pacman) as dependências do Flutter, o Java 17, o Flutter (clone do repositório oficial, ramo `stable` por padrão) e o Android SDK (command-line tools, `platform-tools`, licenças), grava o PATH em `~/.bashrc` e `~/.profile` e roda `flutter doctor -v`.
+- `tool/_ambiente.sh`: localiza Flutter (`~/development/flutter`, `~/flutter`, `/opt/flutter`…), Android SDK (`~/Android/Sdk`) e Java 17 já instalados e os põe no PATH da execução.
+
+### Alterado
+- `tool/gerar_apk.sh` e `tool/_preparar.sh`: usam a detecção acima e, se o Flutter não existir, indicam o instalador do sistema certo (Linux ou macOS) em vez de só apontar a documentação.
 
 ## [1.6.5] - 2026-10-20
 

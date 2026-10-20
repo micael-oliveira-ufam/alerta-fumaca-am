@@ -15,7 +15,8 @@ aviso_caminho() {
 }
 
 exige_flutter() {
-  command -v flutter >/dev/null || erro "Flutter não encontrado. Rode: bash tool/instalar_requisitos_macos.sh"
+  source "$(dirname "${BASH_SOURCE[0]}")/_ambiente.sh"
+  command -v flutter >/dev/null || { mensagem_instalar_flutter >&2; exit 1; }
 }
 
 exige_macos() {
