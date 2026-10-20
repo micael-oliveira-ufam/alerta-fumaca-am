@@ -45,7 +45,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.6.7"
+APP_VERSION = "1.6.8"
 
 
 def create_app(

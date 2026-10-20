@@ -33,7 +33,8 @@ elif command -v pacman >/dev/null; then
 else
   echo "Gerenciador de pacotes não reconhecido. Instale manualmente: curl git unzip xz zip libglu1-mesa e o JDK 17."
 fi
-java -version 2>&1 | head -1 || true
+# Captura a saída inteira: cortar com `| head` fecha o pipe e o Flutter acusa 'Broken pipe'.
+saida_java="$(java -version 2>&1 || true)"; echo "${saida_java%%$'\n'*}"
 
 echo "== 2/5 Flutter ($FLUTTER_REF) em $FLUTTER_DIR"
 if [[ ! -x "$FLUTTER_DIR/bin/flutter" ]]; then
@@ -43,14 +44,15 @@ else
   echo "Já existe: $FLUTTER_DIR"
 fi
 export PATH="$FLUTTER_DIR/bin:$PATH"
-flutter --version | head -1
+saida_flutter="$(flutter --version 2>&1)" || { echo "$saida_flutter"; echo "ERRO: o Flutter não iniciou."; exit 1; }
+echo "${saida_flutter%%$'\n'*}"
 
 echo "== 3/5 Android SDK (command-line tools) em $SDK"
 if [[ ! -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]]; then
   url="${CMDLINE_TOOLS_URL:-}"
   if [[ -z "$url" ]]; then
     # Descobre o zip atual na página oficial (o número da versão muda; não está fixo aqui).
-    arq="$(curl -fsSL https://developer.android.com/studio 2>/dev/null | grep -Eo 'commandlinetools-linux-[0-9]+_latest\.zip' | head -n 1 || true)"
+    arq="$(curl -fsSL https://developer.android.com/studio 2>/dev/null | grep -Eom1 'commandlinetools-linux-[0-9]+_latest\.zip' || true)"
     [[ -n "$arq" ]] && url="https://dl.google.com/android/repository/$arq"
   fi
   if [[ -z "$url" ]]; then

@@ -407,6 +407,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.23 Mapa web bloqueado pelo OpenStreetMap — versão 1.6.7
 - Print do usuário: tiles com "Access blocked – App is not following the tile usage policy" (403) no painel público via túnel. Causa: `Referrer-Policy: no-referrer` no servidor (a política de tiles do OSM exige Referer). **Verificado:** o cabeçalho estava nos dois painéis (`main.py`, `painel.py`) e o 84º teste confere o novo valor. **Não verificado:** o carregamento real dos tiles (OSM inacessível daqui); confirmar recarregando a página com Ctrl+F5. O app Flutter não é afetado (já usa `userAgentPackageName`).
 
+### 4.24 Broken pipe no instalador — versão 1.6.8
+- Saída do usuário: o Flutter baixou o Dart SDK e compilou a ferramenta, mas terminou em `FileSystemException: writeFrom failed ... Broken pipe`. Causa: **bug meu** (`flutter --version | head -1`, versão 1.6.6). **Verificado:** reproduzido o padrão e a correção (captura em variável) com um `flutter` falso; o trecho de `java -version` recebeu a mesma correção. **Não testado:** Flutter real. Lição: nunca cortar a saída de `flutter` com `head` em pipe.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

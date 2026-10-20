@@ -13,6 +13,11 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 ## [Não lançado]
 
 ### Corrigido
+- `tool/instalar_requisitos_linux.sh`: terminava com "FileSystemException ... Broken pipe" (ao rodar `flutter --version` na primeira vez). Causa: a saída era cortada com `| head -1`, o que fecha o pipe enquanto o Flutter ainda escreve. Agora a saída é capturada inteira e só a primeira linha é exibida; se o Flutter não iniciar, o erro real aparece. O instalador é reexecutável: o que já foi instalado é reaproveitado.
+
+## [1.6.8] - 2026-10-20
+
+### Corrigido
 - Mapas das páginas web (painel público e do administrador) mostravam "Access blocked ... 403" no lugar do mapa. Causa: o servidor enviava `Referrer-Policy: no-referrer` e o OpenStreetMap recusa tiles sem o cabeçalho Referer (política de uso de tiles). Agora é `strict-origin-when-cross-origin` (só a origem vai a terceiros, nunca o caminho). Teste novo em `server/tests/test_publico.py`.
 
 ## [1.6.7] - 2026-10-20
