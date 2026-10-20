@@ -12,7 +12,16 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.0.
+Nenhuma mudança desde a 1.6.1.
+
+## [1.6.1] - 2026-10-20
+
+### Corrigido
+- Fotos dos desenvolvedores estavam trocadas (Micael = óculos e crachá; Elias = camiseta cinza), no app e na plataforma online.
+- Referências de "Fato ou Fake?" e da farmácia caseira passaram a apontar para fontes efetivamente lidas (VIGIAR/Ministério da Saúde e SES-AM/FVS-RCP).
+
+### Adicionado
+- `tool/teste_comunicacao.py`: teste de comunicação app -> servidor com o mesmo JSON que o app envia.
 
 ## [1.6.0] - 2026-10-20
 

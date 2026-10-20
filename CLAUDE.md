@@ -368,15 +368,20 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Sintomas mais relatados:** gráficos sempre visíveis (zerados se não houver dados), nível de risco e **bairros de Manaus** (`server/app/bairros.py`: coordenada de ~1 km → bairro via Nominatim, cache em `celulas_bairro`, mínimo 3 respostas por bairro, só Manaus).
 - **Mapa "Hoje" sem focos:** causa provável (**não confirmada**: o INPE não é acessível daqui) é a camada `focos_hoje_*` vir vazia. Correção: "Hoje" usa a camada de 48 h e recorta o dia atual de Manaus (UTC-4) no app (`FireWindow.filter`) e o servidor mapeia `today` para a camada de 48 h.
 - **Datas de satélite:** `lib/services/gibs_availability.dart` testa um tile (zoom 3, Manaus) por data e mostra só as datas com imagem. **Não verificado ao vivo** (GIBS inacessível daqui): se a GIBS devolver 200 com tile em branco para datas sem dado, a data aparecerá; o aviso de falha de tile segue como segunda proteção.
-- **Sobre:** removido "Alterar endereço"; o link da plataforma abre no navegador. `ApiConfig.save/override` ficou sem tela (código morto, mantido por testes). Desenvolvedores com foto e e-mail (`assets/images/dev_*.jpg`). **Suposição declarada:** a foto de camiseta cinza = Micael e a de óculos/crachá LNCC = Elias (pela ordem enviada); trocar os arquivos se estiver invertido.
+- **Sobre:** removido "Alterar endereço"; o link da plataforma abre no navegador. `ApiConfig.save/override` ficou sem tela (código morto, mantido por testes). Desenvolvedores com foto e e-mail (`assets/images/dev_*.jpg`). **Suposição declarada:** confirmado pelo usuário: Micael = óculos e crachá LNCC; Elias = camiseta cinza.
 - **Plataforma online:** seções de bairros, focos de calor (KPIs, por satélite/dia/município, mapa de calor), links de desmatamento e desenvolvedores. **Desmatamento: só links oficiais** (TerraBrasilis); nomes de camadas WMS do DETER/PRODES não foram verificados e não foram usados.
 - **Verificado:** testes do servidor; a página pública em Chromium com focos simulados (dados fictícios). **Não verificado:** todo o Dart novo (não compila aqui), Nominatim, GIBS, INPE.
+
+### 4.17 Fotos corrigidas, fontes e teste de comunicação — versão 1.6.1
+- Usuário corrigiu: **Micael = óculos e crachá LNCC; Elias = camiseta cinza**. Fotos trocadas.
+- Fontes [8] (VIGIAR, Ministério da Saúde, 2ª ed.) e [9] (SES-AM/FVS-RCP, 18/09/2024) foram lidas e as referências dos mitos reajustadas ([8], [8,9], [1,8]); [5], [6], [7] seguem não consultadas.
+- `tool/teste_comunicacao.py`: envia ao servidor o mesmo JSON do app (11 sintomas, contexto, coordenada a 2 casas, data com microssegundos). **Resultado real (servidor local, HTTP, SQLite):** /health 200; novo 201; reenvio 200 `duplicado:true`; sem localização 201; nível inválido e sem sintomas 422 (o app trata 4xx como "rejeitado", sem reenvio); painel público com 10 respostas: suficiente, 11 sintomas, 1 área. **Não testado:** o app Dart de fato, o túnel Cloudflare, PostgreSQL.
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
 - **Confirmar com o CIT** os telefones 0800 722 6001 e (92) 3305-4700 antes de divulgar; depois retirar o aviso do app e de `lib/data/guidance_content.dart`.
-- Consultar as fontes marcadas “não consultada” (ASBAI, CFMV, OPAS/OMS, Vigifis, SES-AM/FVS-AM) e atualizar os rótulos.
+- Fontes ainda **não consultadas** em fonte primária: ASBAI [5], CFMV [6], OPAS/OMS [7] (buscas de 20/10/2026 não acharam o documento). Já consultadas: VIGIAR [8] (página gov.br, lida) e SES-AM/FVS-RCP [9] (só pela imprensa, não o original). Nem [8] nem [9] tratam de soro ou animais, e [9] não trata de mitos.
 - Revisão por profissional de saúde e médico-veterinário antes de publicar os textos de farmácia caseira e pets.
 - Notificações push/locais do alerta roxo e alerta laranja (precisa de previsão de vento): decisão do usuário.
 - Causa raiz da falha inicial da consulta ao INPE: aguardando o texto de “Detalhes técnicos”.

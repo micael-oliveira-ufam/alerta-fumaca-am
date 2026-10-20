@@ -297,7 +297,7 @@ const myths = <MythData>[
     Verification.teamText,
     'Texto da equipe; não encontrei fonte que trate do leite. O trecho sobre soro '
         'fisiológico "hidratar as vias aéreas" do original foi retirado, por não ter fonte.',
-    refs: [9],
+    refs: [8],
   ),
   MythData(
     'Dá para lavar a máscara PFF2/N95 e reutilizar?',
@@ -307,7 +307,7 @@ const myths = <MythData>[
     Verification.teamText,
     'Texto da equipe; não consultei a nota da ASBAI nem fabricante. Confira a orientação '
         'do fabricante e da Anvisa.',
-    refs: [5, 9],
+    refs: [8, 9],
   ),
   MythData(
     'Queimar casca de laranja ou borra de café em casa tira o cheiro de fumaça?',
@@ -319,13 +319,13 @@ const myths = <MythData>[
     'O CDC (lido) orienta evitar fontes internas de fumaça. A afirmação específica sobre '
         'casca de laranja e borra de café é do texto da equipe. Ajuste: o original cita só '
         'aumento de monóxido de carbono, que mantive fora por não ter fonte.',
-    refs: [1, 9],
+    refs: [1, 8],
   ),
 ];
 
 const mythsReferenceNote =
-    'Referência: Secretaria de Estado de Saúde do Amazonas (SES-AM) e Fundação de Vigilância em '
-    'Saúde (FVS-AM), boletins e notas de esclarecimento sobre mitos durante a estiagem e a fumaça.';
+    'Referências: Ministério da Saúde (VIGIAR) e Secretaria de Estado de Saúde do Amazonas '
+    '(SES-AM) com a FVS-RCP, orientações sobre a fumaça.';
 
 // ---------------------------------------------------------------- Alertas
 const alertPurpleTitle = 'Alerta de fumaça intensa';
@@ -395,18 +395,25 @@ const extraReferences = <ExtraReference>[
   ),
   ExtraReference(
     8,
-    'Ministério da Saúde. Programa VIGIAR: vigilância em saúde de populações expostas a '
-        'poluentes atmosféricos.',
-    'Vigilância em saúde e poluição do ar.',
-    'NÃO consultada. Veja também a nota do Ministério da Saúde na fonte [3] (lida apenas '
-        'pela divulgação na imprensa).',
+    'Ministério da Saúde, Secretaria de Vigilância em Saúde e Ambiente. Queimadas e incêndios '
+        'florestais: alerta de risco sanitário e recomendações para a população (2ª ed.). '
+        'Programa VIGIAR.',
+    'Máscaras N95/PFF2/P100, hidratação, permanência em ambiente fechado, grupos de risco e sintomas.',
+    'LIDA (página gov.br, 20/10/2026): recomenda N95/PFF2/P100 limpas e secas; permanecer em '
+        'ambiente interno protegido; aumentar a ingestão de água; crianças <5 anos, idosos, '
+        'comorbidades e gestantes. NÃO menciona soro fisiológico nem animais.',
+    url: 'https://www.gov.br/saude/pt-br/composicao/svsa/saude-ambiental/vigiar/publicacoes/queimadas-e-incendios-florestais-alerta-de-risco-sanitario-e-recomendacoes-para-a-populacao',
   ),
   ExtraReference(
     9,
-    'Secretaria de Estado de Saúde do Amazonas (SES-AM) / Fundação de Vigilância em Saúde '
-        '(FVS-AM). Boletins sobre mitos e condutas na estiagem e fumaça.',
-    'Seção "Fato ou Fake?".',
-    'NÃO consultada.',
+    'Secretaria de Estado de Saúde do Amazonas (SES-AM) e Fundação de Vigilância em Saúde '
+        'Dra. Rosemary Costa Pinto (FVS-RCP). Orientações de saúde para reduzir os impactos da '
+        'fumaça (Comitê de Enfrentamento à Estiagem, 18/09/2024).',
+    'Hidratação, máscaras (N95/PFF2/P100 para partículas finas) e redução da exposição.',
+    'LIDA apenas pela matéria da imprensa (Rede Onda Digital, 19/09/2024), não o documento '
+        'original. Recomenda hidratação, N95/PFF2/P100, evitar atividade física e tabaco. NÃO '
+        'trata de mitos, leite, soro nem animais.',
+    url: 'https://redeondadigital.com.br/amazonas/confira-orientacoes-de-saude-para-reduzir-impactos-da-fumaca',
   ),
   ExtraReference(
     10,
@@ -430,7 +437,7 @@ const referenceShort = <int, String>{
   5: 'ASBAI, notas técnicas sobre máscaras',
   6: 'CFMV, fumaça e animais de companhia',
   7: 'OPAS/OMS, queimadas e saúde',
-  8: 'Ministério da Saúde, programa VIGIAR',
-  9: 'SES-AM / FVS-AM, boletins sobre mitos',
+  8: 'Ministério da Saúde, VIGIAR (2ª ed.)',
+  9: 'SES-AM / FVS-RCP, orientações sobre a fumaça (2024)',
   10: 'AVMA, Wildfire smoke and animals',
 };
