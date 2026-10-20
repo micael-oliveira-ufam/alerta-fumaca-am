@@ -134,6 +134,26 @@ Omita `--dart-define` para o modo local.
 | "Compilado sem a permissão de localização" | `ACCESS_*_LOCATION` ausente | Reaplicar o script e reinstalar |
 | "Permissão bloqueada" | Negada em definitivo | Liberar nas configurações do Android |
 
+## Versionamento
+
+Uma versão só para o projeto (app e servidor), no padrão [SemVer](https://semver.org/lang/pt-BR/). A fonte é o arquivo `VERSION`; o `tool/versao.py` mantém as cópias sincronizadas (`pubspec.yaml`, `lib/data/app_info.dart`, `server/app/main.py`) e confere o `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)).
+
+```bash
+python3 tool/versao.py mostrar                 # versão e situação das cópias
+python3 tool/versao.py verificar               # erro se algo divergir (também roda antes do APK)
+python3 tool/versao.py nova minor              # patch | minor | major | X.Y.Z
+```
+
+Fluxo de uma release:
+
+1. Escreva as mudanças em `CHANGELOG.md`, na seção `## [Não lançado]`, nas categorias Adicionado, Alterado, Corrigido ou Removido.
+2. `python3 tool/versao.py nova minor` (ou `patch`/`major`): sobe `VERSION`, o número de build do `pubspec.yaml` (+1) e move o não lançado para a nova seção com a data.
+3. Faça o commit e marque: `git tag -a vX.Y.Z -m "Versão X.Y.Z"` e `git push origin main vX.Y.Z`.
+
+Regras: o build (`+N` do pubspec) só cresce, porque o Android exige isso para atualizar o app instalado; mudança que quebra a API ou o formato de dados é MAIOR. Os testes (`tool/test_versao.py` e `server/tests/test_versao.py`) falham se alguma cópia divergir.
+
+Histórico de versões: `CHANGELOG.md`. Tags: `v1.0.0` (commit `eb29899`) e `v1.1.0`.
+
 ## Testes
 
 Não há GitHub Actions neste repositório. Rode localmente:

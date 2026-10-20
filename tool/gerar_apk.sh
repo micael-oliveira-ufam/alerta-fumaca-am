@@ -15,6 +15,8 @@ if [[ -n "$API_URL" ]]; then
   DEFINES+=("--dart-define=API_BASE_URL=$API_URL")
 fi
 
+python3 tool/versao.py verificar || { echo 'Corrija a versão antes de gerar o APK (tool/versao.py).'; exit 1; }
+
 command -v flutter >/dev/null || { echo "Flutter não encontrado. Instale: https://docs.flutter.dev/get-started/install"; exit 1; }
 
 # Gera android/ e ios/ se ainda não existem (não são versionadas).
@@ -39,4 +41,5 @@ cp "$APK" "$DEST"
 ( cd dist && sha256sum Alerta-Fumaca-AM.apk > SHA256SUMS.txt )
 echo
 echo "APK pronto: $DEST"
+echo "Versão: $(cat VERSION)"
 echo "SHA-256: $(cut -d' ' -f1 dist/SHA256SUMS.txt)"
