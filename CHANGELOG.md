@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.5.1.
+
+## [1.5.1] - 2026-10-20
+
+### Corrigido
+- `tool/_preparar.sh` (usado por `abrir_emulador.sh` e `gerar_ios.sh`): `pod install` falhava com "No `Podfile' found in the project directory" quando `ios/Podfile` ainda não existia. O Flutter só cria o Podfile ao preparar o projeto iOS. Agora, se faltar, o script roda `flutter build ios --config-only --no-codesign` para gerá-lo; se ainda assim não existir, segue sem o `pod install` manual (o `flutter run` e o `flutter build ios` rodam o CocoaPods sozinhos). **Não testado num Mac real**; a lógica foi conferida com comandos simulados.
+
 Nenhuma mudança desde a 1.5.0.
 
 ## [1.5.0] - 2026-10-20

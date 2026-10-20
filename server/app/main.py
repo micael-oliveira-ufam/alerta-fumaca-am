@@ -45,7 +45,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 
 
 def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:

@@ -51,8 +51,19 @@ preparar_projeto() {
 }
 
 # Instala os pods do iOS (CocoaPods baixa as bibliotecas nativas).
+# O Flutter só cria ios/Podfile quando prepara o projeto iOS (build ou --config-only); logo
+# depois do `flutter create` ele pode não existir. Se faltar, pedimos ao Flutter que o gere.
 instalar_pods() {
   command -v pod >/dev/null || erro "CocoaPods não encontrado. Rode: brew install cocoapods"
+  if [[ ! -f ios/Podfile ]]; then
+    echo "== ios/Podfile ainda não existe: pedindo ao Flutter que prepare o projeto iOS"
+    flutter build ios --config-only --no-codesign || true
+  fi
+  if [[ ! -f ios/Podfile ]]; then
+    echo "AVISO: ios/Podfile continua ausente. Seguindo sem 'pod install' manual:"
+    echo "  o 'flutter run' e o 'flutter build ios' rodam o CocoaPods sozinhos."
+    return 0
+  fi
   echo "== Baixando bibliotecas nativas do iOS (pod install)"
   ( cd ios && pod install --repo-update )
 }

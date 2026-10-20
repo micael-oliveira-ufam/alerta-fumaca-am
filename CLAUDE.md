@@ -350,6 +350,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Verificado:** 75 testes do servidor passaram (10 novos); a página foi aberta num Chromium (Playwright) com 240 respostas de teste geradas por mim, em desktop, celular e escuro, sem erros de JavaScript (só falhas de carregar o mapa do OpenStreetMap, bloqueado no sandbox). **Não verificado:** o mapa com tiles reais, o acesso pelo túnel Cloudflare, uso com PostgreSQL e comportamento com muito tráfego. Os dados da demonstração eram **fictícios** e não foram commitados.
 - Ainda aberto: o termo LGPD não cita perfil, exposição e contexto como estatísticas públicas.
 
+### 4.15 Erro "No Podfile found" — versão 1.5.1
+- O usuário colou: `[!] No Podfile' found in the project directory.` ao rodar o fluxo iOS. Causa provável: `ios/Podfile` ainda não existia (o `flutter create` não o gera nesse ponto); **a causa exata no Mac do usuário não foi confirmada**. Correção em `_preparar.sh` (ver CHANGELOG). Se persistir, pedir a saída de `ls ios` e de `flutter build ios --config-only --no-codesign`.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
