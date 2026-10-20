@@ -16,7 +16,8 @@ Nenhuma mudança desde a 1.7.1.
 
 ## [1.7.1] - 2026-10-20
 
-Nenhuma mudança desde a 1.7.0.
+### Corrigido
+- O domínio fixo estava escrito `respira-amazonas.cloud` (sem o "r"); o domínio real é **`respirar-amazonas.cloud`** (confirmado na tela de DNS da Cloudflare do usuário). Por isso o navegador devolvia `DNS_PROBE_FINISHED_NXDOMAIN`. Corrigido em `tool/_ambiente.sh` (URL padrão do app), `tool/iniciar_servidor.sh`, `docker-compose.yml`, `.env.example`, README e teste. **APKs compilados na 1.7.0 apontam para o nome errado e precisam ser recompilados.**
 
 ## [1.7.0] - 2026-10-20
 
