@@ -20,20 +20,23 @@ import io
 import logging
 import secrets
 import threading
+import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from pathlib import Path
 from typing import Iterator
 
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import focos, stats
+from . import focos, publico, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -42,7 +45,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 
 
 def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
@@ -77,8 +80,63 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.state.focos_locks = defaultdict(threading.Lock)
     app.state.focos_locks_guard = threading.Lock()
 
+    app.state.publico_cache = {}
+    app.state.publico_lock = threading.Lock()
+
     register_routes(app)
+    _montar_painel_publico(app)
     return app
+
+
+PUBLICO_DIR = Path(__file__).parent / "static_publico"
+VENDOR_DIR = Path(__file__).parent / "static" / "vendor"
+#: Segundos em que o resultado do painel público é reaproveitado (protege o banco quando muita
+#: gente abre o link ao mesmo tempo).
+PUBLICO_CACHE_SEGUNDOS = 10
+
+_CSP_PUBLICO = (
+    "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
+    "style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'"
+)
+
+
+def _montar_painel_publico(app: FastAPI) -> None:
+    """Página pública (sem senha) com dados agregados. Ver `app.publico` para as regras."""
+
+    @app.get("/", include_in_schema=False)
+    def pagina_publica() -> FileResponse:
+        resp = FileResponse(PUBLICO_DIR / "publico.html", media_type="text/html; charset=utf-8")
+        resp.headers["Content-Security-Policy"] = _CSP_PUBLICO
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["Referrer-Policy"] = "no-referrer"
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+    app.mount("/assets", StaticFiles(directory=PUBLICO_DIR), name="assets-publicos")
+    app.mount("/vendor", StaticFiles(directory=VENDOR_DIR), name="vendor-publico")
+
+    @app.get("/publico/painel")
+    def painel_publico(
+        request: Request,
+        response: Response,
+        dias: int = Query(30),
+        session: Session = Depends(get_session),
+    ) -> dict:
+        if dias not in publico.PERIODOS:
+            raise HTTPException(status_code=422, detail=f"dias deve ser um de {publico.PERIODOS}.")
+        st = request.app.state
+        with st.publico_lock:
+            agora = time.monotonic()
+            guardado = st.publico_cache.get(dias)
+            if guardado and agora - guardado[0] < PUBLICO_CACHE_SEGUNDOS:
+                dados = guardado[1]
+            else:
+                dados = publico.montar(session, st.settings, dias)
+                st.publico_cache[dias] = (agora, dados)
+        response.headers["Cache-Control"] = f"public, max-age={PUBLICO_CACHE_SEGUNDOS}"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return dados
 
 
 def get_session(request: Request) -> Iterator[Session]:

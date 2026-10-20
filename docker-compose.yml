@@ -8,7 +8,7 @@
 # Link público aleatório: o serviço `tunnel` (profile "tunnel", ligado por padrão pelo
 # COMPOSE_PROFILES do .env.example) abre um túnel rápido da Cloudflare para a API. O link
 # *.trycloudflare.com é sorteado a cada início e aparece no painel, com QR code. O painel NÃO
-# passa pelo túnel. Para desligar o túnel, deixe COMPOSE_PROFILES vazio no .env.
+# passa pelo túnel. Já o link do túnel abre o PAINEL PÚBLICO (dados agregados, sem senha) em `/`. Para desligar o túnel, deixe COMPOSE_PROFILES vazio no .env.
 #
 # O banco NÃO é publicado no host (só a API e o painel enxergam o Postgres, pela rede interna).
 # Os dados ficam no volume `pgdata`; `docker compose down` mantém os dados,

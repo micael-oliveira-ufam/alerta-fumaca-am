@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RespirAR Amazonas · Painel público</title>
+  <meta name="description" content="Sintomas relatados por usuários do RespirAR Amazonas durante episódios de fumaça: dados anônimos e agregados, de livre visualização.">
+  <meta name="theme-color" content="#1B5E20">
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/assets/publico.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">UFAM · Faculdade de Ciências Farmacêuticas</p>
+      <h1>Respir<span>AR</span> Amazonas <small>painel público</small></h1>
+      <p class="lead">Sintomas relatados por quem usa o app durante episódios de fumaça no Amazonas.
+        Dados <strong>anônimos e agregados</strong>, abertos a qualquer pessoa.</p>
+      <div class="hero-bar">
+        <div class="seg" id="periodo" role="group" aria-label="Período">
+          <button type="button" data-dias="1">24 h</button>
+          <button type="button" data-dias="7">7 dias</button>
+          <button type="button" data-dias="30" class="on" aria-pressed="true">30 dias</button>
+          <button type="button" data-dias="90">90 dias</button>
+        </div>
+        <span class="live" id="live" role="status" aria-live="polite"><i></i><span id="live-txt">Carregando…</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="conteudo" aria-busy="true">
+    <section id="aviso" class="aviso" hidden></section>
+
+    <section class="kpis" id="kpis" aria-label="Resumo"></section>
+
+    <section class="card" id="sec-sintomas">
+      <div class="card-h">
+        <div>
+          <h2>Sintomas mais relatados</h2>
+          <p class="sub" id="sintomas-sub"></p>
+        </div>
+        <div class="seg small" id="ordem" role="group" aria-label="Ordenar sintomas">
+          <button type="button" data-ordem="relatos" class="on" aria-pressed="true">Mais relatados</button>
+          <button type="button" data-ordem="gravidade">Mais intensos</button>
+        </div>
+      </div>
+      <div class="legenda" aria-hidden="true">
+        <span><i class="c-leve"></i>Leve</span><span><i class="c-mod"></i>Moderado</span><span><i class="c-int"></i>Intenso</span>
+      </div>
+      <ol class="rank" id="rank"></ol>
+    </section>
+
+    <div class="duo">
+      <section class="card" id="sec-niveis">
+        <h2>Nível de risco calculado pelo app</h2>
+        <p class="sub">Resultado da triagem educativa de cada resposta.</p>
+        <div class="donut-box" id="donut"></div>
+      </section>
+      <section class="card" id="sec-serie">
+        <h2>Respostas por dia</h2>
+        <p class="sub">Dias com resposta no período (horário do servidor, UTC).</p>
+        <div id="serie"></div>
+      </section>
+    </div>
+
+    <section class="card" id="sec-mapa">
+      <div class="card-h">
+        <div>
+          <h2>Onde foram relatados</h2>
+          <p class="sub">Áreas de cerca de 1 km com respostas suficientes. Cor = pior nível na área; tamanho = nº de respostas.</p>
+        </div>
+      </div>
+      <div class="legenda" aria-hidden="true">
+        <span><i class="n-low"></i>Baixo</span><span><i class="n-moderate"></i>Moderado</span><span><i class="n-high"></i>Alto</span><span><i class="n-emergency"></i>Procure atendimento</span>
+      </div>
+      <div id="mapa" role="img" aria-label="Mapa das áreas com respostas"></div>
+      <p class="sub" id="mapa-nota"></p>
+    </section>
+
+    <div class="trio">
+      <section class="card"><h2>Quem respondeu</h2><p class="sub">Grupos de maior atenção.</p><div id="perfil"></div></section>
+      <section class="card"><h2>Tempo de exposição</h2><p class="sub">Quanto tempo na fumaça.</p><div id="exposicao"></div></section>
+      <section class="card"><h2>Situação de quem respondeu</h2><p class="sub">Perguntas opcionais do app.</p><div id="contexto"></div></section>
+    </div>
+
+    <section class="card nota">
+      <h2>Como ler estes dados</h2>
+      <ul>
+        <li><strong>É auto-relato.</strong> Quem usa o app descreve o que sente. Nada é confirmado por exame ou por profissional de saúde.</li>
+        <li><strong>Não é uma amostra representativa</strong> da população. Mostra quem tem o app e decidiu enviar.</li>
+        <li><strong>Não é diagnóstico</strong> nem substitui os boletins oficiais de saúde e de qualidade do ar.</li>
+        <li><strong>Privacidade:</strong> não há nome, telefone, e-mail, IP ou identificador de aparelho. Estatísticas só aparecem com pelo menos <span id="min-pub">5</span> respostas no período; uma área só aparece no mapa com pelo menos <span id="min-area">3</span>; contagens muito pequenas são escondidas.</li>
+        <li>Em emergência (falta de ar intensa, dor no peito, desmaio), ligue <strong>192 (SAMU)</strong>.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <span>RespirAR Amazonas · projeto acadêmico UFAM/FCF</span>
+    <a id="baixar" href="/publico/painel?dias=30" download="respirar-amazonas-dados-agregados.json">Baixar dados agregados (JSON)</a>
+  </footer>
+
+  <script src="/vendor/leaflet/leaflet.js"></script>
+  <script src="/assets/publico.js"></script>
+</body>
+</html>

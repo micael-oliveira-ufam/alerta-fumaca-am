@@ -343,6 +343,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - O `.ipa` é **sem assinatura**: não instala em iPhone; exige conta Apple Developer.
 - Corrigido o bug do `DEFINES` vazio no bash 3.2 do macOS (também em `gerar_apk.sh`).
 
+### 4.14 Painel público sem senha — versão 1.5.0
+- Pedido: melhorar muito a interface do painel online com todos os dados enviados, especialmente os sintomas mais relatados, **sem senha e de livre visualização**.
+- Decisão do agente (a confirmar com o usuário): a visão pública mostra **dados agregados**, não respostas individuais, porque o termo LGPD do app promete anonimização e mínimos de divulgação (5 respostas; 3 por área). O painel do administrador (token, `127.0.0.1:8080`) continua com as últimas respostas; a exportação CSV segue com token.
+- Implementação: `server/app/publico.py`, `server/app/rotulos.py`, `server/app/static_publico/` (HTML, CSS, JS), rotas `/`, `/assets`, `/vendor`, `/publico/painel` em `main.py`.
+- **Verificado:** 75 testes do servidor passaram (10 novos); a página foi aberta num Chromium (Playwright) com 240 respostas de teste geradas por mim, em desktop, celular e escuro, sem erros de JavaScript (só falhas de carregar o mapa do OpenStreetMap, bloqueado no sandbox). **Não verificado:** o mapa com tiles reais, o acesso pelo túnel Cloudflare, uso com PostgreSQL e comportamento com muito tráfego. Os dados da demonstração eram **fictícios** e não foram commitados.
+- Ainda aberto: o termo LGPD não cita perfil, exposição e contexto como estatísticas públicas.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

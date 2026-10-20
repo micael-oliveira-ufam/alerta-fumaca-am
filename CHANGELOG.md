@@ -12,6 +12,18 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.5.0.
+
+## [1.5.0] - 2026-10-20
+
+### Adicionado
+- **Painel público, sem senha**, servido pela própria API em `/` (acessível pelo link do túnel): hero com indicador "ao vivo", filtro 24 h/7/30/90 dias, indicadores-chave, ranking de **sintomas mais relatados** (barras empilhadas leve/moderado/intenso, ordenável por frequência ou intensidade), rosca de níveis de risco, respostas por dia, mapa de áreas, perfil, tempo de exposição, contexto, nota "como ler estes dados" e download do JSON agregado. Claro/escuro, responsivo, sem bibliotecas externas além do Leaflet já incluso, respeita "reduzir movimento".
+- `GET /publico/painel?dias=1|7|30|90` (aberto, dados agregados, cache de 10 s). Módulos `app/publico.py` e `app/rotulos.py`; `tests/test_publico.py` (10 testes, entre eles: abre sem senha mesmo com `ADMIN_TOKEN`, nada individual vaza, mínimos de privacidade, CSV continua protegido).
+
+### Privacidade
+- O painel público respeita as regras do termo LGPD (mínimo de 5 respostas; área com 3+). Contagens pequenas de perfil e contexto são escondidas ("menos de 3"). Respostas individuais e horários exatos **não** são expostos.
+- Perfil (idoso, gestante, criança...), tempo de exposição e contexto passam a aparecer publicamente **em forma agregada**. O termo cita "sintomas mais relatados, níveis de risco e mapa"; avaliar se o texto deve citar também estes agregados (mudar o texto exige subir `kLgpdTermsVersion`).
+
 Nenhuma mudança desde a 1.4.0.
 
 ## [1.4.0] - 2026-10-20

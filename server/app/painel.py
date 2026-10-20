@@ -40,24 +40,9 @@ from .db import make_engine, make_session_factory
 from .schemas import CONTEXTO_CAMPOS
 from .models import NIVEIS, Resposta, RespostaSintoma
 from .ratelimit import RateLimiter
+from .rotulos import SINTOMA_ROTULOS
 
 STATIC_DIR = Path(__file__).parent / "static"
-
-#: Rótulos dos sintomas do questionário do app (lib/logic/risk_assessment.dart).
-#: Identificadores desconhecidos aparecem com o próprio id.
-SINTOMA_ROTULOS = {
-    "cough": "Tosse",
-    "throat": "Irritação ou dor na garganta",
-    "nose": "Coriza ou nariz irritado",
-    "wheeze": "Chiado no peito",
-    "dyspnea": "Falta de ar",
-    "eyes": "Olhos ardendo, vermelhos ou lacrimejando",
-    "chest": "Aperto ou dor no peito",
-    "palpitation": "Palpitações ou batimentos irregulares",
-    "headache": "Dor de cabeça",
-    "dizzy": "Tontura ou confusão",
-    "fatigue": "Cansaço fora do normal",
-}
 
 _HOST = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
 
