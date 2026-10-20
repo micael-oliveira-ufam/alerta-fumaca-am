@@ -27,7 +27,7 @@ Confira a integridade antes de instalar: `sha256sum -c SHA256SUMS.txt`.
 | **Mapa · Comunidade** | Mapa centrado em Manaus ou no GPS (com permissão), com áreas agregadas (~1 km). Com servidor: dados coletivos; sem servidor: só os do aparelho. |
 | **Sintomas mais relatados** | Ranking dos sintomas com % das respostas, distribuição leve/moderado/intenso e gravidade média. Vem do servidor (todas as respostas coletadas) ou, sem servidor, só do aparelho. |
 | **CIT-AM** | Cartão com o Centro de Informações Toxicológicas do Amazonas. |
-| **Sobre** | Desenvolvedores, logos, fontes de dados e avisos. |
+| **Sobre** | Desenvolvedores, logos, fontes de dados, termo LGPD e **endereço do servidor** (colar o link do painel). |
 
 ## Fontes de dados e o que "tempo real" significa
 
@@ -51,10 +51,11 @@ Confira a integridade antes de instalar: `sha256sum -c SHA256SUMS.txt`.
 ## Servidor e banco de dados (Docker)
 
 ```bash
-cp .env.example .env          # edite POSTGRES_PASSWORD e, se quiser exportar, ADMIN_TOKEN
-docker compose up -d --build  # sobe PostgreSQL 16 + API
+cp .env.example .env          # edite POSTGRES_PASSWORD e ADMIN_TOKEN (ex.: openssl rand -hex 24)
+docker compose up -d --build  # sobe PostgreSQL 16 + API + painel + túnel da Cloudflare
 curl http://localhost:8000/health
 bash tool/smoke_test_api.sh   # envia 1 resposta de teste e confere os endpoints
+# painel em tempo real: http://localhost:8080
 ```
 
 - O banco **não é publicado no host**; só a API o acessa pela rede interna. Dados no volume `pgdata`.
@@ -71,6 +72,17 @@ bash tool/smoke_test_api.sh   # envia 1 resposta de teste e confere os endpoints
 | `GET /health` | Verifica API e banco. |
 
 Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SECONDS`, `RATE_LIMIT_PER_MIN`, `MIN_RESPOSTAS_PUBLICAS` (padrão 5), `MIN_RESPOSTAS_CELULA` (padrão 3).
+
+### Painel em tempo real e link público (Cloudflare)
+
+- **Painel** (`http://localhost:8080`, só neste computador): total e ritmo de respostas, níveis de risco, sintomas mais relatados, respostas por hora, mapa de áreas (~1 km), perfil, últimas respostas anônimas, estado do banco e o **link do servidor com QR code**. Atualiza a cada 5 s (consulta periódica, não conexão contínua). Exige o `ADMIN_TOKEN` quando definido. É outro processo e **não passa pelo túnel**.
+- **Link aleatório:** o serviço `tunnel` abre um *túnel rápido* da Cloudflare (`cloudflared`, sem conta) e sorteia `https://<palavras>.trycloudflare.com` **cada vez que inicia**. O painel lê o link atual e o exibe.
+- **No app:** *Sobre → Servidor → Alterar endereço*, colar o link, "Testar e salvar" (o app confere `/health`). Ao trocar de servidor, o consentimento de envio é perguntado de novo.
+- **Atenção, o link muda** quando o túnel reinicia; quem já colou o link antigo deixa de enviar até colar o novo. Os envios que falharam ficam guardados no aparelho e são reenviados (o `submission_id` evita duplicar).
+- **Para um endereço estável:** use um túnel *nomeado* da Cloudflare (exige conta e domínio): crie o túnel, aponte-o para `http://api:8000`, troque o `command` do serviço `tunnel` por `["tunnel","--no-autoupdate","run","--token","<TOKEN>"]` e defina `PUBLIC_URL=https://api.seudominio.com`. **Esse caminho não foi testado aqui.**
+- **Limitações:** a Cloudflare descreve os túneis rápidos como para testes, sem garantia de disponibilidade. O computador precisa ficar ligado.
+- **Segurança:** o link dá acesso à API **de coleta**; ele não é uma senha. Qualquer pessoa que o tenha pode enviar respostas, inclusive falsas. As estatísticas **não são verificadas** e não devem ser usadas como dado científico sem tratamento. O limite de envios usa o IP real (`CF-Connecting-IP`) só em memória; isso só é seguro porque a API escuta apenas em `127.0.0.1` (`API_BIND`).
+- Para desligar o túnel: deixe `COMPOSE_PROFILES=` vazio no `.env`.
 
 ### Privacidade (LGPD)
 
@@ -114,7 +126,7 @@ Omita `--dart-define` para o modo local.
 
 ## CI e releases (GitHub Actions)
 
-- `ci.yml` (push, PR): pytest do servidor em SQLite **e** PostgreSQL 16; teste do Docker Compose (sobe, smoke test, reinicia a API e confere a persistência); testes do script de permissões; análise, testes e build do APK Flutter.
+- `ci.yml` (push, PR): pytest do servidor em SQLite **e** PostgreSQL 16; teste do Docker Compose (sobe, smoke test, painel, reinicia a API e confere a persistência); teste de ponta a ponta do **túnel Cloudflare** (sorteia o link, envia uma resposta por ele, confere no painel e que o painel não é alcançável pelo link); testes do script de permissões; análise, testes e build do APK Flutter.
 - `release.yml`: ao enviar uma tag `vX.Y.Z` (que deve bater com `version:` do `pubspec.yaml`), compila o APK e o anexa ao release com `SHA256SUMS.txt`.
 - Para o APK já apontar para o seu servidor: *Settings → Secrets and variables → Actions → Variables → `API_BASE_URL`*.
 

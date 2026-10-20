@@ -109,6 +109,14 @@ class ConsentStore {
     return prefs.getBool(_sendKey);
   }
 
+  /// Volta a "nunca perguntado": o próximo envio pedirá o consentimento de novo.
+  /// Usado quando o endereço do servidor muda (o consentimento foi dado para outro destino).
+  Future<void> resetSendDecision() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sendKey);
+    await prefs.remove(_sendLocationKey);
+  }
+
   Future<void> setSendDecision(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_sendKey, value);

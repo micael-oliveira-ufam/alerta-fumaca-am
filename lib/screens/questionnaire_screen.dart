@@ -6,6 +6,7 @@ import '../models/answer_record.dart';
 import '../models/smoke_report.dart';
 import '../services/answer_sync.dart';
 import '../services/api_client.dart';
+import '../services/api_config.dart';
 import '../services/location_service.dart';
 import '../services/report_repository.dart';
 import '../theme/app_theme.dart';
@@ -191,6 +192,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  'Servidor de destino: ${ApiConfig.host}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
                 const Text(
                   'Se você concordar, o app enviará ao servidor do projeto cada resposta '
                   'do questionário: os sintomas e suas intensidades, o tempo de exposição, '

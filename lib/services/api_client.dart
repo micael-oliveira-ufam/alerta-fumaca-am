@@ -133,6 +133,16 @@ class ApiClient {
     );
   }
 
+  /// Confere se o endereço é mesmo um servidor do Alerta Fumaça: `/health` deve devolver
+  /// `{"status":"ok","version":...}` e o banco estar acessível. Devolve a versão da API.
+  Future<String> checkHealth() async {
+    final body = await _getJson('/health', const {});
+    if (body is Map<String, dynamic> && body['status'] == 'ok') {
+      return (body['version'] as String?) ?? '?';
+    }
+    throw const ApiException('Este endereço não parece ser um servidor do Alerta Fumaça.');
+  }
+
   Future<StatsSnapshot> fetchStats({int days = 30}) async {
     final body = await _getJson('/estatisticas', {'dias': '$days'});
     try {

@@ -4,6 +4,7 @@ import '../data/app_info.dart';
 import '../data/guidance_content.dart';
 import '../services/inpe_fire_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/server_card.dart';
 import '../widgets/ui.dart';
 import 'lgpd_screen.dart';
 
@@ -58,6 +59,9 @@ class AboutScreen extends StatelessWidget {
             icon: const Icon(Icons.privacy_tip_outlined),
             label: const Text('Privacidade e uso dos dados (LGPD)'),
           ),
+          const SizedBox(height: 20),
+          const SectionTitle('SERVIDOR'),
+          const ServerCard(),
           const SizedBox(height: 20),
           const SectionTitle('DESENVOLVEDORES'),
           for (final dev in _desenvolvedores) ...[

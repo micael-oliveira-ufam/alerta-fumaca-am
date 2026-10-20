@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel · Alerta Fumaça AM</title>
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/static/painel.css">
+</head>
+<body>
+  <header class="topo">
+    <div>
+      <h1>Alerta Fumaça AM <span>· painel do servidor</span></h1>
+      <p class="sub">Dados anônimos recebidos do app. Atualiza a cada 5 s.</p>
+    </div>
+    <div class="status" id="status" aria-live="polite">
+      <span class="pill" id="pill-banco">banco: …</span>
+      <span class="pill" id="pill-atualizado">atualizando…</span>
+    </div>
+  </header>
+
+  <form id="login" class="card login" hidden>
+    <label for="token">Token de administrador</label>
+    <input id="token" type="password" autocomplete="current-password" required>
+    <button type="submit">Entrar</button>
+    <p class="erro" id="login-erro" hidden></p>
+  </form>
+
+  <main id="conteudo">
+    <section class="card tunel" aria-labelledby="t-tunel">
+      <div class="tunel-info">
+        <h2 id="t-tunel">Link para conectar o app</h2>
+        <p class="link-linha"><code id="tunel-url">—</code> <button type="button" id="copiar" disabled>Copiar</button></p>
+        <p class="nota" id="tunel-estado"></p>
+        <p class="nota">No app: <b>Sobre → Servidor</b> → colar este endereço. O link é sorteado a cada vez que o túnel inicia; quem já configurou o app precisa colar o novo.</p>
+      </div>
+      <img id="qr" alt="QR code do link do servidor" width="132" height="132" hidden>
+    </section>
+
+    <section class="kpis" aria-label="Indicadores">
+      <div class="kpi"><span class="v" id="k-total">—</span><span class="r">respostas no total</span></div>
+      <div class="kpi"><span class="v" id="k-24h">—</span><span class="r">nas últimas 24 h</span></div>
+      <div class="kpi"><span class="v" id="k-1h">—</span><span class="r">na última hora</span></div>
+      <div class="kpi"><span class="v" id="k-ultima">—</span><span class="r">última resposta</span></div>
+    </section>
+
+    <div class="grade">
+      <section class="card"><h2>Níveis de risco</h2>
+        <div class="alternar"><button data-nivel="24h" class="on">24 h</button><button data-nivel="30d">30 dias</button></div>
+        <div id="niveis"></div>
+      </section>
+      <section class="card"><h2>Sintomas mais relatados <small>(30 dias)</small></h2>
+        <div id="sintomas"></div>
+      </section>
+    </div>
+
+    <section class="card"><h2>Respostas por hora <small>(últimas 48 h, horário local do navegador)</small></h2>
+      <div id="serie" class="serie"></div>
+    </section>
+
+    <div class="grade">
+      <section class="card"><h2>Áreas com respostas <small>(~1 km, 72 h)</small></h2>
+        <div id="mapa" class="mapa" role="img" aria-label="Mapa das áreas com respostas"></div>
+        <p class="nota">Visão do administrador: mostra também áreas com poucas respostas, que a API pública oculta.</p>
+      </section>
+      <section class="card"><h2>Perfil nas respostas <small>(30 dias)</small></h2>
+        <div id="perfil"></div>
+        <h2 class="esp">Servidor</h2>
+        <dl id="servidor" class="dl"></dl>
+      </section>
+    </div>
+
+    <section class="card"><h2>Últimas respostas</h2>
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>#</th><th>Hora</th><th>Nível</th><th>Pts</th><th>Exposição</th><th>Sintomas (gravidade)</th><th>Perfil</th><th>Local ~1 km</th></tr></thead>
+        <tbody id="recentes"></tbody>
+      </table></div>
+    </section>
+  </main>
+
+  <footer class="rodape">Mapa: © colaboradores do OpenStreetMap. Leaflet 1.9.4 (BSD-2). Este painel não exibe nem guarda identificação de pessoas.</footer>
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
+  <script src="/static/painel.js"></script>
+</body>
+</html>

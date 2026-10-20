@@ -105,7 +105,7 @@ def register_routes(app: FastAPI) -> None:
         response: Response,
         session: Session = Depends(get_session),
     ) -> RespostaOut:
-        origem = request.client.host if request.client else "desconhecida"
+        origem = _origem(request)
         if not request.app.state.limiter.allow(origem):
             raise HTTPException(status_code=429, detail="Muitos envios. Tente novamente em instantes.")
 
@@ -227,6 +227,17 @@ def register_routes(app: FastAPI) -> None:
 
 
 # ---------------------------------------------------------------------- auxiliares
+
+
+def _origem(request: Request) -> str:
+    """Chave do limitador de envios. Atrás do túnel da Cloudflare todas as conexões chegam
+    do mesmo endereço interno; com `TRUST_CF_CONNECTING_IP` usa-se o IP real informado por ela.
+    O valor existe só em memória (ver ratelimit.py) e nunca é gravado."""
+    if request.app.state.settings.trust_cf_connecting_ip:
+        real = request.headers.get("cf-connecting-ip", "").strip()
+        if real:
+            return real[:64]
+    return request.client.host if request.client else "desconhecida"
 
 
 def _buscar_por_submission(session: Session, payload: RespostaIn) -> int | None:

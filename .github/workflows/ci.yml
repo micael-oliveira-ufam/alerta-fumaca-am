@@ -62,6 +62,17 @@ jobs:
           exit 1
       - name: Teste de fumaça (grava 1 registro de teste)
         run: bash tool/smoke_test_api.sh http://localhost:8000
+      - name: Painel em tempo real mostra o registro enviado
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q "Painel"
+          curl -fsS http://localhost:8080/api/painel | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          assert d['servidor']['banco']=='ok', d['servidor']
+          assert d['resumo']['total']==1, d['resumo']['total']
+          assert len(d['recentes'])==1 and d['recentes'][0]['nivel']=='moderate'
+          print('painel ok: total =', d['resumo']['total'])
+          "
       - name: Dados persistem após reiniciar a API
         run: |
           docker compose restart api
@@ -72,6 +83,51 @@ jobs:
         run: docker compose logs --no-color
       - name: Derrubar e apagar volumes
         if: always()
+        run: docker compose down -v
+
+  tunel:
+    name: Túnel Cloudflare (link aleatório, ponta a ponta)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Subir tudo (o túnel vem ligado no .env.example)
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+      - name: Obter o link aleatório pelo painel
+        run: |
+          URL=""
+          for i in $(seq 1 60); do
+            URL=$(curl -fsS http://localhost:8080/api/painel 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['servidor']['tunel']['url'] or '')" 2>/dev/null || true)
+            [ -n "$URL" ] && break
+            sleep 3
+          done
+          if [ -z "$URL" ]; then docker compose ps; docker compose logs --no-color tunnel painel; exit 1; fi
+          echo "TUNEL_URL=$URL" >> "$GITHUB_ENV"
+          echo "Link sorteado: $URL"
+      - name: Aguardar o link responder pela internet
+        run: |
+          for i in $(seq 1 40); do
+            curl -fsS "$TUNEL_URL/health" && exit 0
+            sleep 3
+          done
+          docker compose logs --no-color tunnel
+          exit 1
+      - name: Enviar uma resposta PELO LINK e conferir no painel
+        run: |
+          bash tool/smoke_test_api.sh "$TUNEL_URL"
+          curl -fsS http://localhost:8080/api/painel | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['resumo']['total']==1, d['resumo']['total']; print('painel viu a resposta enviada pelo túnel')"
+      - name: O painel NÃO é alcançável pelo link público
+        run: |
+          for path in / /api/painel /api/qr.svg /static/painel.js; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$TUNEL_URL$path")
+            echo "$path -> $code"
+            [ "$code" = 404 ] || { echo "esperado 404 em $path"; exit 1; }
+          done
+      - name: Logs (em caso de falha)
+        if: failure()
+        run: docker compose logs --no-color
+      - if: always()
         run: docker compose down -v
 
   tools:

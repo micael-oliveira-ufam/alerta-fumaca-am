@@ -53,8 +53,18 @@ class Settings:
     #: número de respostas no período. Impede mostrar a localização de uma pessoa só.
     min_respostas_celula: int = 3
 
-    #: Token do endpoint de exportação CSV. Vazio = exportação desativada.
+    #: Token do endpoint de exportação CSV e do painel. Vazio = exportação desativada.
     admin_token: str = ""
+
+    #: Usar o cabeçalho `CF-Connecting-IP` (Cloudflare) como origem no limitador de envios.
+    #: Ative SOMENTE se a API só for alcançável pelo túnel (senão o cabeçalho pode ser forjado).
+    trust_cf_connecting_ip: bool = False
+
+    #: Endereço público fixo da API (túnel nomeado). Vazio = detectar o link aleatório do túnel.
+    public_url: str = ""
+
+    #: Servidor de métricas do `cloudflared`, de onde se lê o link do túnel rápido.
+    tunnel_metrics_url: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -66,4 +76,8 @@ class Settings:
             min_respostas_publicas=_int("MIN_RESPOSTAS_PUBLICAS", 5),
             min_respostas_celula=_int("MIN_RESPOSTAS_CELULA", 3),
             admin_token=os.getenv("ADMIN_TOKEN", "").strip(),
+            trust_cf_connecting_ip=os.getenv("TRUST_CF_CONNECTING_IP", "").strip().lower()
+            in ("1", "true", "yes", "sim"),
+            public_url=os.getenv("PUBLIC_URL", "").strip().rstrip("/"),
+            tunnel_metrics_url=os.getenv("TUNNEL_METRICS_URL", "").strip().rstrip("/"),
         )
