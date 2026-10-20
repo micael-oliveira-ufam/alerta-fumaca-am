@@ -103,6 +103,7 @@ tool/gerar_apk.sh https://SEU-SERVIDOR            # APK em dist/Alerta-Fumaca-AM
 ```
 
 - `iniciar_servidor.sh` precisa de Docker com acesso ao Docker Hub (imagens `postgres:16-alpine` e `python:3.12-slim`).
+- **Linux:** `bash tool/iniciar_servidor.sh` detecta sozinho o Compose (`docker compose` v2 ou `docker-compose` v1), usa `sudo` se o usuário não estiver no grupo `docker` e, no fim, mostra o link do túnel e o comando `gerar_apk.sh` com ele. Se aparecer `unknown shorthand flag: 'd' in -d`, o Docker está **sem o plugin Compose**: instale `docker-compose-v2` (Ubuntu/Debian), `docker-compose-plugin` (Fedora/repositório oficial) ou `docker-compose`. Para não usar `sudo`: `sudo usermod -aG docker $USER` e reinicie a sessão. Verificado só com `docker` simulado; **não testado em Docker real**.
 - `gerar_apk.sh` precisa de Flutter 3.27+, Java 17 e Android SDK, e roda os testes antes de compilar.
 - Ambos os scripts foram escritos e revisados aqui, mas **não foram executados de ponta a ponta** neste ambiente: o Docker Hub e o Flutter estavam bloqueados. O servidor foi testado direto com Python (SQLite).
 

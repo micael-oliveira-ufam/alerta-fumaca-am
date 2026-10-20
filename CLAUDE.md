@@ -391,6 +391,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Limites:** parte das fontes foi lida só pela imprensa; as páginas foram lidas por um resumidor automático (`WebFetch`), então trechos literais devem ser conferidos nos links antes de publicar em periódico. Nenhum documento original da SES-AM/FVS-RCP ou da DGS foi lido.
 - Teste de comunicação e fotos: ver 4.17.
 
+### 4.19 Servidor no Linux — versão 1.6.3
+- Erro do usuário: `unknown shorthand flag: 'd' in -d` ao rodar `tool/iniciar_servidor.sh`. **Causa provável (não confirmada na máquina dele):** Docker Engine sem o plugin Compose (`docker compose` inexistente). Correção: detecção de `docker compose`/`docker-compose`, `sudo` automático, `openssl` opcional, link do túnel no fim. **Verificado:** `bash -n` e 3 cenários com `docker` simulado (só docker-compose v1; sem Compose; sem permissão). **Não testado em Docker real.**
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

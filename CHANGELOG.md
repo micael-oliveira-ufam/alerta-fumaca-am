@@ -12,7 +12,12 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.2.
+Nenhuma mudança desde a 1.6.3.
+
+## [1.6.3] - 2026-10-20
+
+### Corrigido
+- `tool/iniciar_servidor.sh` no Linux: falhava com `unknown shorthand flag: 'd' in -d` quando o Docker não tem o plugin Compose. Agora usa `docker compose` ou `docker-compose`, explica como instalar se faltar, usa `sudo` quando o usuário não está no grupo `docker`, gera os segredos sem depender do `openssl` e mostra o link do túnel e o comando para compilar o app com ele.
 
 ## [1.6.2] - 2026-10-20
 
