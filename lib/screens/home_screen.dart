@@ -8,6 +8,7 @@ import '../widgets/ui.dart';
 import 'about_screen.dart';
 import 'guidance_screen.dart';
 import 'questionnaire_screen.dart';
+import 'references_screen.dart';
 import 'risk_map_screen.dart';
 import 'stats_screen.dart';
 
@@ -38,38 +39,66 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           _Hero(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           const SectionTitle('O QUE VOCÊ PRECISA AGORA'),
-          ModuleCard(
-            icon: Icons.health_and_safety_rounded,
-            color: AppColors.brand,
-            title: 'O que fazer agora',
-            subtitle: 'Orientações por nível de risco e cuidados de proteção',
-            onTap: () => _open(context, const GuidanceScreen()),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.health_and_safety_rounded,
+                  color: AppColors.brand,
+                  label: 'O que fazer agora',
+                  onTap: () => _open(context, const GuidanceScreen()),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.assignment_ind_rounded,
+                  color: const Color(0xFF1565C0),
+                  label: 'Como estou me sentindo',
+                  onTap: () => _open(context, const QuestionnaireScreen()),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.map_rounded,
+                  color: const Color(0xFF6A1B9A),
+                  label: 'Mapa de risco',
+                  onTap: () => _open(context, const RiskMapScreen()),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          ModuleCard(
-            icon: Icons.assignment_ind_rounded,
-            color: const Color(0xFF1565C0),
-            title: 'Como estou me sentindo',
-            subtitle: 'Questionário rápido e triagem dos efeitos da fumaça',
-            onTap: () => _open(context, const QuestionnaireScreen()),
-          ),
-          const SizedBox(height: 12),
-          ModuleCard(
-            icon: Icons.map_rounded,
-            color: const Color(0xFF6A1B9A),
-            title: 'Mapa de risco',
-            subtitle: 'Focos de calor (INPE), qualidade do ar e comunidade',
-            onTap: () => _open(context, const RiskMapScreen()),
-          ),
-          const SizedBox(height: 12),
-          ModuleCard(
-            icon: Icons.bar_chart_rounded,
-            color: const Color(0xFFEF6C00),
-            title: 'Sintomas mais relatados',
-            subtitle: 'Estatísticas das respostas ao questionário',
-            onTap: () => _open(context, const StatsScreen()),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.bar_chart_rounded,
+                  color: const Color(0xFFEF6C00),
+                  label: 'Sintomas mais relatados',
+                  onTap: () => _open(context, const StatsScreen()),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.menu_book_rounded,
+                  color: const Color(0xFF00838F),
+                  label: 'Referências',
+                  onTap: () => _open(context, const ReferencesScreen()),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.info_outline_rounded,
+                  color: const Color(0xFF546E7A),
+                  label: 'Sobre o app',
+                  onTap: () => _open(context, const AboutScreen()),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           _SamuCard(),

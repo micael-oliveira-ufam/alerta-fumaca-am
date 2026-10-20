@@ -195,6 +195,7 @@ class _CommunityTabState extends State<CommunityTab> {
               circles: circles,
               controller: _mapController,
               onReady: () => _mapReady = true,
+              onLocate: _onLocateTap,
               bannerTop: data.note == null ? 12 : 100,
               markers: [
                 if (_userPoint != null) userMarker(_userPoint!),

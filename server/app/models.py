@@ -26,6 +26,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     SmallInteger,
+    JSON,
     String,
     Uuid,
     func,
@@ -78,6 +79,10 @@ class Resposta(Base):
     doenca_cardiaca: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     app_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    #: Contexto da exposição e da saúde de base (local, máscara, medicação...), só as chaves
+    #: respondidas. Ver `Contexto` em schemas.py. Nulo em respostas de versões antigas do app.
+    contexto: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     sintomas: Mapped[list["RespostaSintoma"]] = relationship(
         back_populates="resposta", cascade="all, delete-orphan"

@@ -38,7 +38,7 @@ from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
 from .ratelimit import RateLimiter
-from .schemas import Estatisticas, MapaColetivo, RespostaIn, RespostaOut, coarsen
+from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, RespostaOut, coarsen
 
 log = logging.getLogger("alerta.api")
 
@@ -129,6 +129,7 @@ def register_routes(app: FastAPI) -> None:
             doenca_respiratoria=payload.perfil.doenca_respiratoria,
             doenca_cardiaca=payload.perfil.doenca_cardiaca,
             app_version=payload.app_version,
+            contexto=(payload.contexto.model_dump(exclude_none=True) or None) if payload.contexto else None,
             sintomas=[
                 RespostaSintoma(sintoma=nome, gravidade=gravidade)
                 for nome, gravidade in sorted(payload.sintomas.items())
@@ -272,6 +273,15 @@ def _geojson(body: bytes, cache_status: str) -> Response:
     )
 
 
+def _celula_ctx(valor: object) -> object:
+    """Ausente = vazio (não respondido); booleanos como 1/0."""
+    if valor is None:
+        return ""
+    if isinstance(valor, bool):
+        return int(valor)
+    return valor
+
+
 def _gerar_csv(session_factory) -> Iterator[str]:  # noqa: ANN001
     """Gera o CSV em lotes (paginação por id), em formato largo: um sintoma por coluna."""
     with session_factory() as session:
@@ -287,7 +297,7 @@ def _linhas_csv(session: Session) -> Iterator[str]:
     colunas = [
         "id", "criado_em", "registrado_em", "lat", "lon", "nivel", "pontos", "exposicao",
         "idoso", "gestante", "crianca", "doenca_respiratoria", "doenca_cardiaca", "app_version",
-    ] + [f"sintoma_{s}" for s in sintomas_ids]
+    ] + [f"ctx_{c}" for c in CONTEXTO_CAMPOS] + [f"sintoma_{s}" for s in sintomas_ids]
 
     def linha(valores: list[object]) -> str:
         buf = io.StringIO()
@@ -312,6 +322,7 @@ def _linhas_csv(session: Session) -> Iterator[str]:
                     int(r.idoso), int(r.gestante), int(r.crianca),
                     int(r.doenca_respiratoria), int(r.doenca_cardiaca), r.app_version or "",
                 ]
+                + [_celula_ctx((r.contexto or {}).get(c)) for c in CONTEXTO_CAMPOS]
                 + [graus.get(s, "") for s in sintomas_ids]
             )
         ultimo_id = lote[-1].id

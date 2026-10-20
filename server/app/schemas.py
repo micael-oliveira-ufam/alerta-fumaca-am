@@ -28,6 +28,26 @@ class Perfil(BaseModel):
     doenca_cardiaca: bool = False
 
 
+class Contexto(BaseModel):
+    """Contexto da exposição e da saúde de base. Todos os campos são opcionais (sem resposta = ausente)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    local: Literal["ar_livre", "casa_janelas_abertas", "casa_janelas_fechadas"] | None = None
+    fumaca_visivel: bool | None = None
+    mascara: Literal["nao_saiu", "nao", "cirurgica_pano", "pff2_n95"] | None = None
+    atividade_fisica_ar_livre: bool | None = None
+    ar_filtrado: bool | None = None
+    trabalho_ar_livre: bool | None = None
+    imunologica: bool | None = None
+    medicacao_a_mao: bool | None = None
+    medicacao_nao_alivia: bool | None = None
+    piorando: bool | None = None
+
+
+CONTEXTO_CAMPOS = tuple(Contexto.model_fields)
+
+
 class RespostaIn(BaseModel):
     """Uma resposta completa do questionário. Nenhum campo identifica a pessoa."""
 
@@ -43,6 +63,7 @@ class RespostaIn(BaseModel):
     perfil: Perfil = Field(default_factory=Perfil)
     sintomas: dict[str, int]
     app_version: str | None = Field(default=None, max_length=32)
+    contexto: Contexto | None = None
 
     @field_validator("sintomas")
     @classmethod

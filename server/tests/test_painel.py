@@ -226,3 +226,78 @@ def test_sem_confiar_o_cabecalho_e_ignorado(engine):
     with TestClient(app) as c:
         assert _enviar_de(c, "203.0.113.1") == 201
         assert _enviar_de(c, "203.0.113.2") == 429  # forjar o cabeçalho não ganha cota nova
+
+
+# ---------------------------------------------------------------- contexto (v1.1)
+
+CONTEXTO = {
+    "local": "casa_janelas_fechadas", "fumaca_visivel": True, "mascara": "pff2_n95",
+    "atividade_fisica_ar_livre": False, "ar_filtrado": True, "trabalho_ar_livre": False,
+    "imunologica": False, "medicacao_a_mao": True, "medicacao_nao_alivia": False, "piorando": True,
+}
+
+
+def test_contexto_e_gravado_e_aparece_no_painel(client, make_painel, engine):
+    _enviar(client, contexto=CONTEXTO)
+    _enviar(client, contexto={"local": "ar_livre", "fumaca_visivel": True})
+    _enviar(client)  # versão antiga do app: sem contexto
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+    from app.models import Resposta
+
+    with Session(engine) as s:
+        guardados = [r.contexto for r in s.scalars(select(Resposta).order_by(Resposta.id))]
+    assert guardados == [CONTEXTO, {"local": "ar_livre", "fumaca_visivel": True}, None]
+
+    d = make_painel().get("/api/painel").json()
+    ctx = d["resumo"]["contexto_30d"]
+    assert ctx["fumaca_visivel"] == {"sim": 2}
+    assert ctx["local"] == {"casa_janelas_fechadas": 1, "ar_livre": 1}
+    assert ctx["mascara"] == {"pff2_n95": 1}
+    assert ctx["piorando"] == {"sim": 1}
+    assert ctx["imunologica"] == {"nao": 1}
+    assert d["recentes"][0]["contexto"] == {}  # a mais nova é a sem contexto
+    assert d["recentes"][2]["contexto"] == CONTEXTO
+
+
+@pytest.mark.parametrize(
+    "ctx",
+    [{"local": "na_lua"}, {"mascara": "qualquer"}, {"campo_novo": True}, {"piorando": "talvez"}],
+)
+def test_contexto_invalido_e_recusado(client, ctx):
+    assert client.post("/respostas", json=payload(contexto=ctx)).status_code == 422
+
+
+def test_contexto_vazio_vira_nulo(client, engine):
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+    from app.models import Resposta
+
+    _enviar(client, contexto={})
+    with Session(engine) as s:
+        assert s.scalars(select(Resposta)).one().contexto is None
+
+
+def test_migracao_adiciona_a_coluna_em_banco_antigo(engine):
+    from sqlalchemy import inspect, text
+    from app.db import garantir_colunas, init_schema
+
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE respostas DROP COLUMN contexto"))
+    assert "contexto" not in {c["name"] for c in inspect(engine).get_columns("respostas")}
+    init_schema(engine)
+    assert "contexto" in {c["name"] for c in inspect(engine).get_columns("respostas")}
+    assert garantir_colunas(engine) == []  # idempotente
+
+
+def test_csv_inclui_colunas_de_contexto(make_client):
+    c = make_client(admin_token="t")
+    c.post("/respostas", json=payload(contexto={"mascara": "pff2_n95", "piorando": True}))
+    c.post("/respostas", json=payload())
+    linhas = c.get("/respostas/export.csv", headers={"X-Admin-Token": "t"}).text.strip().splitlines()
+    cab = linhas[0].split(",")
+    assert "ctx_mascara" in cab and "ctx_piorando" in cab
+    i, j = cab.index("ctx_mascara"), cab.index("ctx_piorando")
+    primeira, segunda = linhas[1].split(","), linhas[2].split(",")
+    assert (primeira[i], primeira[j]) == ("pff2_n95", "1")
+    assert (segunda[i], segunda[j]) == ("", "")

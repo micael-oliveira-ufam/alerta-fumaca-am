@@ -6,22 +6,21 @@ Projeto da UFAM / FCF. Desenvolvedores: Micael Davi Lima de Oliveira e Elias Bar
 
 > **Aviso.** O app **não faz diagnóstico** e não substitui atendimento médico. Em emergência, ligue **192 (SAMU)**.
 
-## Baixar o APK
+## Instalar
 
-Em **Releases** deste repositório há o arquivo `alerta-fumaca-am-vX.Y.Z.apk` e o `SHA256SUMS.txt`.
-Confira a integridade antes de instalar: `sha256sum -c SHA256SUMS.txt`.
+Este repositório contém **apenas o código-fonte**: não há APK pronto nem pipeline de compilação. Gere o app na sua máquina (seção "Compilar o app"). Sem servidor configurado (`API_BASE_URL` ou o endereço no cartão *Sobre → Servidor*), o app roda em **modo local**: nenhuma resposta sai do aparelho.
 
-- O APK é **assinado com a chave de depuração do Flutter**: serve para testes e distribuição direta, **não** para a Play Store.
-- Para instalar, permita "instalar apps de fontes desconhecidas" no Android.
-- Sem servidor configurado (`API_BASE_URL`, abaixo), o app roda em **modo local**: nenhuma resposta sai do aparelho.
+Nome exibido do aplicativo: **Alerta Fumaça AM** (o script `tool/apply_platform_config.py` grava esse nome no Android e no iOS). O app abre em **tela cheia** (modo imersivo; as barras do sistema voltam com um deslize na borda da tela).
 
 ## O que o app faz
 
 | Tela | Conteúdo |
 |---|---|
-| **Início** | Acesso às funções e ao SAMU (192). |
+| **Início** | Botões circulares para as funções, atalho às referências e ao SAMU (192). |
 | **O que fazer agora** | Orientações por nível de risco. |
-| **Como estou me sentindo** | Questionário de 11 sintomas, perfil de vulnerabilidade, triagem em 4 níveis. Ao final, o usuário decide (com consentimento separado) se envia a resposta anônima ao servidor. |
+| **Como estou me sentindo** | Questionário em 4 etapas com botões circulares: **sintomas** (11), **exposição** (local, fumaça visível, tempo ao ar livre, máscara, exercício, trabalho ao ar livre, ar filtrado), **sobre você** (idoso, gestante, criança, doença respiratória/cardíaca, imunidade, medicação à mão) e **situação atual** (piorando, remédio não alivia). Classificação em 4 níveis + cuidados para a situação. As perguntas de contexto são opcionais e **não entram na pontuação**. Ao final, o usuário decide (com consentimento separado) se envia a resposta anônima ao servidor. |
+| **Referências** | Fontes de cada pergunta, o que foi verificado e o que é critério do projeto (ver abaixo). |
+| **Mapas** | Todos os mapas: **sem rotação** (zoom por pinça não gira mais), botões circulares de aproximar/afastar, minha localização, visão inicial e **camadas**, barra de escala. Camadas: fundo *Ruas* (OpenStreetMap) ou *Satélite* (NASA GIBS, cor real), sobreposições *Fumaça e aerossóis* e *Focos de calor VIIRS* (NASA GIBS) com escolha do dia, além das chaves de cada aba (focos do INPE, densidade). |
 | **Mapa · Focos · INPE** | Focos de calor de **hoje** ou das **últimas 48 h**, com **Amazonas** (padrão, enfatizado) ou **Brasil**. Filtro por satélite: **MODIS (Aqua e Terra)**, **NOAA-20** e **Suomi NPP** (padrão), mais NOAA-21 opcional. Resumo (totais, parcela do Amazonas, por satélite, estado, bioma, ranking de municípios), mapa e lista. |
 | **Mapa · Qualidade do ar** | Índice de qualidade do ar (padrão EUA), PM2,5 e PM10 **estimados por modelo** para 9 sedes municipais do Amazonas. |
 | **Mapa · Comunidade** | Mapa centrado em Manaus ou no GPS (com permissão), com áreas agregadas (~1 km). Com servidor: dados coletivos; sem servidor: só os do aparelho. |
@@ -97,7 +96,7 @@ Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SE
 
 ## Compilar o app
 
-Requisito: Flutter 3.27 ou superior (o CI usa **3.27.4**). As pastas `android/` e `ios/` **não** são versionadas; são geradas assim:
+Requisito: Flutter 3.27 ou superior (desenvolvido para **3.27.x**). As pastas `android/` e `ios/` **não** são versionadas; são geradas assim:
 
 ```bash
 flutter create --platforms=android,ios --org br.ufam.fcf --project-name alerta_fumaca_am .
@@ -113,7 +112,7 @@ flutter build apk --release --dart-define=API_BASE_URL=https://api.seudominio.co
 
 Omita `--dart-define` para o modo local.
 
-> **Por que o script de permissões.** Sem `INTERNET` no `AndroidManifest.xml` principal, um APK de release não acessa a rede (o Flutter só injeta essa permissão nos builds de debug). O CI confere as três permissões dentro do APK compilado.
+> **Por que o script de permissões.** Sem `INTERNET` no `AndroidManifest.xml` principal, um APK de release não acessa a rede (o Flutter só injeta essa permissão nos builds de debug). Confira com `python3 tool/apply_platform_config.py --check`.
 
 ### Diagnóstico pelo próprio app
 
@@ -124,17 +123,30 @@ Omita `--dart-define` para o modo local.
 | "Compilado sem a permissão de localização" | `ACCESS_*_LOCATION` ausente | Reaplicar o script e reinstalar |
 | "Permissão bloqueada" | Negada em definitivo | Liberar nas configurações do Android |
 
-## CI e releases (GitHub Actions)
+## Testes
 
-- `ci.yml` (push, PR): pytest do servidor em SQLite **e** PostgreSQL 16; teste do Docker Compose (sobe, smoke test, painel, reinicia a API e confere a persistência); teste de ponta a ponta do **túnel Cloudflare** (sorteia o link, envia uma resposta por ele, confere no painel e que o painel não é alcançável pelo link); testes do script de permissões; análise, testes e build do APK Flutter.
-- `release.yml`: ao enviar uma tag `vX.Y.Z` (que deve bater com `version:` do `pubspec.yaml`), compila o APK e o anexa ao release com `SHA256SUMS.txt`.
-- Para o APK já apontar para o seu servidor: *Settings → Secrets and variables → Actions → Variables → `API_BASE_URL`*.
+Não há GitHub Actions neste repositório. Rode localmente:
 
 ```bash
-# nova versão
-# 1) altere version: em pubspec.yaml e kAppVersion em lib/data/app_info.dart
-git tag v1.0.1 && git push origin v1.0.1
+# servidor (SQLite por padrão; defina TEST_DATABASE_URL para rodar também em PostgreSQL)
+cd server && pip install -r requirements.txt pytest && pytest -q
+# script de permissões/nome do app
+python3 tool/test_apply_platform_config.py
+# app Flutter (depois de gerar android/ios e rodar flutter pub get)
+flutter analyze && flutter test
 ```
+
+Nova versão: altere `version:` em `pubspec.yaml` e `kAppVersion` em `lib/data/app_info.dart`.
+
+## Referências do questionário
+
+Detalhadas (com ressalvas e o mapeamento pergunta → fonte) na tela **Referências** do app e em `lib/data/references.dart`.
+
+1. CDC. *Wildfire Smoke Exposure Poses Threat to At-Risk Populations*. HAN CDCHAN-00495, 30/06/2023. <https://www.cdc.gov/han/2023/han00495.html> — sintomas, grupos de risco, N95/P100, ambiente fechado, purificador/cômodo mais limpo. **Lida.** Não traz lista de sinais de emergência.
+2. U.S. EPA. *Wildfire Smoke: A Guide for Public Health Officials*. EPA-452/R-21-901 (set. 2021, rev. 2019). Trecho inicial e resumo executivo: <https://www.airnow.gov/sites/default/files/2021-09/wildfire-smoke-guide-forward_0.pdf> — grupos de risco (inclui trabalhadores ao ar livre), reduzir atividade, filtros/purificadores, N95/P100, máscara cirúrgica não recomendada. **Lido só o início e o resumo**, não os capítulos.
+3. Ministério da Saúde. Nota de orientações sobre fumaça de queimadas (ago. 2024), via Agência Brasil: <https://agenciabrasil.ebc.com.br/saude/noticia/2024-08/confira-as-orientacoes-para-amenizar-efeitos-da-fumaca-na-saude>. **O texto da nota não foi consultado**; nenhuma regra do app se apoia em trecho específico dela.
+
+O que **não** vem das fontes: a pontuação e os limiares (8 e 15 pontos), os cortes de 1 h e 4 h de exposição, a pergunta sobre tontura, a de imunidade reduzida e os gatilhos "piorando" e "remédio não alivia". São critérios do projeto, **não validados clinicamente**.
 
 ## Limitações e itens a confirmar
 
@@ -143,9 +155,11 @@ git tag v1.0.1 && git push origin v1.0.1
 - **Telefone do CIT-AM (0800 722 6001)**: informado pela equipe e **não confirmado** em fonte oficial. Confirme com o CIT; está em `lib/data/guidance_content.dart`. Número errado em caso de intoxicação pode causar dano.
 - **Logos da UFAM e do CIT**: confirme a autorização de uso das marcas.
 - **Limiares da triagem** (`moderateThreshold`, `highThreshold`, pontos) são provisórios e **não foram validados clinicamente**.
+- **Camadas de satélite da NASA (GIBS)**: os identificadores das camadas, formatos e níveis de zoom (`lib/logic/map_layers.dart`) seguem o padrão público da GIBS, mas **não foram conferidos contra o serviço** (o ambiente de desenvolvimento não alcançava o host). Se uma camada ficar em branco, o app avisa; confira o nome no catálogo da GIBS e ajuste. A imagem tem atraso, depende de nuvens e **não mede PM2,5**.
+- **Interface, mapa e questionário (Dart)**: escritos sem compilador disponível na sessão. Rode `flutter analyze` e `flutter test` antes de distribuir e teste os mapas num aparelho.
 - **Qualidade do ar**: estimativa de modelo (ver acima); resposta da API não conferida ao vivo no desenvolvimento (a rede do ambiente bloqueava o host), apenas por testes com amostra sintética.
 - **Estatísticas dos sintomas** refletem quem usa o app e decide enviar: **não são amostra representativa** da população.
-- iOS: o código é compartilhado, mas **não foi compilado nem testado** (o CI gera só o APK).
+- iOS: o código é compartilhado, mas **não foi compilado nem testado** (nenhuma plataforma é compilada em CI).
 
 ## Estrutura
 
@@ -155,7 +169,6 @@ server/         API FastAPI + SQLAlchemy + PostgreSQL (app/, tests/, Dockerfile)
 test/           testes Dart (triagem, parser INPE, estatísticas, API, qualidade do ar, mapa)
 tool/           permissões de plataforma, geração de ícones, smoke test da API
 docker-compose.yml, .env.example
-.github/workflows/
 ```
 
 Regenerar ícone/logos a partir do logo da UFAM: `pip install pillow && python3 tool/generate_brand_assets.py caminho/ufam.png [caminho/cit.png]`.

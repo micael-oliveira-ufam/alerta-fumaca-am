@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../data/app_info.dart';
 import '../logic/risk_assessment.dart';
 import '../logic/symptom_stats.dart';
+import '../models/smoke_context.dart';
 import '../models/smoke_report.dart';
 import 'api_config.dart';
 
@@ -68,9 +69,11 @@ Map<String, dynamic> buildAnswerPayload({
   required Map<String, int> severities,
   double? lat,
   double? lon,
+  SmokeContext? context,
   String appVersion = kAppVersion,
 }) {
   final withLocation = lat != null && lon != null;
+  final contexto = context?.toPayload() ?? const <String, dynamic>{};
   return {
     'submission_id': submissionId,
     'registrado_em': recordedAt.toUtc().toIso8601String(),
@@ -88,6 +91,7 @@ Map<String, dynamic> buildAnswerPayload({
     },
     'sintomas': {for (final item in symptomItems) item.id: severities[item.id] ?? 0},
     'app_version': appVersion,
+    if (contexto.isNotEmpty) 'contexto': contexto,
   };
 }
 

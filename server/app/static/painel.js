@@ -9,6 +9,19 @@
   const PERFIL = { idoso: 'Idoso', gestante: 'Gestante', crianca: 'Criança',
     doenca_respiratoria: 'Doença respiratória', doenca_cardiaca: 'Doença cardíaca' };
   const GRAV = ['', 'leve', 'moderada', 'intensa'];
+  const CTX = {
+    local: ['Onde ficou', { ar_livre: 'Ao ar livre', casa_janelas_abertas: 'Em casa, janelas abertas', casa_janelas_fechadas: 'Em casa, janelas fechadas' }],
+    fumaca_visivel: ['Fumaça ou cheiro no local', {}],
+    mascara: ['Máscara', { nao_saiu: 'Não saiu', nao: 'Saiu sem máscara', cirurgica_pano: 'Cirúrgica/pano', pff2_n95: 'PFF2/N95' }],
+    atividade_fisica_ar_livre: ['Atividade física ao ar livre', {}],
+    ar_filtrado: ['Ambiente com ar filtrado/climatizado', {}],
+    trabalho_ar_livre: ['Trabalha ao ar livre', {}],
+    imunologica: ['Condição imunológica', {}],
+    medicacao_a_mao: ['Medicação prescrita à mão', {}],
+    medicacao_nao_alivia: ['Sintomas sem alívio com a medicação', {}],
+    piorando: ['Sintomas piorando', {}],
+  };
+  const CORES = ['#43A047', '#FFB300', '#5C6BC0', '#D84315', '#8D6E63'];
   const $ = (id) => document.getElementById(id);
   let token = '';
   try { token = sessionStorage.getItem('painel_token') || ''; } catch (_) {}
@@ -66,6 +79,27 @@
       dica: `leve ${s.leve} · moderado ${s.moderado} · intenso ${s.intenso}` + (s.gravidade_media != null ? ` · média ${s.gravidade_media}` : ''),
     })), r.total_30d);
     if (itens.length) $('sintomas').append(el('p', { class: 'legenda', text: 'Barra = % das respostas do período · cores: leve, moderado, intenso · passe o mouse para a gravidade média.' }));
+  }
+
+  function desenhaContexto(r) {
+    const itens = [];
+    for (const [campo, [rotulo, nomes]] of Object.entries(CTX)) {
+      const cont = (r.contexto_30d || {})[campo] || {};
+      const chaves = Object.keys(cont); const total = chaves.reduce((a, k) => a + cont[k], 0);
+      if (!total) continue;
+      const ordem = chaves.sort((a, b) => (a === 'sim' ? -1 : b === 'sim' ? 1 : cont[b] - cont[a]));
+      itens.push({
+        rotulo, segmentos: ordem.map((k, i) => ({ valor: cont[k], cor: k === 'nao' ? '#B0BEC5' : CORES[i % CORES.length] })),
+        texto: ordem.map((k) => `${nomes[k] || (k === 'sim' ? 'sim' : k === 'nao' ? 'não' : k)} ${cont[k]}`).join(' · '),
+        dica: `${total} resposta(s)`,
+      });
+    }
+    barras($('contexto'), itens, 0);
+    // cada linha usa o total do próprio campo: refaz as larguras
+    $('contexto').querySelectorAll('.trilha').forEach((tr, i) => {
+      const t = itens[i].segmentos.reduce((a, s) => a + s.valor, 0);
+      [...tr.children].forEach((seg, k) => { seg.style.width = `${100 * itens[i].segmentos[k].valor / t}%`; });
+    });
   }
 
   function desenhaPerfil(r) {
@@ -161,7 +195,7 @@
     if (!r) return;
     $('k-total').textContent = fmtN(r.total); $('k-24h').textContent = fmtN(r.ultimas_24h); $('k-1h').textContent = fmtN(r.ultima_hora);
     $('k-ultima').textContent = r.ultima_resposta ? atras(r.ultima_resposta) : '—';
-    desenhaNiveis(r); desenhaSintomas(r); desenhaPerfil(r); desenhaSerie(d.serie_horaria);
+    desenhaNiveis(r); desenhaSintomas(r); desenhaPerfil(r); desenhaContexto(r); desenhaSerie(d.serie_horaria);
     desenhaMapa(d.mapa); desenhaRecentes(d.recentes); desenhaServidor(s); desenhaTunel(s.tunel);
   }
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 
-from sqlalchemy import URL, Engine, create_engine, text
+from sqlalchemy import URL, Engine, create_engine, inspect, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -38,6 +38,7 @@ def init_schema(engine: Engine, attempts: int = 15, wait_s: float = 2.0) -> None
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
             Base.metadata.create_all(engine)
+            garantir_colunas(engine)
             return
         except OperationalError as exc:
             if attempt == attempts:
@@ -48,3 +49,22 @@ def init_schema(engine: Engine, attempts: int = 15, wait_s: float = 2.0) -> None
 
 def make_session_factory(engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(engine, expire_on_commit=False)
+
+
+#: Colunas acrescentadas depois da primeira versão: (tabela, coluna, tipo SQL).
+#: `create_all` não altera tabelas que já existem, então bancos antigos recebem a coluna aqui.
+_COLUNAS_NOVAS = [("respostas", "contexto", "JSON")]
+
+
+def garantir_colunas(engine: Engine) -> list[str]:
+    """Migração mínima e idempotente: adiciona as colunas novas que faltarem. Devolve as adicionadas."""
+    adicionadas: list[str] = []
+    inspetor = inspect(engine)
+    for tabela, coluna, tipo in _COLUNAS_NOVAS:
+        existentes = {c["name"] for c in inspetor.get_columns(tabela)}
+        if coluna not in existentes:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}"))
+            adicionadas.append(f"{tabela}.{coluna}")
+            log.info("Coluna adicionada: %s.%s", tabela, coluna)
+    return adicionadas

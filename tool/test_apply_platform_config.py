@@ -49,7 +49,9 @@ PERMISSIONS = [
 class ManifestTests(unittest.TestCase):
     def check_manifest(self, source: str) -> str:
         patched, added = patch_manifest(source)
-        self.assertEqual(len(added), 4)  # 3 permissões + queries/DIAL
+        self.assertEqual(len(added), 5)  # 3 permissões + queries/DIAL + nome do app
+        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+        self.assertEqual(patched.count("android:label="), 1)
         for p in PERMISSIONS:
             self.assertEqual(patched.count(f'android:name="{p}"'), 1, p)
         self.assertEqual(patched.count("android.intent.action.DIAL"), 1)
@@ -80,11 +82,41 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(patched.count('android:name="android.permission.INTERNET"'), 1)
 
 
+    def test_nome_do_template_com_underscores_e_trocado(self):
+        template = MANIFEST_NO_QUERIES.replace('android:label="x"', 'android:label="alerta_fumaca_am"')
+        patched, _ = patch_manifest(template)
+        self.assertNotIn("alerta_fumaca_am", patched)
+        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+
+    def test_application_sem_label_recebe_o_nome(self):
+        patched, added = patch_manifest(MANIFEST_NO_QUERIES.replace(' android:label="x"', ""))
+        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+        minidom.parseString(patched)
+
+
 class PlistTests(unittest.TestCase):
+    def test_nomes_exibidos(self):
+        template = PLIST.replace(
+            "<key>CFBundleName</key>\n\t<string>x</string>",
+            "<key>CFBundleDisplayName</key>\n\t<string>Alerta Fumaca Am</string>\n"
+            "\t<key>CFBundleName</key>\n\t<string>alerta_fumaca_am</string>",
+        )
+        patched, _ = patch_plist(template)
+        self.assertEqual(patched.count("Alerta Fumaça AM"), 2)
+        self.assertNotIn("alerta_fumaca_am", patched)
+        self.assertNotIn("Alerta Fumaca Am", patched)
+        minidom.parseString(patched)
+
     def test_adds_keys_once(self):
         patched, added = patch_plist(PLIST)
         self.assertEqual(
-            added, ["NSLocationWhenInUseUsageDescription", "LSApplicationQueriesSchemes"]
+            added,
+            [
+                "NSLocationWhenInUseUsageDescription",
+                "LSApplicationQueriesSchemes",
+                "CFBundleDisplayName=Alerta Fumaça AM",
+                "CFBundleName=Alerta Fumaça AM",
+            ],
         )
         minidom.parseString(patched)
         again, added_again = patch_plist(patched)

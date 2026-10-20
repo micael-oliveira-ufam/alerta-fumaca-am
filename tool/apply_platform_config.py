@@ -20,8 +20,11 @@ Rodar duas vezes não duplica nada.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
+
+APP_NAME = "Alerta Fumaça AM"
 
 MANIFEST = Path("android/app/src/main/AndroidManifest.xml")
 PLIST = Path("ios/Runner/Info.plist")
@@ -60,6 +63,22 @@ def patch_manifest(text: str) -> tuple[str, list[str]]:
         text = text[:end] + block + text[end:]
         added += missing
 
+    # 1b) Nome exibido sob o ícone: "Alerta Fumaça AM" (o template usa o nome do pacote, com "_").
+    app_tag = re.search(r"<application\b[^>]*>", text, re.S)
+    if app_tag is None:
+        raise ValueError("AndroidManifest.xml sem tag <application>.")
+    tag = app_tag.group(0)
+    label = re.search(r'android:label="([^"]*)"', tag)
+    if label is None:
+        new_tag = tag.replace("<application", f'<application android:label="{APP_NAME}"', 1)
+    elif label.group(1) != APP_NAME:
+        new_tag = tag.replace(label.group(0), f'android:label="{APP_NAME}"', 1)
+    else:
+        new_tag = tag
+    if new_tag != tag:
+        text = text[: app_tag.start()] + new_tag + text[app_tag.end():]
+        added.append(f"android:label={APP_NAME}")
+
     # 2) <queries> com a intenção DIAL (necessária para discar no Android 11+).
     if 'android.intent.action.DIAL' not in text:
         if "</queries>" in text:
@@ -93,6 +112,17 @@ def patch_plist(text: str) -> tuple[str, list[str]]:
             "\t<array>\n\t\t<string>tel</string>\n\t</array>\n"
         )
         added.append("LSApplicationQueriesSchemes")
+
+    # Nome exibido sob o ícone (CFBundleDisplayName) e nome do pacote (CFBundleName).
+    for key in ("CFBundleDisplayName", "CFBundleName"):
+        pattern = re.compile(rf"(<key>{key}</key>\s*<string>)([^<]*)(</string>)")
+        found = pattern.search(text)
+        if found is None:
+            entries += f"\t<key>{key}</key>\n\t<string>{APP_NAME}</string>\n"
+            added.append(f"{key}={APP_NAME}")
+        elif found.group(2) != APP_NAME:
+            text = pattern.sub(lambda m: m.group(1) + APP_NAME + m.group(3), text, count=1)
+            added.append(f"{key}={APP_NAME}")
 
     if entries:
         idx = text.rfind("</dict>")

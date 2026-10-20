@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session, selectinload
 from . import stats
 from .config import Settings
 from .db import make_engine, make_session_factory
+from .schemas import CONTEXTO_CAMPOS
 from .models import NIVEIS, Resposta, RespostaSintoma
 from .ratelimit import RateLimiter
 
@@ -126,6 +127,14 @@ def resumo(session: Session, agora: dt.datetime) -> dict[str, Any]:
         ).where(Resposta.criado_em >= d30)
     ).one()
 
+    # Contexto: contagem por campo e valor, só entre quem respondeu aquele campo.
+    contexto: dict[str, dict[str, int]] = {c: {} for c in CONTEXTO_CAMPOS}
+    for (ctx,) in session.execute(select(Resposta.contexto).where(Resposta.criado_em >= d30)):
+        for campo, valor in (ctx or {}).items():
+            if campo in contexto:
+                chave = ("sim" if valor else "nao") if isinstance(valor, bool) else str(valor)
+                contexto[campo][chave] = contexto[campo].get(chave, 0) + 1
+
     ultima = session.scalar(select(func.max(Resposta.criado_em)))
     return {
         "total": contar(None),
@@ -136,6 +145,7 @@ def resumo(session: Session, agora: dt.datetime) -> dict[str, Any]:
         "niveis_24h": niveis(d24),
         "niveis_30d": niveis(d30),
         "sintomas_30d": sintomas,
+        "contexto_30d": contexto,
         "perfil_30d": dict(
             zip(("idoso", "gestante", "crianca", "doenca_respiratoria", "doenca_cardiaca"),
                 (int(v or 0) for v in perfil))
@@ -178,6 +188,7 @@ def recentes(session: Session, limite: int = 20) -> list[dict[str, Any]]:
                            if getattr(r, n)],
                 "sintomas": graus,
                 "app_version": r.app_version,
+                "contexto": r.contexto or {},
             }
         )
     return out

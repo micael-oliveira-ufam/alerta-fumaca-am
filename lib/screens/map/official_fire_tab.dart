@@ -45,6 +45,8 @@ class _OfficialFireTabState extends State<OfficialFireTab> {
   FireScope _scope = FireScope.amazonas;
   FireWindow _window = FireWindow.today;
   Set<FireSatellite> _satellites = FireSatellite.defaults();
+  bool _showHotspots = true;
+  bool _showCells = true;
   late Future<FireResult> _future = _load();
   Timer? _timer;
 
@@ -185,6 +187,10 @@ class _OfficialFireTabState extends State<OfficialFireTab> {
                 scope: _scope,
                 window: _window,
                 satellites: _satellites,
+                showHotspots: _showHotspots,
+                showCells: _showCells,
+                onShowHotspots: (v) => setState(() => _showHotspots = v),
+                onShowCells: (v) => setState(() => _showCells = v),
                 result: snapshot.data!,
                 onRefresh: _reload,
               );
@@ -202,6 +208,10 @@ class _OfficialContent extends StatelessWidget {
     required this.scope,
     required this.window,
     required this.satellites,
+    required this.showHotspots,
+    required this.showCells,
+    required this.onShowHotspots,
+    required this.onShowCells,
     required this.result,
     required this.onRefresh,
   });
@@ -209,6 +219,10 @@ class _OfficialContent extends StatelessWidget {
   final FireScope scope;
   final FireWindow window;
   final Set<FireSatellite> satellites;
+  final bool showHotspots;
+  final bool showCells;
+  final ValueChanged<bool> onShowHotspots;
+  final ValueChanged<bool> onShowCells;
   final FireResult result;
   final VoidCallback onRefresh;
 
@@ -222,13 +236,15 @@ class _OfficialContent extends StatelessWidget {
       );
 
   List<CircleMarker> _circles(List<FireHotspot> hotspots) {
+    if (!showHotspots && !showCells) return const [];
     if (scope == FireScope.amazonas) {
-      return [for (final h in hotspots) _point(h, emphasized: false)];
+      return showHotspots ? [for (final h in hotspots) _point(h, emphasized: false)] : const [];
     }
     // Brasil: os demais estados viram células de 0,5°; o Amazonas continua foco a foco.
     final others = hotspots.where((h) => h.state != InpeFireService.state);
     final amazonas = hotspots.where((h) => h.state == InpeFireService.state);
     return [
+      if (showCells)
       for (final cell in aggregateGrid(others))
         CircleMarker(
           point: LatLng(cell.lat, cell.lon),
@@ -238,7 +254,8 @@ class _OfficialContent extends StatelessWidget {
           borderColor: _gridColor(cell.count),
           borderStrokeWidth: 0.8,
         ),
-      for (final h in amazonas) _point(h, emphasized: true),
+      if (showHotspots)
+        for (final h in amazonas) _point(h, emphasized: true),
     ];
   }
 
@@ -263,6 +280,23 @@ class _OfficialContent extends StatelessWidget {
           zoom: isBrasil ? 3.6 : 5.2,
           circles: _circles(hotspots),
           bannerTop: result.fromCache ? 100 : 12,
+          toggles: [
+            LayerToggle(
+              label: 'Focos de calor do INPE',
+              subtitle: 'Pontos por satélite, coloridos pela intensidade (FRP)',
+              icon: Icons.local_fire_department_rounded,
+              value: showHotspots,
+              onChanged: onShowHotspots,
+            ),
+            if (isBrasil)
+              LayerToggle(
+                label: 'Densidade nos outros estados',
+                subtitle: 'Células de 0,5° com a contagem de focos',
+                icon: Icons.grid_view_rounded,
+                value: showCells,
+                onChanged: onShowCells,
+              ),
+          ],
         ),
         if (result.fromCache)
           Positioned(
