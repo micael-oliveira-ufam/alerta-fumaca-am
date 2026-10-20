@@ -133,6 +133,7 @@ Omita `--dart-define` para o modo local.
 | INPE com "Failed host lookup" | Mesmo motivo, ou DNS/"DNS privado" do aparelho | Idem; ou usar o servidor próprio (`API_BASE_URL`), que consulta o INPE por você |
 | "Compilado sem a permissão de localização" | `ACCESS_*_LOCATION` ausente | Reaplicar o script e reinstalar |
 | "Permissão bloqueada" | Negada em definitivo | Liberar nas configurações do Android |
+| `flutter analyze` falha com "Unexpected end of input" (`LspByteStreamServerChannel`) | Caminho do projeto com acentos ou espaços (ex.: `Projeto Alerta Fumaça AM`). O analisador conta bytes e caracteres de forma diferente, e a mensagem chega cortada. `flutter test` pode funcionar, porque não usa o analisador | Mover a pasta para um caminho só com letras, números e hífens, e rodar `flutter clean && flutter analyze` de novo |
 
 ## Versionamento
 

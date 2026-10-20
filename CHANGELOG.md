@@ -13,6 +13,7 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 ## [Não lançado]
 
 ### Corrigido
+- `tool/gerar_apk.sh` avisa quando o caminho do projeto tem acentos ou espaços, causa provável de `flutter analyze` falhar com "Unexpected end of input". O README ganhou essa linha no diagnóstico.
 - Tela de LGPD: a cor de fundo da área de aceite estava num `DecoratedBox` acima do `CheckboxListTile`, o que escondia o efeito de toque (falha em `test/lgpd_test.dart`). A cor agora fica num `Material`.
 - Adicionado `analysis_options.yaml` (estava ausente, então as regras do `flutter_lints` não eram aplicadas e o analisador não tinha configuração explícita).
 - `tool/iniciar_servidor.sh` e `tool/gerar_apk.sh` funcionam no macOS: o `sed -i` (sintaxe do GNU) foi trocado por `awk`, e `sha256sum` por `shasum -a 256` quando necessário. O script também confere se o Docker está rodando.

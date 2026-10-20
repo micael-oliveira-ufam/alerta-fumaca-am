@@ -15,6 +15,15 @@ if [[ -n "$API_URL" ]]; then
   DEFINES+=("--dart-define=API_BASE_URL=$API_URL")
 fi
 
+# O analisador do Dart (flutter analyze) trava com "Unexpected end of input" quando o caminho
+# tem acentos ou espaços: o protocolo conta bytes e caracteres de forma diferente.
+if printf '%s' "$PWD" | LC_ALL=C grep -q '[^ -~]' || [[ "$PWD" == *" "* ]]; then
+  echo "AVISO: o caminho do projeto tem acentos ou espaços:"
+  echo "  $PWD"
+  echo "  Se 'flutter analyze' falhar com 'Unexpected end of input', mova a pasta para um caminho"
+  echo "  só com letras, números e hífens (ex.: ~/projetos/alerta-fumaca-am) e rode de novo."
+fi
+
 python3 tool/versao.py verificar || { echo 'Corrija a versão antes de gerar o APK (tool/versao.py).'; exit 1; }
 
 command -v flutter >/dev/null || { echo "Flutter não encontrado. Instale: https://docs.flutter.dev/get-started/install"; exit 1; }
