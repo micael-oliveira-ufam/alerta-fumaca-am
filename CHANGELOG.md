@@ -12,6 +12,11 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+### Corrigido
+- Mapas das páginas web (painel público e do administrador) mostravam "Access blocked ... 403" no lugar do mapa. Causa: o servidor enviava `Referrer-Policy: no-referrer` e o OpenStreetMap recusa tiles sem o cabeçalho Referer (política de uso de tiles). Agora é `strict-origin-when-cross-origin` (só a origem vai a terceiros, nunca o caminho). Teste novo em `server/tests/test_publico.py`.
+
+## [1.6.7] - 2026-10-20
+
 Nenhuma mudança desde a 1.6.6.
 
 ## [1.6.6] - 2026-10-20

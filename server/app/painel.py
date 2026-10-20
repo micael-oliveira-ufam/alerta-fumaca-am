@@ -265,7 +265,7 @@ def create_painel_app(settings: Settings | None = None, engine: Engine | None = 
         resp = await call_next(request)
         resp.headers["Cache-Control"] = "no-store"
         resp.headers["X-Content-Type-Options"] = "nosniff"
-        resp.headers["Referrer-Policy"] = "no-referrer"
+        resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; "
             "style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; "

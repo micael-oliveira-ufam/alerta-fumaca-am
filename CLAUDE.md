@@ -404,6 +404,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.22 Flutter no Linux — versão 1.6.6
 - Erro do usuário: `Flutter não encontrado` ao rodar `tool/gerar_apk.sh` no Linux (o Flutter não estava instalado/no PATH). Novo `tool/instalar_requisitos_linux.sh` (dependências, JDK 17, Flutter por `git clone`, Android SDK por command-line tools, PATH) e `tool/_ambiente.sh` (detecção automática). Dependências conforme a documentação oficial do Flutter para Linux (`curl git unzip xz-utils zip libglu1-mesa`). **Não está na documentação lida:** o método `git clone`, o JDK 17 e `flutter config --android-sdk` (escolhas minhas). O número do zip das command-line tools é descoberto na página do Android, **não verificado ao vivo** (inacessível daqui). **Verificado:** `bash -n` e detecção com Flutter/SDK simulados. **Não testado:** a instalação real.
 
+### 4.23 Mapa web bloqueado pelo OpenStreetMap — versão 1.6.7
+- Print do usuário: tiles com "Access blocked – App is not following the tile usage policy" (403) no painel público via túnel. Causa: `Referrer-Policy: no-referrer` no servidor (a política de tiles do OSM exige Referer). **Verificado:** o cabeçalho estava nos dois painéis (`main.py`, `painel.py`) e o 84º teste confere o novo valor. **Não verificado:** o carregamento real dos tiles (OSM inacessível daqui); confirmar recarregando a página com Ctrl+F5. O app Flutter não é afetado (já usa `userAgentPackageName`).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

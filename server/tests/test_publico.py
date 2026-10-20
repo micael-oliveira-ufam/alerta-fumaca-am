@@ -107,3 +107,9 @@ def test_resultado_e_reaproveitado_por_alguns_segundos(client):
 def test_exportacao_csv_continua_exigindo_token(make_client):
     client = make_client(admin_token="segredo-do-admin")
     assert client.get("/respostas/export.csv").status_code in (401, 403)
+
+
+def test_referrer_policy_permite_tiles_do_osm(client):
+    """O OpenStreetMap bloqueia (403) tiles pedidos sem Referer; a página precisa enviar ao menos a origem."""
+    r = client.get("/")
+    assert r.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
