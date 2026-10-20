@@ -2,7 +2,7 @@
 # Gera o app iOS na sua máquina (macOS com Xcode).
 #
 # Uso:
-#   bash tool/gerar_ios.sh                          # simulador, servidor fixo (https://respira-amazonas.cloud)
+#   bash tool/gerar_ios.sh                          # simulador, servidor fixo (https://respirar-amazonas.cloud)
 #   bash tool/gerar_ios.sh simulador --local        # sem servidor (nada é enviado)
 #   bash tool/gerar_ios.sh simulador https://api.seudominio.com
 #   bash tool/gerar_ios.sh dispositivo [URL]        # release SEM assinatura (ver aviso abaixo)

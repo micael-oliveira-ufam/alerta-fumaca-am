@@ -1,7 +1,7 @@
 name: respirar_amazonas
 description: Orientação e triagem educativa durante episódios de fumaça no Amazonas, com focos de calor do INPE por satélite, qualidade do ar estimada e estatísticas anonimizadas dos sintomas.
 publish_to: 'none'
-version: 1.7.0+19
+version: 1.7.1+20
 environment:
   sdk: '>=3.6.0 <4.0.0'
 

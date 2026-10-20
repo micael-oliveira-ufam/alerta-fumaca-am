@@ -77,13 +77,13 @@ Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SE
 - **Painel** (`http://localhost:8080`, só neste computador): total e ritmo de respostas, níveis de risco, sintomas mais relatados, respostas por hora, mapa de áreas (~1 km), perfil, últimas respostas anônimas, estado do banco e o **link do servidor com QR code**. Atualiza a cada 5 s (consulta periódica, não conexão contínua). Exige o `ADMIN_TOKEN` quando definido. É outro processo e **não passa pelo túnel**.
 - **Painel público (sem senha):** o próprio link do túnel (`https://<palavras>.trycloudflare.com/`) abre uma página com os dados **agregados** dos usuários: sintomas mais relatados (ranking com leve/moderado/intenso, ordenável por frequência ou intensidade), níveis de risco, respostas por dia, mapa de áreas (~1 km), **bairros de Manaus mais afetados**, perfil, tempo de exposição e contexto, **focos de calor do INPE em detalhe** (por satélite, dia e município, com mapa de calor via `leaflet.heat` 0.2.0, copiado de `server/app/static/vendor/leaflet-heat`), links oficiais de desmatamento (TerraBrasilis) e os desenvolvedores, com filtro de 24 h / 7 / 30 / 90 dias e atualização a cada 15 s. Qualquer pessoa com o link vê; não há login. Os mesmos dados saem em JSON em `GET /publico/painel?dias=30` (aberto, com CORS liberado). **Regras de privacidade aplicadas no servidor** (as do termo LGPD): abaixo de `MIN_RESPOSTAS_PUBLICAS` respostas só aparece o total; área do mapa só com `MIN_RESPOSTAS_CELULA`+ respostas; contagens de perfil/contexto menores que `MIN_RESPOSTAS_CELULA` viram "menos de N". **Não são públicos:** respostas individuais, horário de cada envio, exportação CSV e o painel do administrador (`127.0.0.1:8080`, com token). O resultado é guardado 10 s em memória para aguentar muitos acessos. Como o endereço do túnel é aleatório e muda a cada início, divulgue o link atual (o painel do administrador o mostra com QR code) ou use um túnel nomeado/domínio próprio para um endereço fixo.
 - **Link aleatório:** o serviço `tunnel` abre um *túnel rápido* da Cloudflare (`cloudflared`, sem conta) e sorteia `https://<palavras>.trycloudflare.com` **cada vez que inicia**. O painel lê o link atual e o exibe.
-- **No app:** o endereço é definido **na compilação** (`tool/gerar_apk.sh` usa `https://respira-amazonas.cloud` por padrão; ou `<URL>`, ou `--dart-define=API_BASE_URL=...`); não há campo para alterá-lo. Em *Sobre → Plataforma online* o app apenas mostra o link, que o usuário abre no navegador. Ao final de cada questionário o app pergunta se a pessoa quer compartilhar as respostas para estudos epidemiológicos; só com "Sim" há envio.
+- **No app:** o endereço é definido **na compilação** (`tool/gerar_apk.sh` usa `https://respirar-amazonas.cloud` por padrão; ou `<URL>`, ou `--dart-define=API_BASE_URL=...`); não há campo para alterá-lo. Em *Sobre → Plataforma online* o app apenas mostra o link, que o usuário abre no navegador. Ao final de cada questionário o app pergunta se a pessoa quer compartilhar as respostas para estudos epidemiológicos; só com "Sim" há envio.
 - **Atenção (só no link aleatório), o link muda** quando o túnel reinicia; um app compilado com o link antigo deixa de enviar até ser recompilado. Por isso o padrão é o domínio fixo. Os envios que falharam ficam guardados no aparelho e são reenviados (o `submission_id` evita duplicar).
-- **Domínio fixo (`respira-amazonas.cloud`):** o serviço `tunnel_dominio` usa um túnel *nomeado* da Cloudflare, então o endereço não muda e o app compilado continua enviando. Passo a passo (exige conta Cloudflare com o domínio adicionado):
+- **Domínio fixo (`respirar-amazonas.cloud`):** o serviço `tunnel_dominio` usa um túnel *nomeado* da Cloudflare, então o endereço não muda e o app compilado continua enviando. Passo a passo (exige conta Cloudflare com o domínio adicionado):
   1. No painel da Cloudflare (*Zero Trust → Networks → Tunnels*) crie um túnel e copie o **token**.
-  2. No mesmo túnel, publique uma rota (*Published application*) com o domínio `respira-amazonas.cloud` e o serviço `http://api:8000`.
-  3. Rode `TUNNEL_TOKEN=<token> bash tool/iniciar_servidor.sh` (ou rode sem a variável e cole o token quando o script pedir). O script grava o token no `.env` (fora do Git), liga o perfil `dominio`, define `PUBLIC_URL` e confere `https://respira-amazonas.cloud/health`.
-  4. Compile o app com `bash tool/gerar_apk.sh`: sem argumento ele já aponta para `https://respira-amazonas.cloud`. Outro servidor: passe a URL; sem servidor: `--local`.
+  2. No mesmo túnel, publique uma rota (*Published application*) com o domínio `respirar-amazonas.cloud` e o serviço `http://api:8000`.
+  3. Rode `TUNNEL_TOKEN=<token> bash tool/iniciar_servidor.sh` (ou rode sem a variável e cole o token quando o script pedir). O script grava o token no `.env` (fora do Git), liga o perfil `dominio`, define `PUBLIC_URL` e confere `https://respirar-amazonas.cloud/health`.
+  4. Compile o app com `bash tool/gerar_apk.sh`: sem argumento ele já aponta para `https://respirar-amazonas.cloud`. Outro servidor: passe a URL; sem servidor: `--local`.
   Caminhos conforme a documentação da Cloudflare (comando `cloudflared tunnel --no-autoupdate run` com o token em `TUNNEL_TOKEN`). **Verificado:** o fluxo do script com `docker` e `curl` simulados. **Não testado:** o túnel e o domínio reais.
 - **Limitações:** a Cloudflare descreve os túneis rápidos como para testes, sem garantia de disponibilidade. O computador precisa ficar ligado.
 - **Segurança:** o link dá acesso à API **de coleta** e ao painel público (somente leitura, dados agregados); ele não é uma senha. Qualquer pessoa que o tenha pode enviar respostas, inclusive falsas. As estatísticas **não são verificadas** e não devem ser usadas como dado científico sem tratamento. O limite de envios usa o IP real (`CF-Connecting-IP`) só em memória; isso só é seguro porque a API escuta apenas em `127.0.0.1` (`API_BIND`).
@@ -104,7 +104,7 @@ Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SE
 
 ```bash
 tool/iniciar_servidor.sh                          # servidor: cria o .env com segredos e sobe o Docker
-tool/gerar_apk.sh                                 # APK em dist/Alerta-Fumaca-AM.apk, ligado a https://respira-amazonas.cloud
+tool/gerar_apk.sh                                 # APK em dist/Alerta-Fumaca-AM.apk, ligado a https://respirar-amazonas.cloud
 tool/gerar_apk.sh https://SEU-SERVIDOR            # outro servidor
 tool/gerar_apk.sh --local                         # modo local (nada é enviado)
 ```
@@ -130,7 +130,7 @@ flutter analyze && flutter test
 flutter build apk --release --dart-define=API_BASE_URL=https://api.seudominio.com.br
 ```
 
-Omita `--dart-define` para o modo local (os scripts de `tool/` já passam `https://respira-amazonas.cloud` por padrão).
+Omita `--dart-define` para o modo local (os scripts de `tool/` já passam `https://respirar-amazonas.cloud` por padrão).
 
 ## iOS e emuladores (macOS)
 

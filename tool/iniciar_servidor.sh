@@ -3,7 +3,7 @@
 #
 # Uso: bash tool/iniciar_servidor.sh
 #
-# Domínio fixo (respira-amazonas.cloud): com o TOKEN do túnel nomeado da Cloudflare, o servidor
+# Domínio fixo (respirar-amazonas.cloud): com o TOKEN do túnel nomeado da Cloudflare, o servidor
 # passa a responder nesse domínio, e o app compilado por tool/gerar_apk.sh já aponta para ele.
 #   TUNNEL_TOKEN=<token> bash tool/iniciar_servidor.sh     # grava o token no .env (só na 1ª vez)
 # Sem token, usa o link temporário *.trycloudflare.com (muda a cada início).
@@ -101,7 +101,7 @@ gravar_var() {
 }
 
 # Domínio fixo: token do túnel nomeado (variável de ambiente, .env ou digitado agora).
-DOMINIO="${DOMINIO:-respira-amazonas.cloud}"
+DOMINIO="${DOMINIO:-respirar-amazonas.cloud}"
 TOKEN_TUNEL="${TUNNEL_TOKEN:-$(ler_var TUNNEL_TOKEN)}"
 if [[ -z "$TOKEN_TUNEL" && -t 0 ]]; then
   echo "Domínio fixo ($DOMINIO): cole o TOKEN do túnel da Cloudflare, ou Enter para usar o link temporário."

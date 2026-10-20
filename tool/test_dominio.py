@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-DOMINIO = "https://respira-amazonas.cloud"
+DOMINIO = "https://respirar-amazonas.cloud"
 
 
 def _bash(trecho: str) -> str:

@@ -2,7 +2,7 @@
 # Gera o APK de release do RespirAR Amazonas na sua máquina.
 #
 # Uso:
-#   tool/gerar_apk.sh                              # app ligado ao servidor fixo (https://respira-amazonas.cloud)
+#   tool/gerar_apk.sh                              # app ligado ao servidor fixo (https://respirar-amazonas.cloud)
 #   tool/gerar_apk.sh https://api.seudominio.com  # aponta o app para outro servidor
 #   tool/gerar_apk.sh --local                      # modo local (sem servidor; nada é enviado)
 #

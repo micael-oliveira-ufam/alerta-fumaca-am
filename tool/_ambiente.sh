@@ -34,7 +34,7 @@ mensagem_instalar_flutter() {
 
 # Endereço fixo do servidor do app. Os scripts de compilação o usam quando nenhuma URL é passada.
 # Para outro servidor:  URL_SERVIDOR_PADRAO=https://outro.exemplo bash tool/gerar_apk.sh
-URL_SERVIDOR_PADRAO="${URL_SERVIDOR_PADRAO:-https://respira-amazonas.cloud}"
+URL_SERVIDOR_PADRAO="${URL_SERVIDOR_PADRAO:-https://respirar-amazonas.cloud}"
 
 # Decide a URL do servidor: "--local" = app sem servidor; vazio = padrão; outro valor = esse valor.
 resolver_url_servidor() {

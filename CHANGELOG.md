@@ -12,6 +12,10 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.7.1.
+
+## [1.7.1] - 2026-10-20
+
 Nenhuma mudança desde a 1.7.0.
 
 ## [1.7.0] - 2026-10-20
