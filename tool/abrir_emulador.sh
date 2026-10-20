@@ -2,8 +2,8 @@
 # Baixa os pacotes, abre um emulador/simulador e roda o app nele.
 #
 # Uso:
-#   bash tool/abrir_emulador.sh ios [URL_DO_SERVIDOR]       # Simulador do iPhone (macOS + Xcode)
-#   bash tool/abrir_emulador.sh android [URL_DO_SERVIDOR]   # Emulador Android
+#   bash tool/abrir_emulador.sh ios [URL|--local]           # Simulador do iPhone (macOS + Xcode)
+#   bash tool/abrir_emulador.sh android [URL|--local]       # Emulador Android (padrão: servidor fixo)
 #
 # Variáveis opcionais:
 #   SIMULADOR_IOS="iPhone 16"     nome do aparelho (padrão: o primeiro iPhone disponível)
@@ -15,9 +15,11 @@ cd "$(dirname "$0")/.."
 source tool/_preparar.sh
 
 PLATAFORMA="${1:-}"
-API_URL="${2:-}"
+source tool/_ambiente.sh
+API_URL="$(resolver_url_servidor "${2:-}")"   # padrão: servidor fixo; "--local" = sem servidor
 DEFINES=()
 [[ -n "$API_URL" ]] && DEFINES+=("--dart-define=API_BASE_URL=$API_URL")
+echo "Servidor do app: ${API_URL:-nenhum (modo local)}"
 case "$PLATAFORMA" in ios|android) ;; *) erro "uso: bash tool/abrir_emulador.sh ios|android [URL]";; esac
 
 aviso_caminho

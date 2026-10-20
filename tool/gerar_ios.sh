@@ -2,7 +2,8 @@
 # Gera o app iOS na sua máquina (macOS com Xcode).
 #
 # Uso:
-#   bash tool/gerar_ios.sh                          # simulador, modo local (sem servidor)
+#   bash tool/gerar_ios.sh                          # simulador, servidor fixo (https://respira-amazonas.cloud)
+#   bash tool/gerar_ios.sh simulador --local        # sem servidor (nada é enviado)
 #   bash tool/gerar_ios.sh simulador https://api.seudominio.com
 #   bash tool/gerar_ios.sh dispositivo [URL]        # release SEM assinatura (ver aviso abaixo)
 #
@@ -18,9 +19,11 @@ cd "$(dirname "$0")/.."
 source tool/_preparar.sh
 
 ALVO="${1:-simulador}"
-API_URL="${2:-}"
+source tool/_ambiente.sh
+API_URL="$(resolver_url_servidor "${2:-}")"
 DEFINES=()
 [[ -n "$API_URL" ]] && DEFINES+=("--dart-define=API_BASE_URL=$API_URL")
+echo "Servidor do app: ${API_URL:-nenhum (modo local)}"
 case "$ALVO" in simulador|dispositivo) ;; *) erro "alvo inválido: '$ALVO' (use simulador ou dispositivo)";; esac
 
 aviso_caminho

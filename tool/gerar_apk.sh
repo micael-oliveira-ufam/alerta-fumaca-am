@@ -2,18 +2,23 @@
 # Gera o APK de release do RespirAR Amazonas na sua máquina.
 #
 # Uso:
-#   tool/gerar_apk.sh                              # modo local (sem servidor)
-#   tool/gerar_apk.sh https://api.seudominio.com  # aponta o app para o seu servidor
+#   tool/gerar_apk.sh                              # app ligado ao servidor fixo (https://respira-amazonas.cloud)
+#   tool/gerar_apk.sh https://api.seudominio.com  # aponta o app para outro servidor
+#   tool/gerar_apk.sh --local                      # modo local (sem servidor; nada é enviado)
 #
 # Requisitos: Flutter 3.27+ (flutter doctor), Java 17 e Android SDK.
 # No Linux, instale tudo com:  bash tool/instalar_requisitos_linux.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-API_URL="${1:-}"
+source tool/_ambiente.sh
+API_URL="$(resolver_url_servidor "${1:-}")"
 DEFINES=()
 if [[ -n "$API_URL" ]]; then
   DEFINES+=("--dart-define=API_BASE_URL=$API_URL")
+  echo "Servidor do app: $API_URL"
+else
+  echo "Modo local: o app NÃO enviará respostas a servidor algum."
 fi
 
 # O analisador do Dart (flutter analyze) trava com "Unexpected end of input" quando o caminho
@@ -27,7 +32,6 @@ fi
 
 python3 tool/versao.py verificar || { echo 'Corrija a versão antes de gerar o APK (tool/versao.py).'; exit 1; }
 
-source tool/_ambiente.sh
 command -v flutter >/dev/null || { mensagem_instalar_flutter; exit 1; }
 
 # Gera android/ e ios/ se ainda não existem (não são versionadas).

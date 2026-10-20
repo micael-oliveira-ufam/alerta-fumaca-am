@@ -100,5 +100,19 @@ services:
       - api
     command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "--url", "http://api:8000"]
 
+  # Túnel NOMEADO da Cloudflare, para o domínio fixo (ex.: respira-amazonas.cloud). Exige conta
+  # Cloudflare com o domínio adicionado e um túnel criado no painel (Zero Trust > Networks >
+  # Tunnels), com uma rota publicada para o serviço http://api:8000. O TUNNEL_TOKEN vem desse
+  # painel. `tool/iniciar_servidor.sh` liga este serviço sozinho quando há TUNNEL_TOKEN.
+  tunnel_dominio:
+    image: cloudflare/cloudflared:2024.12.2
+    profiles: ["dominio"]
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    command: ["tunnel", "--no-autoupdate", "run"]
+
 volumes:
   pgdata:

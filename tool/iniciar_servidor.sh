@@ -3,6 +3,12 @@
 #
 # Uso: bash tool/iniciar_servidor.sh
 #
+# Domínio fixo (respira-amazonas.cloud): com o TOKEN do túnel nomeado da Cloudflare, o servidor
+# passa a responder nesse domínio, e o app compilado por tool/gerar_apk.sh já aponta para ele.
+#   TUNNEL_TOKEN=<token> bash tool/iniciar_servidor.sh     # grava o token no .env (só na 1ª vez)
+# Sem token, usa o link temporário *.trycloudflare.com (muda a cada início).
+# Outro domínio:  DOMINIO=api.exemplo.org TUNNEL_TOKEN=<token> bash tool/iniciar_servidor.sh
+#
 # Funciona no macOS (bash 3.2, BSD sed/awk) e no Linux (Docker Engine com plugin Compose v2
 # ou docker-compose v1; usa sudo se o usuário não estiver no grupo docker). Na primeira execução cria o
 # arquivo .env com senhas e token aleatórios gerados aqui.
@@ -89,6 +95,32 @@ fi
 # Lê o valor de uma variável do .env (vazio se não existir).
 ler_var() { awk -F= -v k="$1" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' .env; }
 
+# Grava VAR=valor no .env (troca se existir, acrescenta se não).
+gravar_var() {
+  if grep -q "^$1=" .env; then definir_var "$1" "$2"; else echo "$1=$2" >> .env; fi
+}
+
+# Domínio fixo: token do túnel nomeado (variável de ambiente, .env ou digitado agora).
+DOMINIO="${DOMINIO:-respira-amazonas.cloud}"
+TOKEN_TUNEL="${TUNNEL_TOKEN:-$(ler_var TUNNEL_TOKEN)}"
+if [[ -z "$TOKEN_TUNEL" && -t 0 ]]; then
+  echo "Domínio fixo ($DOMINIO): cole o TOKEN do túnel da Cloudflare, ou Enter para usar o link temporário."
+  read -r -s -p "Token: " TOKEN_TUNEL || true
+  echo
+fi
+if [[ -n "$TOKEN_TUNEL" ]]; then
+  gravar_var TUNNEL_TOKEN "$TOKEN_TUNEL"
+  gravar_var COMPOSE_PROFILES dominio
+  gravar_var PUBLIC_URL "https://$DOMINIO"
+  MODO_DOMINIO=1
+  # Se antes rodava o túnel temporário, para-o (senão continuariam os dois).
+  "${COMPOSE[@]}" stop tunnel >/dev/null 2>&1 || true
+else
+  MODO_DOMINIO=0
+  echo "AVISO: sem TUNNEL_TOKEN o servidor usa um link temporário que muda a cada início; o app compilado"
+  echo "       para $DOMINIO NÃO o alcançará. Para o domínio fixo, rode de novo com TUNNEL_TOKEN=<token>."
+fi
+
 # Testa se algo já escuta numa porta deste computador.
 porta_em_uso() { (exec 3<>"/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1; }
 
@@ -145,6 +177,27 @@ done
 
 echo "Painel em tempo real: http://127.0.0.1:$PAINEL_PORTA (digite o ADMIN_TOKEN do .env na tela de entrada)"
 
+if [[ "$MODO_DOMINIO" == "1" ]]; then
+  URL="https://$DOMINIO"
+  echo "Conferindo $URL/health (a Cloudflare pode levar alguns instantes)..."
+  ok=0
+  for _ in $(seq 1 15); do
+    if curl -fsS -m 8 "$URL/health" >/dev/null 2>&1; then ok=1; break; fi
+    sleep 3
+  done
+  if [[ "$ok" == "1" ]]; then
+    echo "Domínio no ar: $URL  (painel público em $URL/)"
+    echo "Para compilar o app apontando para ele:  bash tool/gerar_apk.sh"
+  else
+    echo "O domínio ainda NÃO respondeu em $URL/health. Confira:"
+    echo "  1. No painel da Cloudflare (Zero Trust > Networks > Tunnels): o túnel está 'Healthy' e tem uma rota"
+    echo "     publicada para $DOMINIO apontando para o serviço  http://api:8000"
+    echo "  2. Os logs do túnel:  ${COMPOSE[*]} logs tunnel_dominio"
+    echo "  3. Se o domínio está adicionado à sua conta Cloudflare (DNS gerenciado por ela)."
+  fi
+  exit 0
+fi
+
 # Link público do túnel (só existe se o perfil do túnel estiver ativo no .env).
 link=""
 for _ in $(seq 1 15); do
@@ -154,7 +207,7 @@ for _ in $(seq 1 15); do
 done
 if [[ -n "$link" ]]; then
   echo "Link público (muda a cada início): $link"
-  echo "Para compilar o app apontando para ele:  bash tool/gerar_apk.sh $link"
+  echo "Para compilar o app apontando para ele:  bash tool/gerar_apk.sh $link   (o padrão do script é $DOMINIO)"
 else
   echo "Link público do túnel não apareceu. Veja:  ${COMPOSE[*]} logs tunnel"
 fi

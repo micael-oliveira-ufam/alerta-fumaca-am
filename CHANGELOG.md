@@ -12,6 +12,10 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.7.0.
+
+## [1.7.0] - 2026-10-20
+
 ### Corrigido
 - `tool/instalar_requisitos_linux.sh`: o `flutter doctor` acusava "No valid Android SDK platforms found" porque o instalador só baixava `platform-tools`. Agora também instala a plataforma (`platforms;android-N`) e o `build-tools` mais recentes (só versões finais, sem `-rc`/`-ext`), descobertos por `sdkmanager --list`; `--sdk_root` é passado explicitamente. Se a lista não puder ser obtida, o script mostra o comando manual.
 - O fim do instalador explica que os itens "Linux toolchain" (clang, CMake, GTK) do doctor são só para apps de desktop e não afetam o APK.
