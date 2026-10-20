@@ -94,6 +94,17 @@ Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SE
 - Como os registros são anônimos, **não é possível apagar um envio depois**; o diálogo avisa isso. Dado de saúde é dado pessoal sensível: **defina a base legal, o controlador e a retenção** antes de operar o servidor com o público.
 - Publique a API **atrás de HTTPS** (proxy reverso). O Compose expõe HTTP na porta 8000.
 
+## Início rápido (pacote final)
+
+```bash
+tool/iniciar_servidor.sh                          # servidor: cria o .env com segredos e sobe o Docker
+tool/gerar_apk.sh https://SEU-SERVIDOR            # APK em dist/Alerta-Fumaca-AM.apk (sem URL = modo local)
+```
+
+- `iniciar_servidor.sh` precisa de Docker com acesso ao Docker Hub (imagens `postgres:16-alpine` e `python:3.12-slim`).
+- `gerar_apk.sh` precisa de Flutter 3.27+, Java 17 e Android SDK, e roda os testes antes de compilar.
+- Ambos os scripts foram escritos e revisados aqui, mas **não foram executados de ponta a ponta** neste ambiente: o Docker Hub e o Flutter estavam bloqueados. O servidor foi testado direto com Python (SQLite).
+
 ## Compilar o app
 
 Requisito: Flutter 3.27 ou superior (desenvolvido para **3.27.x**). As pastas `android/` e `ios/` **não** são versionadas; são geradas assim:
