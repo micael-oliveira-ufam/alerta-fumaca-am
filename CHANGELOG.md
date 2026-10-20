@@ -12,6 +12,18 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.3.0.
+
+## [1.3.0] - 2026-10-19
+
+### Alterado
+- **Nome do app: "Alerta Fumaça AM" passou a "RespirAR Amazonas"** (decisão do usuário). Atualizado no app (título, início, *Sobre*, termo LGPD), no servidor (título da API e do painel), nos scripts de plataforma (`tool/apply_platform_config.py`, que grava o nome no Android e no iOS) e no README. O nome do pacote Dart (`alerta_fumaca_am`) e o repositório continuam iguais.
+- Termo LGPD: versão `1.0` -> `1.1` porque o nome aparece no texto (regra do próprio arquivo: qualquer mudança de texto pede nova leitura). **O usuário verá o termo de novo na próxima abertura.**
+- **Tela de abertura reformulada**: fumaça que sobe e se dissipa ao fundo, logo com anéis de pulso, entrada escalonada do nome ("Respir" + "AR" destacado), slogan "Alertas, triagem e proteção contra fumaça no Amazonas.", quatro recursos (focos do INPE, qualidade do ar, triagem, orientações sem internet), instituição, versão, aviso educativo e barra de progresso. Dura 3,8 s; um toque pula. Com "remover animações" do sistema ligado, o movimento contínuo é desligado.
+
+### Adicionado
+- `test/app_name_test.dart`.
+
 Nenhuma mudança desde a 1.2.0.
 
 ## [1.2.0] - 2026-10-19

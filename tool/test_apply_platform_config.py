@@ -50,7 +50,7 @@ class ManifestTests(unittest.TestCase):
     def check_manifest(self, source: str) -> str:
         patched, added = patch_manifest(source)
         self.assertEqual(len(added), 5)  # 3 permissões + queries/DIAL + nome do app
-        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+        self.assertIn('android:label="RespirAR Amazonas"', patched)
         self.assertEqual(patched.count("android:label="), 1)
         for p in PERMISSIONS:
             self.assertEqual(patched.count(f'android:name="{p}"'), 1, p)
@@ -86,11 +86,11 @@ class ManifestTests(unittest.TestCase):
         template = MANIFEST_NO_QUERIES.replace('android:label="x"', 'android:label="alerta_fumaca_am"')
         patched, _ = patch_manifest(template)
         self.assertNotIn("alerta_fumaca_am", patched)
-        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+        self.assertIn('android:label="RespirAR Amazonas"', patched)
 
     def test_application_sem_label_recebe_o_nome(self):
         patched, added = patch_manifest(MANIFEST_NO_QUERIES.replace(' android:label="x"', ""))
-        self.assertIn('android:label="Alerta Fumaça AM"', patched)
+        self.assertIn('android:label="RespirAR Amazonas"', patched)
         minidom.parseString(patched)
 
 
@@ -102,7 +102,7 @@ class PlistTests(unittest.TestCase):
             "\t<key>CFBundleName</key>\n\t<string>alerta_fumaca_am</string>",
         )
         patched, _ = patch_plist(template)
-        self.assertEqual(patched.count("Alerta Fumaça AM"), 2)
+        self.assertEqual(patched.count("RespirAR Amazonas"), 2)
         self.assertNotIn("alerta_fumaca_am", patched)
         self.assertNotIn("Alerta Fumaca Am", patched)
         minidom.parseString(patched)
@@ -114,8 +114,8 @@ class PlistTests(unittest.TestCase):
             [
                 "NSLocationWhenInUseUsageDescription",
                 "LSApplicationQueriesSchemes",
-                "CFBundleDisplayName=Alerta Fumaça AM",
-                "CFBundleName=Alerta Fumaça AM",
+                "CFBundleDisplayName=RespirAR Amazonas",
+                "CFBundleName=RespirAR Amazonas",
             ],
         )
         minidom.parseString(patched)

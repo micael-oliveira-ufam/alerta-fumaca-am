@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Gera o APK de release do Alerta Fumaça AM na sua máquina.
+# Gera o APK de release do RespirAR Amazonas na sua máquina.
 #
 # Uso:
 #   tool/gerar_apk.sh                              # modo local (sem servidor)

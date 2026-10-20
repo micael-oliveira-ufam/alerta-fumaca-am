@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Versionamento do Alerta Fumaça AM (app Flutter + servidor FastAPI, uma versão só).
+"""Versionamento do RespirAR Amazonas (app Flutter + servidor FastAPI, uma versão só).
 
 Fonte única: o arquivo `VERSION` (SemVer: MAIOR.MENOR.PATCH). Este script mantém as cópias
 sincronizadas e confere o changelog:

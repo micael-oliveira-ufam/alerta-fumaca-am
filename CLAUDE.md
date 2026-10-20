@@ -60,7 +60,7 @@ Exemplo de fecho:
 
 - **Sem GitHub Actions e sem APK no repositório.** O usuário pediu explicitamente: o repositório não compila o APK nem usa Actions. O APK é gerado localmente por `tool/gerar_apk.sh`. Não recriar `.github/workflows/` nem commitar `*.apk`.
 - **Nunca commitar segredos.** `.env`, senhas, `ADMIN_TOKEN`, chaves e dados reais de usuários ficam fora do Git (ver `.gitignore`). Se um segredo aparecer em saída ou arquivo, avisar o usuário.
-- **Nome do app:** exibido como **Alerta Fumaça AM** (com acento e espaços). O pacote Dart continua `alerta_fumaca_am`.
+- **Nome do app:** exibido como **RespirAR Amazonas** (desde a 1.3.0; antes era "Alerta Fumaça AM"). O pacote Dart continua `alerta_fumaca_am`. Ao trocar o nome de novo, atualizar `appDisplayName`, `tool/apply_platform_config.py`, textos do app e do servidor, README e subir `kLgpdTermsVersion` (o nome aparece no termo).
 - **Tela cheia:** o app abre em modo imersivo (`immersiveSticky`), reaplicado quando o app volta ao primeiro plano.
 - **Privacidade (LGPD):** nada de dado pessoal novo sem passar pelo termo de consentimento. Localização é anonimizada antes do envio. Qualquer campo novo no servidor deve ser opcional e discutido antes.
 - **Caminho do projeto sem acentos e sem espaços.** Pastas como `Projeto Alerta Fumaça AM` quebram o servidor de análise do Dart (“Unexpected end of input”). Avisar o usuário se vir esse caminho.
@@ -318,6 +318,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 4. Retirou “caem diretamente na corrente sanguínea” e “riscos toxicológicos a longo prazo”.
 5. Em “leite”, retirou a frase de que soro fisiológico é líquido essencial; em “queimar casca/borra”, retirou a parte do monóxido de carbono.
 6. Manteve o “Alerta vermelho de farmácia” (prudência), marcando a frase sobre o coração como não conferida.
+
+### 4.11 Renomeação para RespirAR Amazonas e nova splash — versão 1.3.0
+- Pedido: “Altere o nome do aplicativo para RespirAR Amazonas, melhore a tela de splash fornecendo mais informações e também uma animação melhor ao iniciar.”
+- Antes, o agente discutiu vantagens e desvantagens dos nomes. **Verificado:** VIGIAR é nome de programa de vigilância em saúde (por isso foi desaconselhado). **Não verificado:** disponibilidade de “RespirAR” nas lojas, no INPI e em domínios.
+- Nome trocado em app, servidor, scripts e README; `kLgpdTermsVersion` 1.0 -> 1.1 (o usuário reaceita o termo).
+- Splash: fumaça animada, anéis de pulso, entrada escalonada, recursos, versão, barra de progresso, toque para pular, respeita “remover animações”. Dart não compilado no sandbox; aparência e fluidez **não foram vistas** (nem em emulador).
+- O ícone do app (`assets/icon`) e a splash nativa **não foram alterados** e ainda são os da marca anterior; refazer o ícone é decisão aberta.
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).

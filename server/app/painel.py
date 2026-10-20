@@ -244,7 +244,7 @@ def create_painel_app(settings: Settings | None = None, engine: Engine | None = 
             engine.dispose()
 
     app = FastAPI(
-        title="Alerta Fumaça AM — Painel",
+        title="RespirAR Amazonas — Painel",
         docs_url=None, redoc_url=None, openapi_url=None,
         lifespan=lifespan,
     )

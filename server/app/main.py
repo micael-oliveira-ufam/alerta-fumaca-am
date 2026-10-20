@@ -1,4 +1,4 @@
-"""API do Alerta Fumaça AM.
+"""API do RespirAR Amazonas.
 
 Endpoints
 ---------
@@ -42,7 +42,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 
 
 def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
@@ -59,7 +59,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             engine.dispose()
 
     app = FastAPI(
-        title="Alerta Fumaça AM — API",
+        title="RespirAR Amazonas — API",
         version=APP_VERSION,
         description=(
             "Registro anonimizado de respostas do questionário de sintomas, estatísticas "

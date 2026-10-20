@@ -1,7 +1,7 @@
 name: alerta_fumaca_am
 description: Orientação e triagem educativa durante episódios de fumaça no Amazonas, com focos de calor do INPE por satélite, qualidade do ar estimada e estatísticas anonimizadas dos sintomas.
 publish_to: 'none'
-version: 1.2.0+3
+version: 1.3.0+4
 environment:
   sdk: '>=3.6.0 <4.0.0'
 

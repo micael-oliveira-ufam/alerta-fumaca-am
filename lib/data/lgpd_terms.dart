@@ -7,7 +7,7 @@
 /// redigido pela equipe técnica a partir da LGPD e do comportamento real do app. Antes
 /// de divulgar ao público, a UFAM/FCF deve revisar, designar formalmente o controlador
 /// e o canal do encarregado (art. 41) e definir o prazo de retenção.
-const kLgpdTermsVersion = '1.0';
+const kLgpdTermsVersion = '1.1';
 
 class TermsSection {
   const TermsSection(this.title, this.paragraphs);
@@ -22,7 +22,7 @@ const kLgpdSummary =
 
 const kLgpdSections = <TermsSection>[
   TermsSection('1. Quem somos e para que serve', [
-    'O Alerta Fumaça AM é um projeto acadêmico da Faculdade de Ciências Farmacêuticas (FCF) '
+    'O RespirAR Amazonas é um projeto acadêmico da Faculdade de Ciências Farmacêuticas (FCF) '
         'da Universidade Federal do Amazonas (UFAM). Oferece orientação educativa e triagem de '
         'sintomas em episódios de fumaça. Não faz diagnóstico e não substitui atendimento médico.',
     'Controlador dos dados enviados: equipe do projeto (FCF/UFAM), representada pelos '

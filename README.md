@@ -1,4 +1,4 @@
-# Alerta Fumaça AM
+# RespirAR Amazonas
 
 App Flutter (Android e iOS) para **orientação e triagem educativa** durante episódios de fumaça no Amazonas, com focos de calor por satélite (INPE), qualidade do ar estimada e estatísticas anonimizadas dos sintomas. Acompanha um servidor (FastAPI + PostgreSQL) que sobe com um comando via Docker.
 
@@ -10,7 +10,7 @@ Projeto da UFAM / FCF. Desenvolvedores: Micael Davi Lima de Oliveira e Elias de 
 
 Este repositório contém **apenas o código-fonte**: não há APK pronto nem pipeline de compilação. Gere o app na sua máquina (seção "Compilar o app"). Sem servidor configurado (`API_BASE_URL` ou o endereço no cartão *Sobre → Servidor*), o app roda em **modo local**: nenhuma resposta sai do aparelho.
 
-Nome exibido do aplicativo: **Alerta Fumaça AM** (o script `tool/apply_platform_config.py` grava esse nome no Android e no iOS). O app abre em **tela cheia** (modo imersivo; as barras do sistema voltam com um deslize na borda da tela).
+Nome exibido do aplicativo: **RespirAR Amazonas** (o script `tool/apply_platform_config.py` grava esse nome no Android e no iOS). O app abre em **tela cheia** (modo imersivo; as barras do sistema voltam com um deslize na borda da tela).
 
 ## O que o app faz
 

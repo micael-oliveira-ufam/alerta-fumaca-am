@@ -36,7 +36,7 @@ class AboutScreen extends StatelessWidget {
                 Image.asset('assets/icon/app_icon.png', width: 96, height: 96),
                 const SizedBox(height: 12),
                 const Text(
-                  'Alerta Fumaça AM',
+                  'RespirAR Amazonas',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
                 ),
                 const SizedBox(height: 4),

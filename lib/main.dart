@@ -6,7 +6,7 @@ import 'services/api_config.dart';
 import 'theme/app_theme.dart';
 
 /// Nome exibido do aplicativo.
-const appDisplayName = 'Alerta Fumaça AM';
+const appDisplayName = 'RespirAR Amazonas';
 
 Future<void> _enterFullscreen() =>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);

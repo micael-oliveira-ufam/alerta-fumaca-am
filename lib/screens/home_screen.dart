@@ -25,7 +25,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alerta Fumaça AM', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('RespirAR Amazonas', style: TextStyle(fontWeight: FontWeight.w800)),
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,

@@ -24,7 +24,7 @@ import re
 import sys
 from pathlib import Path
 
-APP_NAME = "Alerta Fumaça AM"
+APP_NAME = "RespirAR Amazonas"
 
 MANIFEST = Path("android/app/src/main/AndroidManifest.xml")
 PLIST = Path("ios/Runner/Info.plist")
@@ -63,7 +63,7 @@ def patch_manifest(text: str) -> tuple[str, list[str]]:
         text = text[:end] + block + text[end:]
         added += missing
 
-    # 1b) Nome exibido sob o ícone: "Alerta Fumaça AM" (o template usa o nome do pacote, com "_").
+    # 1b) Nome exibido sob o ícone: "RespirAR Amazonas" (o template usa o nome do pacote, com "_").
     app_tag = re.search(r"<application\b[^>]*>", text, re.S)
     if app_tag is None:
         raise ValueError("AndroidManifest.xml sem tag <application>.")
