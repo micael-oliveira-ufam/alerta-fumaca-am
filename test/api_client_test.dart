@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:alerta_fumaca_am/logic/risk_assessment.dart';
-import 'package:alerta_fumaca_am/services/api_client.dart';
+import 'package:respirar_amazonas/logic/risk_assessment.dart';
+import 'package:respirar_amazonas/services/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';

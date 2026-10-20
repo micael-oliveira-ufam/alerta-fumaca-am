@@ -1,4 +1,4 @@
-import 'package:alerta_fumaca_am/logic/map_layers.dart';
+import 'package:respirar_amazonas/logic/map_layers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,6 +1,6 @@
-import 'package:alerta_fumaca_am/logic/fire_stats.dart';
-import 'package:alerta_fumaca_am/models/fire_hotspot.dart';
-import 'package:alerta_fumaca_am/models/fire_satellite.dart';
+import 'package:respirar_amazonas/logic/fire_stats.dart';
+import 'package:respirar_amazonas/models/fire_hotspot.dart';
+import 'package:respirar_amazonas/models/fire_satellite.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FireHotspot _h({

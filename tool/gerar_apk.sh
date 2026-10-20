@@ -21,7 +21,7 @@ if printf '%s' "$PWD" | LC_ALL=C grep -q '[^ -~]' || [[ "$PWD" == *" "* ]]; then
   echo "AVISO: o caminho do projeto tem acentos ou espaços:"
   echo "  $PWD"
   echo "  Se 'flutter analyze' falhar com 'Unexpected end of input', mova a pasta para um caminho"
-  echo "  só com letras, números e hífens (ex.: ~/projetos/alerta-fumaca-am) e rode de novo."
+  echo "  só com letras, números e hífens (ex.: ~/projetos/respirar-amazonas) e rode de novo."
 fi
 
 python3 tool/versao.py verificar || { echo 'Corrija a versão antes de gerar o APK (tool/versao.py).'; exit 1; }
@@ -30,7 +30,7 @@ command -v flutter >/dev/null || { echo "Flutter não encontrado. Instale: https
 
 # Gera android/ e ios/ se ainda não existem (não são versionadas).
 if [[ ! -d android ]]; then
-  flutter create --platforms=android,ios --org br.ufam.fcf --project-name alerta_fumaca_am .
+  flutter create --platforms=android,ios --org br.ufam.fcf --project-name respirar_amazonas .
   rm -f test/widget_test.dart
 fi
 

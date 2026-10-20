@@ -1,6 +1,6 @@
-import 'package:alerta_fumaca_am/models/fire_hotspot.dart';
-import 'package:alerta_fumaca_am/models/fire_satellite.dart';
-import 'package:alerta_fumaca_am/services/inpe_fire_service.dart';
+import 'package:respirar_amazonas/models/fire_hotspot.dart';
+import 'package:respirar_amazonas/models/fire_satellite.dart';
+import 'package:respirar_amazonas/services/inpe_fire_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Amostra no formato do WFS do INPE. O primeiro foco reproduz o caso real em que, ao pedir

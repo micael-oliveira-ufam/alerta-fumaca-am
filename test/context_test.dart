@@ -1,8 +1,8 @@
-import 'package:alerta_fumaca_am/data/references.dart';
-import 'package:alerta_fumaca_am/logic/context_advice.dart';
-import 'package:alerta_fumaca_am/logic/risk_assessment.dart';
-import 'package:alerta_fumaca_am/models/smoke_context.dart';
-import 'package:alerta_fumaca_am/services/api_client.dart';
+import 'package:respirar_amazonas/data/references.dart';
+import 'package:respirar_amazonas/logic/context_advice.dart';
+import 'package:respirar_amazonas/logic/risk_assessment.dart';
+import 'package:respirar_amazonas/models/smoke_context.dart';
+import 'package:respirar_amazonas/services/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> _payload({SmokeContext? context}) => buildAnswerPayload(

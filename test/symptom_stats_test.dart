@@ -1,6 +1,6 @@
-import 'package:alerta_fumaca_am/logic/risk_assessment.dart';
-import 'package:alerta_fumaca_am/logic/symptom_stats.dart';
-import 'package:alerta_fumaca_am/models/answer_record.dart';
+import 'package:respirar_amazonas/logic/risk_assessment.dart';
+import 'package:respirar_amazonas/logic/symptom_stats.dart';
+import 'package:respirar_amazonas/models/answer_record.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _now = DateTime.utc(2026, 10, 19, 12);

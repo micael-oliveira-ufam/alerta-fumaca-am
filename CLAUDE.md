@@ -9,7 +9,7 @@ Instruções permanentes para o agente (Claude Code) que trabalha neste reposit�
 4. [Histórico detalhado](#4-histórico-detalhado-do-que-foi-feito) — o que já foi feito, na ordem, e o que ficou pendente ou não verificado.
 
 Autores: Micael Davi Lima de Oliveira e Elias de Souza Barros (FCF · UFAM).
-Repositório: https://github.com/micael-oliveira-ufam/alerta-fumaca-am (ramo `main`).
+Repositório: https://github.com/micael-oliveira-ufam/respirar-amazonas (ramo `main`).
 
 ---
 
@@ -60,7 +60,7 @@ Exemplo de fecho:
 
 - **Sem GitHub Actions e sem APK no repositório.** O usuário pediu explicitamente: o repositório não compila o APK nem usa Actions. O APK é gerado localmente por `tool/gerar_apk.sh`. Não recriar `.github/workflows/` nem commitar `*.apk`.
 - **Nunca commitar segredos.** `.env`, senhas, `ADMIN_TOKEN`, chaves e dados reais de usuários ficam fora do Git (ver `.gitignore`). Se um segredo aparecer em saída ou arquivo, avisar o usuário.
-- **Nome do app:** exibido como **RespirAR Amazonas** (desde a 1.3.0; antes era "Alerta Fumaça AM"). O pacote Dart continua `alerta_fumaca_am`. Ao trocar o nome de novo, atualizar `appDisplayName`, `tool/apply_platform_config.py`, textos do app e do servidor, README e subir `kLgpdTermsVersion` (o nome aparece no termo).
+- **Nome do app:** exibido como **RespirAR Amazonas** (desde a 1.3.0; antes era "Alerta Fumaça AM"). O pacote Dart é `respirar_amazonas` e o repositório é `respirar-amazonas` (desde a 1.3.1). Ao trocar o nome de novo, atualizar `appDisplayName`, `tool/apply_platform_config.py`, textos do app e do servidor, README e subir `kLgpdTermsVersion` (o nome aparece no termo).
 - **Tela cheia:** o app abre em modo imersivo (`immersiveSticky`), reaplicado quando o app volta ao primeiro plano.
 - **Privacidade (LGPD):** nada de dado pessoal novo sem passar pelo termo de consentimento. Localização é anonimizada antes do envio. Qualquer campo novo no servidor deve ser opcional e discutido antes.
 - **Caminho do projeto sem acentos e sem espaços.** Pastas como `Projeto Alerta Fumaça AM` quebram o servidor de análise do Dart (“Unexpected end of input”). Avisar o usuário se vir esse caminho.
@@ -108,7 +108,7 @@ flutter test
 
 ### 1.7 Entrega
 
-- Arquivo pronto para o usuário: enviar com `SendUserFile`. Pacote final: `.zip` da versão atual (`alerta-fumaca-am-vX.Y.Z-<commit>.zip`), sem `.git`, `build`, `dist`, `.env`.
+- Arquivo pronto para o usuário: enviar com `SendUserFile`. Pacote final: `.zip` da versão atual (`respirar-amazonas-vX.Y.Z-<commit>.zip`), sem `.git`, `build`, `dist`, `.env`.
 - Ao final, dizer em poucas linhas: o que mudou, o que foi verificado, o que **não** foi, e o que o usuário precisa rodar.
 - Terminar com a pergunta de próximos passos (ordem 1.3).
 
@@ -325,6 +325,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Nome trocado em app, servidor, scripts e README; `kLgpdTermsVersion` 1.0 -> 1.1 (o usuário reaceita o termo).
 - Splash: fumaça animada, anéis de pulso, entrada escalonada, recursos, versão, barra de progresso, toque para pular, respeita “remover animações”. Dart não compilado no sandbox; aparência e fluidez **não foram vistas** (nem em emulador).
 - O ícone do app (`assets/icon`) e a splash nativa **não foram alterados** e ainda são os da marca anterior; refazer o ícone é decisão aberta.
+
+### 4.12 Renomeação do pacote e do repositório — versão 1.3.1
+- Pedido: “Altere o nome do pacote e do repositório.” Os nomes não foram especificados; o agente **inferiu** `respirar_amazonas` (pacote Dart) e `respirar-amazonas` (repositório) a partir do nome do app. Confirmar.
+- Pacote: `pubspec.yaml`, todos os imports `package:` em `test/`, `tool/gerar_apk.sh`, README e testes de `tool/`. **Verificado:** nenhum `package:alerta_fumaca_am` restante (grep).
+- **Efeito no Android/iOS:** o identificador do app deriva de `--org br.ufam.fcf` + nome do pacote (`br.ufam.fcf.respirar_amazonas`). Quem tem a versão antiga instalada terá **um segundo app**, não uma atualização. Aceitável antes de publicar; confirmar com o usuário.
+- **Repositório:** o agente **não consegue renomear** (o proxy devolve 403 para escrita de configurações). O usuário deve renomear em *Settings → General → Repository name* e depois rodar `git remote set-url origin https://github.com/micael-oliveira-ufam/respirar-amazonas.git`. O GitHub redireciona o nome antigo.
+- A pasta local também pode ser renomeada (sem acentos e sem espaços).
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).

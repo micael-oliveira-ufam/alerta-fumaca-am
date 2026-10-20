@@ -1,6 +1,6 @@
-import 'package:alerta_fumaca_am/data/lgpd_terms.dart';
-import 'package:alerta_fumaca_am/screens/lgpd_screen.dart';
-import 'package:alerta_fumaca_am/services/report_repository.dart';
+import 'package:respirar_amazonas/data/lgpd_terms.dart';
+import 'package:respirar_amazonas/screens/lgpd_screen.dart';
+import 'package:respirar_amazonas/services/report_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

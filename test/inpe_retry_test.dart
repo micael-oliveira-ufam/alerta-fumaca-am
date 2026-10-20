@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:alerta_fumaca_am/services/inpe_fire_service.dart';
+import 'package:respirar_amazonas/services/inpe_fire_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';

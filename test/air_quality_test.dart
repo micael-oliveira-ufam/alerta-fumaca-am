@@ -1,4 +1,4 @@
-import 'package:alerta_fumaca_am/services/air_quality_service.dart';
+import 'package:respirar_amazonas/services/air_quality_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// ATENÇÃO: estas amostras são SINTÉTICAS, escritas a partir da documentação do Open-Meteo

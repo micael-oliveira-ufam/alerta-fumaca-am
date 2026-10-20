@@ -83,9 +83,9 @@ class ManifestTests(unittest.TestCase):
 
 
     def test_nome_do_template_com_underscores_e_trocado(self):
-        template = MANIFEST_NO_QUERIES.replace('android:label="x"', 'android:label="alerta_fumaca_am"')
+        template = MANIFEST_NO_QUERIES.replace('android:label="x"', 'android:label="respirar_amazonas"')
         patched, _ = patch_manifest(template)
-        self.assertNotIn("alerta_fumaca_am", patched)
+        self.assertNotIn("respirar_amazonas", patched)
         self.assertIn('android:label="RespirAR Amazonas"', patched)
 
     def test_application_sem_label_recebe_o_nome(self):
@@ -99,11 +99,11 @@ class PlistTests(unittest.TestCase):
         template = PLIST.replace(
             "<key>CFBundleName</key>\n\t<string>x</string>",
             "<key>CFBundleDisplayName</key>\n\t<string>Alerta Fumaca Am</string>\n"
-            "\t<key>CFBundleName</key>\n\t<string>alerta_fumaca_am</string>",
+            "\t<key>CFBundleName</key>\n\t<string>respirar_amazonas</string>",
         )
         patched, _ = patch_plist(template)
         self.assertEqual(patched.count("RespirAR Amazonas"), 2)
-        self.assertNotIn("alerta_fumaca_am", patched)
+        self.assertNotIn("respirar_amazonas", patched)
         self.assertNotIn("Alerta Fumaca Am", patched)
         minidom.parseString(patched)
 

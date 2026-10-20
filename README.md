@@ -110,7 +110,7 @@ tool/gerar_apk.sh https://SEU-SERVIDOR            # APK em dist/Alerta-Fumaca-AM
 Requisito: Flutter 3.27 ou superior (desenvolvido para **3.27.x**). As pastas `android/` e `ios/` **não** são versionadas; são geradas assim:
 
 ```bash
-flutter create --platforms=android,ios --org br.ufam.fcf --project-name alerta_fumaca_am .
+flutter create --platforms=android,ios --org br.ufam.fcf --project-name respirar_amazonas .
 rm -f test/widget_test.dart
 python3 tool/apply_platform_config.py            # INTERNET, localização, discagem (idempotente)
 python3 tool/apply_platform_config.py --check

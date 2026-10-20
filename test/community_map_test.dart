@@ -1,7 +1,7 @@
-import 'package:alerta_fumaca_am/logic/community_map.dart';
-import 'package:alerta_fumaca_am/logic/risk_assessment.dart';
-import 'package:alerta_fumaca_am/models/smoke_report.dart';
-import 'package:alerta_fumaca_am/services/api_client.dart';
+import 'package:respirar_amazonas/logic/community_map.dart';
+import 'package:respirar_amazonas/logic/risk_assessment.dart';
+import 'package:respirar_amazonas/models/smoke_report.dart';
+import 'package:respirar_amazonas/services/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 SmokeReport _r(double lat, double lon, RiskLevel level) => SmokeReport(

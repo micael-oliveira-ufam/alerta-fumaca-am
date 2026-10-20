@@ -12,6 +12,14 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.3.1.
+
+## [1.3.1] - 2026-10-19
+
+### Alterado
+- **Pacote Dart `alerta_fumaca_am` -> `respirar_amazonas`** e **repositório `alerta-fumaca-am` -> `respirar-amazonas`** (nomes inferidos do nome do app). Atualizados `pubspec.yaml`, imports dos testes, scripts, README e links. O renome do repositório no GitHub precisa ser feito pelo usuário (o ambiente do agente não tem permissão).
+- Atenção: o identificador do app (`br.ufam.fcf.<pacote>`) muda, então um aparelho com a versão antiga instalada receberá um segundo app, não uma atualização.
+
 Nenhuma mudança desde a 1.3.0.
 
 ## [1.3.0] - 2026-10-19
@@ -99,6 +107,6 @@ Primeira versão: orientação e triagem educativa durante episódios de fumaça
 - API FastAPI com PostgreSQL 16, Docker Compose e testes automatizados.
 - Pipeline no GitHub Actions: testes do servidor (SQLite e PostgreSQL), teste do Compose, análise e testes do Flutter, e APK anexado ao release ao enviar a tag `vX.Y.Z`.
 
-[Não lançado]: https://github.com/micael-oliveira-ufam/alerta-fumaca-am/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/micael-oliveira-ufam/alerta-fumaca-am/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/micael-oliveira-ufam/alerta-fumaca-am/releases/tag/v1.0.0
+[Não lançado]: https://github.com/micael-oliveira-ufam/respirar-amazonas/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/micael-oliveira-ufam/respirar-amazonas/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/micael-oliveira-ufam/respirar-amazonas/releases/tag/v1.0.0

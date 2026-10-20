@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:alerta_fumaca_am/logic/risk_assessment.dart';
+import 'package:respirar_amazonas/logic/risk_assessment.dart';
 
 Map<String, int> none() => {for (final i in symptomItems) i.id: 0};
 

@@ -1,7 +1,7 @@
-import 'package:alerta_fumaca_am/data/guidance_content.dart';
-import 'package:alerta_fumaca_am/data/pdf_content.dart';
-import 'package:alerta_fumaca_am/data/references.dart';
-import 'package:alerta_fumaca_am/services/air_quality_service.dart';
+import 'package:respirar_amazonas/data/guidance_content.dart';
+import 'package:respirar_amazonas/data/pdf_content.dart';
+import 'package:respirar_amazonas/data/references.dart';
+import 'package:respirar_amazonas/services/air_quality_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
