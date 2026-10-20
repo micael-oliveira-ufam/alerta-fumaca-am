@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
 # Sobe o servidor (PostgreSQL + API + painel + túnel Cloudflare) com Docker.
 #
-# Uso: tool/iniciar_servidor.sh
+# Uso: bash tool/iniciar_servidor.sh
 #
-# Na primeira execução cria o arquivo .env com senhas e token fortes, gerados aqui.
+# Funciona no macOS (bash 3.2, BSD sed/awk) e no Linux. Na primeira execução cria o
+# arquivo .env com senhas e token aleatórios gerados aqui.
 set -euo pipefail
-cd "$(dirname "$0")/../"
+cd "$(dirname "$0")/.."
 
-command -v docker >/dev/null || { echo "Docker não encontrado. Instale o Docker Desktop ou o Docker Engine."; exit 1; }
+command -v docker >/dev/null || { echo "Docker não encontrado. Instale o Docker Desktop (macOS) ou o Docker Engine (Linux)."; exit 1; }
+docker info >/dev/null 2>&1 || { echo "O Docker não está rodando. Abra o Docker Desktop e tente de novo."; exit 1; }
+
+# Troca o valor de uma variável no .env sem sed -i (a sintaxe de -i difere entre macOS e Linux).
+definir_var() {
+  local chave="$1" valor="$2" tmp
+  tmp="$(mktemp)"
+  awk -v k="$chave" -v v="$valor" '
+    index($0, k "=") == 1 { print k "=" v; next }
+    { print }
+  ' .env > "$tmp"
+  mv "$tmp" .env
+}
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  # Troca os valores de exemplo por segredos aleatórios (o .env não vai para o Git).
   senha_db="$(openssl rand -hex 24)"
   token="$(openssl rand -hex 24)"
-  sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$senha_db/" .env
-  sed -i "s/^ADMIN_TOKEN=.*/ADMIN_TOKEN=$token/" .env
+  definir_var POSTGRES_PASSWORD "$senha_db"
+  definir_var ADMIN_TOKEN "$token"
   echo "Arquivo .env criado. ADMIN_TOKEN (guarde para o painel e a exportação CSV): $token"
 fi
 

@@ -38,7 +38,11 @@ APK="build/app/outputs/flutter-apk/app-release.apk"
 DEST="dist/Alerta-Fumaca-AM.apk"
 mkdir -p dist
 cp "$APK" "$DEST"
-( cd dist && sha256sum Alerta-Fumaca-AM.apk > SHA256SUMS.txt )
+if command -v sha256sum >/dev/null; then
+  ( cd dist && sha256sum Alerta-Fumaca-AM.apk > SHA256SUMS.txt )
+else
+  ( cd dist && shasum -a 256 Alerta-Fumaca-AM.apk > SHA256SUMS.txt )  # macOS
+fi
 echo
 echo "APK pronto: $DEST"
 echo "Versão: $(cat VERSION)"
