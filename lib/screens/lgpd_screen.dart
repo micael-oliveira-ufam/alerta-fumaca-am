@@ -105,10 +105,13 @@ class _LgpdScreenState extends State<LgpdScreen> {
                 ),
               ),
               if (!widget.onlyRead)
-                Container(
+                // A cor de fundo fica no Material (e não num DecoratedBox), para que o
+                // CheckboxListTile e os efeitos de toque apareçam sobre ela.
+                Material(
+                  color: Colors.white,
+                  child: Container(
                   padding: const EdgeInsets.fromLTRB(8, 4, 16, 12),
                   decoration: const BoxDecoration(
-                    color: Colors.white,
                     border: Border(top: BorderSide(color: AppColors.border)),
                   ),
                   child: Column(
@@ -132,6 +135,7 @@ class _LgpdScreenState extends State<LgpdScreen> {
                       ),
                     ],
                   ),
+                ),
                 ),
             ],
           ),
