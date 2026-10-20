@@ -410,6 +410,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.24 Broken pipe no instalador — versão 1.6.8
 - Saída do usuário: o Flutter baixou o Dart SDK e compilou a ferramenta, mas terminou em `FileSystemException: writeFrom failed ... Broken pipe`. Causa: **bug meu** (`flutter --version | head -1`, versão 1.6.6). **Verificado:** reproduzido o padrão e a correção (captura em variável) com um `flutter` falso; o trecho de `java -version` recebeu a mesma correção. **Não testado:** Flutter real. Lição: nunca cortar a saída de `flutter` com `head` em pipe.
 
+### 4.25 Android SDK sem plataformas — versão 1.6.9
+- Saída do usuário (`flutter doctor -v`, Linux Mint 22.3): Flutter 3.47.7 / Dart 3.13.5 **OK**; Android toolchain ✗ (`~/Android/Sdk/platforms` vazio, "Unable to locate Android SDK"); Chrome e rede OK; Linux toolchain ✗ (clang, CMake, ninja, GTK: irrelevante para APK). Causa do item Android: o instalador instalava só `platform-tools` (**falha minha**). Correção: instala também a plataforma e o build-tools mais recentes. **Verificado:** o filtro com `sdkmanager` falso (ignora `-rc1`/`-ext5`, escolhe o maior número; caminho sem rede). **Não verificado:** o formato real de `sdkmanager --list` (assumi colunas separadas por `|`), se a plataforma mais nova é a que o Flutter/Gradle pede (o Gradle baixa o que faltar com as licenças aceitas) e se o passo 3 (cmdline-tools) já rodou na máquina do usuário.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

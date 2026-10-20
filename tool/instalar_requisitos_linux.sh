@@ -76,8 +76,23 @@ fi
 export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK"
 
 echo "== 4/5 Pacotes do SDK e licenças"
-yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-"$SDK/cmdline-tools/latest/bin/sdkmanager" "platform-tools"
+yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses >/dev/null || true
+SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+# Descobre a plataforma e o build-tools mais recentes publicados (não fixo números aqui).
+# Só versões finais: o espaço/barra exigido após o número exclui '-rc1', '-ext5' e similares.
+# A saída é capturada inteira numa variável (sem `| head`, que fecharia o pipe).
+lista_sdk="$("$SDKM" --sdk_root="$SDK" --list 2>/dev/null || true)"
+plataforma="$(printf '%s\n' "$lista_sdk" | grep -Eo 'platforms;android-[0-9]+[[:space:]|]' | tr -d '[:blank:]|' | sort -t- -k2 -n -u | tail -n 1 || true)"
+buildtools="$(printf '%s\n' "$lista_sdk" | grep -Eo 'build-tools;[0-9]+\.[0-9]+\.[0-9]+[[:space:]|]' | tr -d '[:blank:]|' | sort -V -u | tail -n 1 || true)"
+if [[ -z "$plataforma" || -z "$buildtools" ]]; then
+  echo "AVISO: não consegui listar plataformas/build-tools (sem rede ou sdkmanager falhou)."
+  echo "Instale manualmente:  $SDKM --sdk_root=$SDK \"platform-tools\" \"platforms;android-35\" \"build-tools;35.0.0\""
+  echo "(substitua os números pelos mais recentes de:  $SDKM --list)"
+  "$SDKM" --sdk_root="$SDK" "platform-tools"
+else
+  echo "Instalando: platform-tools, $plataforma, $buildtools"
+  "$SDKM" --sdk_root="$SDK" "platform-tools" "$plataforma" "$buildtools"
+fi
 flutter config --android-sdk "$SDK" >/dev/null
 yes | flutter doctor --android-licenses >/dev/null 2>&1 || true
 
@@ -94,4 +109,5 @@ echo
 flutter doctor -v || true
 echo
 echo "Abra um NOVO terminal (ou rode: source ~/.bashrc) e então:  bash tool/gerar_apk.sh <link do túnel>"
-echo "Se o 'flutter doctor' mostrar [!] ou [✗] em Android toolchain, corrija o item indicado."
+echo "Os itens 'Linux toolchain' (clang, CMake, GTK) do doctor são só para apps de desktop: pode ignorar para gerar o APK."
+echo "Se 'Android toolchain' ainda mostrar [!] ou [✗], envie a saída de:  ls -R $SDK | head -40"
