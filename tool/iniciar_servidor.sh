@@ -107,10 +107,32 @@ for var in API_PORT PAINEL_PORT; do
     if grep -q "^$var=" .env; then definir_var "$var" "$nova"; else echo "$var=$nova" >> .env; fi
   fi
 done
+
+# Sobe os serviços. Se o Docker ainda recusar uma porta (alguém a ocupou depois do teste, ou
+# ela só está ocupada em outra interface), troca a porta que falhou pela próxima livre e
+# tenta de novo, até 5 vezes.
+for tentativa in 1 2 3 4 5; do
+  saida="$(mktemp)"
+  if "${COMPOSE[@]}" up -d --build 2>&1 | tee "$saida"; then
+    # pipefail: o status é o do compose, não o do tee
+    rm -f "$saida"; break
+  fi
+  ocupada="$(grep -Eo '(Bind for [0-9.]+:|:)[0-9]+ failed: port is already allocated|address already in use' "$saida" | grep -Eo '[0-9]{2,5}' | head -n 1 || true)"
+  rm -f "$saida"
+  if [[ -z "$ocupada" ]]; then echo "Falha ao subir os serviços (veja a mensagem acima)."; exit 1; fi
+  var=""
+  [[ "$ocupada" == "$(ler_var API_PORT)" ]] && var=API_PORT
+  [[ "$ocupada" == "$(ler_var PAINEL_PORT)" ]] && var=PAINEL_PORT
+  if [[ -z "$var" ]]; then echo "A porta $ocupada está ocupada, mas não é a do painel nem a da API. Libere-a e rode de novo."; exit 1; fi
+  nova=$((ocupada + 1))
+  while porta_em_uso "$nova"; do nova=$((nova + 1)); done
+  echo "A porta $ocupada foi recusada pelo Docker. Trocando $var para $nova e tentando de novo (tentativa $tentativa de 5)."
+  definir_var "$var" "$nova"
+  [[ $tentativa -eq 5 ]] && { echo "Não consegui uma porta livre depois de 5 tentativas."; exit 1; }
+done
+
 API_PORTA="$(ler_var API_PORT)"; API_PORTA="${API_PORTA:-8000}"
 PAINEL_PORTA="$(ler_var PAINEL_PORT)"; PAINEL_PORTA="${PAINEL_PORTA:-8080}"
-
-"${COMPOSE[@]}" up -d --build
 
 echo "Aguardando a API..."
 for _ in $(seq 1 30); do

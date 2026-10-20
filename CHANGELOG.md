@@ -12,7 +12,12 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.4.
+Nenhuma mudança desde a 1.6.5.
+
+## [1.6.5] - 2026-10-20
+
+### Alterado
+- `tool/iniciar_servidor.sh`: se o Docker recusar uma porta mesmo depois do teste prévio, o script troca a porta que falhou (painel ou API) pela próxima livre e tenta de novo, até 5 vezes, sem intervenção.
 
 ## [1.6.4] - 2026-10-20
 
