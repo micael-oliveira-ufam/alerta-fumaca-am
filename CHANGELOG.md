@@ -12,7 +12,17 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.1.
+Nenhuma mudança desde a 1.6.2.
+
+## [1.6.2] - 2026-10-20
+
+### Corrigido
+- Telefone local do CIT: o (92) 3305-4700 não foi confirmado em nenhuma fonte; substituído pelo (92) 3305-4702 (Abracit e lista de CIATox do Ministério da Saúde). O 0800 722 6001 foi confirmado.
+- Textos de saúde revisados contra fontes lidas: retiradas afirmações sem fonte (nebulização com soro, acroleína/formaldeído, "HEPA", raças de focinho curto, gato de boca aberta, limpeza dos olhos do pet com soro, "álcool destrói a máscara", locais de distribuição de máscaras, "sobrecarrega o coração").
+- Dica de máscara de pano/cirúrgica no resultado do questionário não exibe mais texto interno.
+
+### Alterado
+- Referências ampliadas de 10 para 20 (ASBAI, OMS/OPAS, OMS Europa, VIGIAR, SES-AM/FVS-RCP, CRMV-AM no lugar do CFMV, Anvisa, 3M, DGS, Manual MSD, EPA, imprensa especializada), todas lidas em 20/10/2026.
 
 ## [1.6.1] - 2026-10-20
 

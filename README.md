@@ -225,7 +225,7 @@ O que **não** vem das fontes: a pontuação e os limiares (8 e 15 pontos), os c
 
 - **Termo LGPD**: redigido pela equipe técnica, **não revisado por jurídico**. A UFAM/FCF deve designar o controlador e o canal do encarregado (art. 41) e fixar a retenção; ajuste `lgpd_terms.dart` e incremente a versão.
 
-- **Telefone do CIT-AM (0800 722 6001)**: informado pela equipe e **não confirmado** em fonte oficial. Confirme com o CIT; está em `lib/data/guidance_content.dart`. Número errado em caso de intoxicação pode causar dano.
+- **Telefones do CIT-AM**: 0800 722 6001 e (92) 3305-4702 **confirmados em 20/10/2026** (Abracit, lista de CIATox do Ministério da Saúde, matéria de A Crítica). O (92) 3305-4700, usado antes, **não foi confirmado** e foi retirado. Reconfirme periodicamente; estão em `lib/data/guidance_content.dart` e `lib/data/pdf_content.dart`.
 - **Logos da UFAM e do CIT**: confirme a autorização de uso das marcas.
 - **Limiares da triagem** (`moderateThreshold`, `highThreshold`, pontos) são provisórios e **não foram validados clinicamente**.
 - **Camadas de satélite da NASA (GIBS)**: os identificadores das camadas, formatos e níveis de zoom (`lib/logic/map_layers.dart`) seguem o padrão público da GIBS, mas **não foram conferidos contra o serviço** (o ambiente de desenvolvimento não alcançava o host). Se uma camada ficar em branco, o app avisa; confira o nome no catálogo da GIBS e ajuste. A imagem tem atraso, depende de nuvens e **não mede PM2,5**.

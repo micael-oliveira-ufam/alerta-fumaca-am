@@ -110,9 +110,9 @@ const questionSources = <QuestionSource>[
   ),
   QuestionSource(
     'Máscara usada',
-    [1, 2],
-    'N95/P100 (CDC e EPA); cirúrgica não recomendada (EPA). A pergunta usa "PFF2" por ser o '
-        'nome brasileiro; a equivalência com N95 é uma suposição do projeto, não está nas fontes lidas.',
+    [1, 2, 8, 11],
+    'N95/P100 (CDC e EPA); cirúrgica não recomendada (EPA). O Ministério da Saúde cita '
+        '"N95, PFF2 ou P100" e a OMS Europa, "FFP2 ou N95": a pergunta usa "PFF2", nome brasileiro.',
   ),
   QuestionSource(
     'Tempo ao ar livre e atividade física intensa',

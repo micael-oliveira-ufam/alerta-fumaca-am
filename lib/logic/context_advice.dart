@@ -50,10 +50,9 @@ List<ContextTip> contextTips(SmokeContext c, Profile profile) {
   if ((c.mask == MaskUse.surgicalOrCloth) &&
       (c.visibleSmoke == true || c.place == Place.outdoors)) {
     tips.add(const ContextTip(
-      'Máscara cirúrgica não é recomendada contra fumaça (EPA). Não encontramos nas fontes '
-      'lidas recomendação para máscara de pano comum. Por cautela, prefira PFF2/N95 bem '
-      'ajustada ao rosto.',
-      [2],
+      'Máscaras cirúrgicas e de pano protegem só contra partículas grossas e não são '
+      'recomendadas contra a fumaça (EPA). Prefira PFF2/N95 bem ajustada ao rosto.',
+      [2, 8, 9],
     ));
   }
   if (c.mask == MaskUse.none && c.visibleSmoke == true && c.place == Place.outdoors) {

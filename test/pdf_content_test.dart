@@ -26,6 +26,27 @@ void main() {
     }
   });
 
+  test('todo cartão de saúde e todo mito traz ao menos uma referência', () {
+    for (final c in allCards) {
+      expect(c.refs, isNotEmpty, reason: c.title);
+    }
+    for (final m in myths) {
+      expect(m.refs, isNotEmpty, reason: m.claim);
+    }
+  });
+
+  test('toda referência extra traz o texto interno de verificação e nome curto', () {
+    for (final r in extraReferences) {
+      expect(r.status.trim(), isNotEmpty, reason: '${r.id}');
+      expect(referenceShort[r.id], isNotNull, reason: '${r.id}');
+    }
+  });
+
+  test('o telefone local do CIT é o confirmado (3305-4702), não o 4700', () {
+    expect(kCitHugvPhoneAlt, '(92) 3305-4702');
+    expect(kCitHugvPhoneAltDial, '9233054702');
+  });
+
   test('alerta roxo começa onde a faixa "muito ruim" começa', () {
     expect(airCategoryOf(alertPurpleMinAqi), AirCategory.veryUnhealthy);
     expect(airCategoryOf(alertPurpleMinAqi - 1), AirCategory.unhealthy);

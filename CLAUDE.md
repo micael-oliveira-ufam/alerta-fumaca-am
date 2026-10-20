@@ -377,11 +377,25 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Fontes [8] (VIGIAR, Ministério da Saúde, 2ª ed.) e [9] (SES-AM/FVS-RCP, 18/09/2024) foram lidas e as referências dos mitos reajustadas ([8], [8,9], [1,8]); [5], [6], [7] seguem não consultadas.
 - `tool/teste_comunicacao.py`: envia ao servidor o mesmo JSON do app (11 sintomas, contexto, coordenada a 2 casas, data com microssegundos). **Resultado real (servidor local, HTTP, SQLite):** /health 200; novo 201; reenvio 200 `duplicado:true`; sem localização 201; nível inválido e sem sintomas 422 (o app trata 4xx como "rejeitado", sem reenvio); painel público com 10 respostas: suficiente, 11 sintomas, 1 área. **Não testado:** o app Dart de fato, o túnel Cloudflare, PostgreSQL.
 
+### 4.18 Validação das fontes e dos textos de saúde — versão 1.6.2
+- Pedido do usuário: descobrir todas as fontes pendentes e validar todas as informações. **Método:** busca na web, leitura de cada documento com `WebFetch` e comparação afirmação a afirmação. Resultado por tema (tudo em `lib/data/pdf_content.dart`, notas internas em `verificationNote`):
+  - **Máscaras:** confirmado (MS/VIGIAR: N95, PFF2 ou P100; OMS Europa: FFP2 ou N95; SES-AM via imprensa; CDC; EPA). Retirado "locais de distribuição" (sem fonte).
+  - **Purificador/umidificador:** purificador confirmado (CDC, EPA, MS); "HEPA" retirado. Umidificador e toalhas/baldes: só opinião de especialistas em reportagens (CNN Brasil, Correio Braziliense); **nenhuma fonte oficial lida confirma que ajudam contra a fumaça**.
+  - **Monóxido de carbono:** mecanismo confirmado no Manual MSD. **Acroleína/formaldeído: nenhuma fonte lida os cita; nomes retirados.**
+  - **Soro nasal/ocular:** só médicos em reportagens; **nebulização com soro removida** (sem fonte).
+  - **Mel:** menores de 1 ano confirmado (Anvisa via CFM, 2008); o benefício para a garganta segue sem fonte.
+  - **Pets:** AVMA e CRMV-AM (via A Crítica). **Removidos** sem fonte: raças de focinho curto, gato de boca aberta, limpeza dos olhos com soro, pano úmido no corpo. CFMV: nada localizado; trocado pelo CRMV-AM.
+  - **Mitos:** leite (DGS Portugal via notícia: "não é antídoto do monóxido de carbono"); máscara (3M: não limpar, descartar úmida/suja; retirado "álcool destrói a filtragem"); casca/borra (ASBAI, DGS: evitar combustão; os itens específicos não constam nas fontes).
+  - **CIT:** 0800 722 6001 **confirmado** em 3 fontes; **(92) 3305-4700 NÃO confirmado** e trocado por (92) 3305-4702 (Abracit, Ministério da Saúde). Texto "inclusive por fumaça" retirado.
+  - **Ações por nível de risco** (`levelActions`), limiares 8/15 e cortes de 1 h/4 h: **continuam critério do projeto, sem validação clínica**; exigem revisão por profissional de saúde.
+- **Limites:** parte das fontes foi lida só pela imprensa; as páginas foram lidas por um resumidor automático (`WebFetch`), então trechos literais devem ser conferidos nos links antes de publicar em periódico. Nenhum documento original da SES-AM/FVS-RCP ou da DGS foi lido.
+- Teste de comunicação e fotos: ver 4.17.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
-- **Confirmar com o CIT** os telefones 0800 722 6001 e (92) 3305-4700 antes de divulgar; depois retirar o aviso do app e de `lib/data/guidance_content.dart`.
-- Fontes ainda **não consultadas** em fonte primária: ASBAI [5], CFMV [6], OPAS/OMS [7] (buscas de 20/10/2026 não acharam o documento). Já consultadas: VIGIAR [8] (página gov.br, lida) e SES-AM/FVS-RCP [9] (só pela imprensa, não o original). Nem [8] nem [9] tratam de soro ou animais, e [9] não trata de mitos.
+- CIT: 0800 722 6001 e (92) 3305-4702 confirmados (20/10/2026); **reconfirmar por telefone antes de divulgar** (as fontes são páginas de terceiros e imprensa). O (92) 3305-4700 foi retirado.
+- Fontes de saúde: todas as indicadas pela equipe foram localizadas e lidas em 20/10/2026 (ver 4.18). Restam ressalvas: SES-AM/FVS-RCP [9] e DGS [14] só via imprensa; CFMV não tem documento localizado (substituído pelo CRMV-AM [6]); OMS/OPAS [7] é de 1999 e voltada a governos.
 - Revisão por profissional de saúde e médico-veterinário antes de publicar os textos de farmácia caseira e pets.
 - Notificações push/locais do alerta roxo e alerta laranja (precisa de previsão de vento): decisão do usuário.
 - Causa raiz da falha inicial da consulta ao INPE: aguardando o texto de “Detalhes técnicos”.

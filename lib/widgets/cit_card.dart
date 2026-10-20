@@ -13,7 +13,7 @@ import 'ui.dart';
 class CitCard extends StatelessWidget {
   const CitCard({super.key, this.detailed = false});
 
-  /// Mostra apresentação, "quando ligar" e o segundo telefone do HUGV.
+  /// Mostra apresentação, "quando ligar" e o telefone local do CIT.
   final bool detailed;
 
   static const _teal = Color(0xFF00695C);
@@ -93,7 +93,7 @@ class CitCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => launchUrl(Uri(scheme: 'tel', path: kCitHugvPhoneAltDial)),
                 icon: const Icon(Icons.call_outlined),
-                label: const Text('Telefone do HUGV $kCitHugvPhoneAlt'),
+                label: const Text('Telefone local do CIT $kCitHugvPhoneAlt'),
               ),
             ),
           ],
