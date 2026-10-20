@@ -86,18 +86,42 @@ if [[ ! -f .env ]]; then
   echo "Arquivo .env criado. ADMIN_TOKEN (guarde para o painel e a exportação CSV): $token"
 fi
 
+# Lê o valor de uma variável do .env (vazio se não existir).
+ler_var() { awk -F= -v k="$1" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' .env; }
+
+# Testa se algo já escuta numa porta deste computador.
+porta_em_uso() { (exec 3<>"/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1; }
+
+# Se uma porta do .env já estiver ocupada por OUTRO programa, escolhe a próxima livre e
+# grava no .env ("port is already allocated" no Docker). Se o serviço deste projeto já está
+# rodando, a porta é dele e nada é alterado.
+for var in API_PORT PAINEL_PORT; do
+  padrao=8000; servico=api
+  [[ "$var" == "PAINEL_PORT" ]] && { padrao=8080; servico=painel; }
+  if [[ -n "$("${COMPOSE[@]}" ps -q "$servico" 2>/dev/null || true)" ]]; then continue; fi
+  porta="$(ler_var "$var")"; porta="${porta:-$padrao}"
+  if porta_em_uso "$porta"; then
+    nova=$((porta + 1))
+    while porta_em_uso "$nova"; do nova=$((nova + 1)); done
+    echo "A porta $porta já está em uso por outro programa (veja: ss -ltnp | grep :$porta). Usando $nova em $var."
+    if grep -q "^$var=" .env; then definir_var "$var" "$nova"; else echo "$var=$nova" >> .env; fi
+  fi
+done
+API_PORTA="$(ler_var API_PORT)"; API_PORTA="${API_PORTA:-8000}"
+PAINEL_PORTA="$(ler_var PAINEL_PORT)"; PAINEL_PORTA="${PAINEL_PORTA:-8080}"
+
 "${COMPOSE[@]}" up -d --build
 
 echo "Aguardando a API..."
 for _ in $(seq 1 30); do
-  if curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1; then
-    echo "API no ar: http://127.0.0.1:8000/health"
+  if curl -fsS "http://127.0.0.1:$API_PORTA/health" >/dev/null 2>&1; then
+    echo "API no ar: http://127.0.0.1:$API_PORTA/health"
     break
   fi
   sleep 2
 done
 
-echo "Painel em tempo real: http://127.0.0.1:8080 (digite o ADMIN_TOKEN do .env na tela de entrada)"
+echo "Painel em tempo real: http://127.0.0.1:$PAINEL_PORTA (digite o ADMIN_TOKEN do .env na tela de entrada)"
 
 # Link público do túnel (só existe se o perfil do túnel estiver ativo no .env).
 link=""

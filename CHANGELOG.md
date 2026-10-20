@@ -12,7 +12,12 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.6.3.
+Nenhuma mudança desde a 1.6.4.
+
+## [1.6.4] - 2026-10-20
+
+### Corrigido
+- `tool/iniciar_servidor.sh`: falhava com "Bind for 0.0.0.0:8080 failed: port is already allocated" quando outro programa já usava a porta do painel (ou da API). Agora detecta a porta ocupada, escolhe a próxima livre, grava no `.env` e mostra o endereço certo.
 
 ## [1.6.3] - 2026-10-20
 
