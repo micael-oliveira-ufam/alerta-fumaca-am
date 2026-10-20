@@ -1,19 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_info.dart';
 import '../data/guidance_content.dart';
 import '../services/inpe_fire_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/server_card.dart';
+import '../widgets/platform_card.dart';
 import '../widgets/ui.dart';
 import 'lgpd_screen.dart';
 
 const _instituicao = 'Faculdade de Ciências Farmacêuticas (FCF)\nUniversidade Federal do Amazonas (UFAM)';
 
-const _desenvolvedores = <({String nome, String instituicao})>[
-  (nome: 'Micael Davi Lima de Oliveira', instituicao: 'FCF · UFAM'),
-  (nome: 'Elias de Souza Barros', instituicao: 'FCF · UFAM'),
+const _desenvolvedores = <({String nome, String instituicao, String email, String foto})>[
+  (
+    nome: 'Micael Davi Lima de Oliveira',
+    instituicao: 'FCF · UFAM',
+    email: 'micael.oliveira@ufam.edu.br',
+    foto: 'assets/images/dev_micael.jpg',
+  ),
+  (
+    nome: 'Elias de Souza Barros',
+    instituicao: 'FCF · UFAM',
+    email: 'eliasbarros170@gmail.com',
+    foto: 'assets/images/dev_elias.jpg',
+  ),
 ];
+
+Future<void> _escrever(BuildContext context, String email) async {
+  final ok = await launchUrl(Uri(scheme: 'mailto', path: email));
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(behavior: SnackBarBehavior.floating, content: Text('Escreva para $email')),
+    );
+  }
+}
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -60,18 +80,18 @@ class AboutScreen extends StatelessWidget {
             label: const Text('Privacidade e uso dos dados (LGPD)'),
           ),
           const SizedBox(height: 20),
-          const SectionTitle('SERVIDOR'),
-          const ServerCard(),
+          const SectionTitle('PLATAFORMA ONLINE'),
+          const PlatformCard(),
           const SizedBox(height: 20),
           const SectionTitle('DESENVOLVEDORES'),
           for (final dev in _desenvolvedores) ...[
             AppCard(
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.person_rounded, color: AppColors.brand),
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: const Color(0xFFE8F5E9),
+                    backgroundImage: AssetImage(dev.foto),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -83,6 +103,23 @@ class AboutScreen extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(dev.instituicao,
                             style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: () => _escrever(context, dev.email),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.mail_outline_rounded, size: 16, color: Color(0xFF1565C0)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(dev.email,
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF1565C0),
+                                        decoration: TextDecoration.underline)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -133,8 +170,8 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Instituto Nacional de Pesquisas Espaciais (INPE), Programa Queimadas, '
-                  'via TerraBrasilis. Camadas de todos os satélites: ${FireWindow.today.layer} '
-                  '(hoje) e ${FireWindow.last48h.layer} (últimas 48 h). Satélites exibidos: '
+                  'via TerraBrasilis. Camada de todos os satélites: ${FireWindow.last48h.layer}; '
+                  '"Hoje" mostra os focos do dia atual em Manaus. Satélites exibidos: '
                   'MODIS (Aqua e Terra), NOAA-20, Suomi NPP e, opcionalmente, NOAA-21.',
                   style: const TextStyle(height: 1.4, color: AppColors.muted),
                 ),

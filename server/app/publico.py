@@ -20,7 +20,7 @@ from typing import Any
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from . import stats
+from . import bairros, stats
 from .config import Settings
 from .models import Resposta
 from .rotulos import SINTOMA_ROTULOS
@@ -104,6 +104,7 @@ def montar(session: Session, settings: Settings, dias: int, agora: dt.datetime |
                 for s in est.sintomas
             ],
             "serie_diaria": [{"dia": d.dia.isoformat(), "respostas": d.respostas} for d in est.serie],
+            "bairros": bairros.ranking(session, settings, dias, agora),
             "perfil": perfil,
             "exposicao": exposicao,
             "contexto": contexto,

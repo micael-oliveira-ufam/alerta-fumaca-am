@@ -77,11 +77,75 @@
       <p class="sub" id="mapa-nota"></p>
     </section>
 
+    <section class="card" id="sec-bairros">
+      <h2>Bairros de Manaus mais afetados</h2>
+      <p class="sub">Respostas do app com localização aproximada (~1 km) dentro de Manaus, agrupadas por bairro. Só aparecem bairros com respostas suficientes.</p>
+      <div id="bairros"></div>
+      <p class="sub" id="bairros-nota"></p>
+    </section>
+
     <div class="trio">
       <section class="card"><h2>Quem respondeu</h2><p class="sub">Grupos de maior atenção.</p><div id="perfil"></div></section>
       <section class="card"><h2>Tempo de exposição</h2><p class="sub">Quanto tempo na fumaça.</p><div id="exposicao"></div></section>
       <section class="card"><h2>Situação de quem respondeu</h2><p class="sub">Perguntas opcionais do app.</p><div id="contexto"></div></section>
     </div>
+
+    <section class="card" id="sec-focos">
+      <div class="card-h">
+        <div>
+          <h2>Focos de calor · INPE (Programa Queimadas)</h2>
+          <p class="sub">Detecções por satélite no Amazonas, últimas 48 h. Dado oficial, não é medição da qualidade do ar.</p>
+        </div>
+        <div class="seg small" id="focos-janela" role="group" aria-label="Janela dos focos">
+          <button type="button" data-j="hoje" class="on" aria-pressed="true">Hoje (Manaus)</button>
+          <button type="button" data-j="48h">48 h</button>
+        </div>
+      </div>
+      <p class="aviso" id="focos-erro" hidden></p>
+      <div class="kpis kpis-s" id="focos-kpis"></div>
+      <div class="duo">
+        <div>
+          <div class="card-h"><h3>Mapa de calor e focos</h3>
+            <div class="seg small" id="focos-modo" role="group" aria-label="Modo do mapa">
+              <button type="button" data-m="calor" class="on" aria-pressed="true">Calor</button>
+              <button type="button" data-m="pontos">Pontos</button>
+            </div></div>
+          <div id="mapa-focos" role="img" aria-label="Mapa de focos de calor"></div>
+          <p class="sub">Calor: concentração de focos. Pontos: cada detecção (cor = potência radiativa, FRP).</p>
+        </div>
+        <div>
+          <h3>Por satélite</h3><div id="focos-sat" class="mini"></div>
+          <h3>Por dia (horário de Manaus)</h3><div id="focos-dia" class="mini"></div>
+        </div>
+      </div>
+      <h3>Municípios com mais focos</h3>
+      <div class="tabela-box"><table class="tabela" id="focos-tab">
+        <thead><tr><th>Município</th><th>Focos</th><th>FRP total (MW)</th><th>FRP máx. (MW)</th><th>Dias sem chuva (média)</th><th>Risco de fogo (média)</th></tr></thead>
+        <tbody></tbody></table></div>
+      <p class="sub" id="focos-nota"></p>
+    </section>
+
+    <section class="card" id="sec-desmat">
+      <h2>Desmatamento e uso da terra</h2>
+      <p class="sub">Os dados de desmatamento são produzidos pelo INPE e não são reproduzidos aqui: consulte a fonte oficial, sempre atualizada.</p>
+      <ul class="links">
+        <li><a href="https://terrabrasilis.dpi.inpe.br/" target="_blank" rel="noopener noreferrer"><b>TerraBrasilis (INPE)</b></a>: painéis e mapas do PRODES (taxa anual de desmatamento) e do DETER (alertas quase diários).</li>
+        <li><a href="https://terrabrasilis.dpi.inpe.br/queimadas/" target="_blank" rel="noopener noreferrer"><b>Programa Queimadas (INPE)</b></a>: focos de calor, risco de fogo e área queimada.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="sec-devs">
+      <h2>Desenvolvedores</h2>
+      <p class="sub">Faculdade de Ciências Farmacêuticas · Universidade Federal do Amazonas (UFAM)</p>
+      <div class="devs">
+        <article class="dev"><img src="/assets/dev_micael.jpg" alt="Foto de Micael Davi Lima de Oliveira" width="96" height="96" loading="lazy">
+          <div><b>Micael Davi Lima de Oliveira</b><span>FCF · UFAM</span>
+          <a href="mailto:micael.oliveira@ufam.edu.br">micael.oliveira@ufam.edu.br</a></div></article>
+        <article class="dev"><img src="/assets/dev_elias.jpg" alt="Foto de Elias de Souza Barros" width="96" height="96" loading="lazy">
+          <div><b>Elias de Souza Barros</b><span>FCF · UFAM</span>
+          <a href="mailto:eliasbarros170@gmail.com">eliasbarros170@gmail.com</a></div></article>
+      </div>
+    </section>
 
     <section class="card nota">
       <h2>Como ler estes dados</h2>
@@ -101,6 +165,8 @@
   </footer>
 
   <script src="/vendor/leaflet/leaflet.js"></script>
+  <script src="/vendor/leaflet-heat/leaflet-heat.js"></script>
   <script src="/assets/publico.js"></script>
+  <script src="/assets/focos.js"></script>
 </body>
 </html>

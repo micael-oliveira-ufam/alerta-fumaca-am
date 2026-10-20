@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../logic/map_layers.dart';
+import '../../services/gibs_availability.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui.dart';
@@ -88,6 +89,12 @@ class BaseMap extends StatefulWidget {
 
 enum _BaseLayer { streets, satellite }
 
+/// "2026-10-19" → "19/10/2026".
+String _formatGibsDate(String iso) {
+  final p = iso.split('-');
+  return p.length == 3 ? '${p[2]}/${p[1]}/${p[0]}' : iso;
+}
+
 class _BaseMapState extends State<BaseMap> {
   late final MapController _controller = widget.controller ?? MapController();
   final _location = LocationService();
@@ -100,6 +107,12 @@ class _BaseMapState extends State<BaseMap> {
   _BaseLayer _base = _BaseLayer.streets;
   final Set<String> _overlays = {};
   int _daysBack = 1;
+  final _availability = GibsAvailability();
+
+  /// Dias (para trás) com imagem para as camadas ativas; `null` = ainda consultando.
+  List<int>? _availableDays;
+  bool _probing = false;
+  int _probeToken = 0;
 
   /// Camadas da NASA que já falharam (avisadas uma vez só).
   final Set<String> _failedLayers = {};
@@ -121,6 +134,46 @@ class _BaseMapState extends State<BaseMap> {
     });
   }
 
+  /// Camadas da NASA que estão em uso agora (mapa de fundo por satélite e sobreposições).
+  List<GibsLayer> get _activeGibs => [
+        if (_base == _BaseLayer.satellite) gibsTrueColor,
+        for (final l in gibsOverlays)
+          if (_overlays.contains(l.id)) l,
+      ];
+
+  /// Consulta quais datas têm imagem e ajusta a data escolhida para uma disponível.
+  VoidCallback? _sheetRefresh;
+
+  Future<void> _refreshAvailability() async {
+    final layers = _activeGibs;
+    final token = ++_probeToken;
+    if (layers.isEmpty) {
+      setState(() {
+        _availableDays = null;
+        _probing = false;
+      });
+      _sheetRefresh?.call();
+      return;
+    }
+    setState(() {
+      _probing = true;
+      _availableDays = null;
+    });
+    _sheetRefresh?.call();
+    final days = await _availability.availableDaysBack(layers);
+    if (!mounted || token != _probeToken) return;
+    setState(() {
+      _probing = false;
+      _availableDays = days;
+      if (days.isNotEmpty && !days.contains(_daysBack)) {
+        // Prefere o dia mais recente com imagem completa (em geral, ontem).
+        _daysBack = days.contains(1) ? 1 : days.first;
+        _failedLayers.clear();
+      }
+    });
+    _sheetRefresh?.call();
+  }
+
   void _gibsTileError(GibsLayer layer, TileImage tile, Object error, StackTrace? st) {
     if (_failedLayers.contains(layer.id)) return;
     _failedLayers.add(layer.id);
@@ -131,9 +184,9 @@ class _BaseMapState extends State<BaseMap> {
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 8),
           content: Text(
-            'A camada "${layer.label}" não carregou para ${gibsDate(DateTime.now(), daysBack: _daysBack)}. '
-            'Tente outro dia no painel de camadas ou verifique a internet. '
-            'Detalhe técnico: $error',
+            'A imagem "${layer.label}" não está disponível para '
+            '${_formatGibsDate(gibsDate(DateTime.now(), daysBack: _daysBack))} nesta região. '
+            'Escolha outra data no painel de camadas ou verifique a internet.',
           ),
         ),
       );
@@ -201,9 +254,13 @@ class _BaseMapState extends State<BaseMap> {
       ),
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheet) {
-          void update(VoidCallback change) {
+          _sheetRefresh = () {
+            if (sheetContext.mounted) setSheet(() {});
+          };
+          void update(VoidCallback change, {bool probe = false}) {
             setState(change);
             setSheet(() {});
+            if (probe) _refreshAvailability();
           }
 
           return SafeArea(
@@ -246,7 +303,7 @@ class _BaseMapState extends State<BaseMap> {
                         ),
                       ],
                       selected: {_base},
-                      onSelectionChanged: (s) => update(() => _base = s.first),
+                      onSelectionChanged: (s) => update(() => _base = s.first, probe: true),
                     ),
                   ),
                   if (_base == _BaseLayer.satellite)
@@ -292,54 +349,54 @@ class _BaseMapState extends State<BaseMap> {
                         } else {
                           _overlays.remove(layer.id);
                         }
-                      }),
+                      }, probe: true),
                     ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Data da imagem de satélite',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
-                        ),
+                  if (_activeGibs.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Data da imagem de satélite',
+                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 6),
+                    if (_probing || _availableDays == null)
+                      const Row(
+                        children: [
+                          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                          SizedBox(width: 10),
+                          Expanded(child: Text('Verificando as datas com imagem disponível…')),
+                        ],
+                      )
+                    else if (_availableDays!.isEmpty)
+                      const Text(
+                        'Nenhuma data recente tem imagem disponível para as camadas escolhidas. '
+                        'Isso pode ser falta de internet ou atraso da NASA; tente mais tarde ou '
+                        'desligue alguma camada.',
+                        style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          for (final d in _availableDays!)
+                            ChoiceChip(
+                              label: Text(_formatGibsDate(gibsDate(DateTime.now(), daysBack: d))
+                                  .substring(0, 5)),
+                              selected: d == _daysBack,
+                              onSelected: (_) => update(() {
+                                _daysBack = d;
+                                _failedLayers.clear();
+                              }),
+                            ),
+                        ],
                       ),
-                      RoundIconButton(
-                        icon: Icons.chevron_left_rounded,
-                        tooltip: 'Dia anterior',
-                        size: 40,
-                        onPressed: _daysBack >= 7
-                            ? null
-                            : () => update(() {
-                                  _daysBack++;
-                                  _failedLayers.clear();
-                                }),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          gibsDate(DateTime.now(), daysBack: _daysBack),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      RoundIconButton(
-                        icon: Icons.chevron_right_rounded,
-                        tooltip: 'Próximo dia',
-                        size: 40,
-                        onPressed: _daysBack <= 0
-                            ? null
-                            : () => update(() {
-                                  _daysBack--;
-                                  _failedLayers.clear();
-                                }),
-                      ),
-                    ],
-                  ),
+                  ],
                   const SizedBox(height: 8),
                   const Text(
                     'As imagens da NASA têm atraso de horas e dependem de nuvens e da '
                     'passagem do satélite; a data é em UTC. Servem para ter uma ideia da '
-                    'extensão da fumaça, não para medir a qualidade do ar. Se uma camada '
-                    'ficar em branco, teste outro dia.',
+                    'extensão da fumaça, não para medir a qualidade do ar. Só aparecem as datas '
+                    'em que a NASA tem imagem.',
                     style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
                   ),
                 ],

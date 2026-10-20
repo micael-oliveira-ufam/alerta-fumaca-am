@@ -51,6 +51,7 @@ def make_client(engine):
             min_respostas_publicas=5,
             min_respostas_celula=3,
             admin_token="",
+            geocoder_ativo=False,
         )
         params.update(overrides)
         client = TestClient(create_app(Settings(**params), engine))

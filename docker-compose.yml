@@ -47,6 +47,8 @@ services:
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-30}
       MIN_RESPOSTAS_PUBLICAS: ${MIN_RESPOSTAS_PUBLICAS:-5}
       MIN_RESPOSTAS_CELULA: ${MIN_RESPOSTAS_CELULA:-3}
+      GEOCODER_ATIVO: ${GEOCODER_ATIVO:-true}
+      GEOCODER_CONTATO: ${GEOCODER_CONTATO:-micael.oliveira@ufam.edu.br}
       # Atrás do túnel, o IP real vem no cabeçalho CF-Connecting-IP. Só é seguro porque a
       # porta da API fica em 127.0.0.1 (API_BIND): ninguém de fora alcança a API sem o túnel.
       TRUST_CF_CONNECTING_IP: ${TRUST_CF_CONNECTING_IP:-true}
@@ -70,6 +72,8 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       MIN_RESPOSTAS_PUBLICAS: ${MIN_RESPOSTAS_PUBLICAS:-5}
       MIN_RESPOSTAS_CELULA: ${MIN_RESPOSTAS_CELULA:-3}
+      GEOCODER_ATIVO: ${GEOCODER_ATIVO:-true}
+      GEOCODER_CONTATO: ${GEOCODER_CONTATO:-micael.oliveira@ufam.edu.br}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-30}
       TUNNEL_METRICS_URL: http://tunnel:2000
       PUBLIC_URL: ${PUBLIC_URL:-}

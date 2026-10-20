@@ -135,12 +135,35 @@ void main() {
     });
   });
 
+  group('janela Hoje', () {
+    FireHotspot at(DateTime t) => FireHotspot(
+        lat: -3, lon: -60, detectedAt: t, state: 'AMAZONAS', municipality: 'X', satellite: 'NOAA-20', biome: 'Amazônia');
+
+    test('início do dia é a meia-noite de Manaus (UTC-4)', () {
+      final now = DateTime.utc(2026, 10, 20, 15, 30); // 11h30 em Manaus
+      expect(FireWindow.startOfTodayUtc(now), DateTime.utc(2026, 10, 20, 4));
+      final early = DateTime.utc(2026, 10, 20, 2); // 22h de 19/10 em Manaus
+      expect(FireWindow.startOfTodayUtc(early), DateTime.utc(2026, 10, 19, 4));
+    });
+
+    test('Hoje mantém só focos do dia local; 48 h mantém todos', () {
+      final now = DateTime.utc(2026, 10, 20, 15);
+      final list = [
+        at(DateTime.utc(2026, 10, 20, 5)),
+        at(DateTime.utc(2026, 10, 20, 3, 59)),
+        at(DateTime.utc(2026, 10, 19, 20)),
+      ];
+      expect(FireWindow.today.filter(list, now).length, 1);
+      expect(FireWindow.last48h.filter(list, now).length, 3);
+    });
+  });
+
   group('consulta', () {
     test('URL direta: camada todosats, filtro de estado e de satélites', () {
       final service = InpeFireService(apiBaseUrl: '');
       final today = service.buildUri(FireWindow.today);
       expect(today.host, 'terrabrasilis.dpi.inpe.br');
-      expect(today.queryParameters['typeName'], 'dados_abertos:focos_hoje_br_todosats');
+      expect(today.queryParameters['typeName'], 'dados_abertos:focos_48h_br_todosats');
       expect(
         today.queryParameters['CQL_FILTER'],
         "estado='AMAZONAS' AND satelite IN ('AQUA_M-T','NOAA-20','NPP-375','NPP-375D','TERRA_M-T')",

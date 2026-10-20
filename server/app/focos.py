@@ -29,7 +29,8 @@ UPSTREAM_URL = "https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/ows"
 UPSTREAM_TIMEOUT_S = 40
 
 LAYERS = {
-    "today": "dados_abertos:focos_hoje_br_todosats",
+    # "Hoje" usa a camada de 48 h; o app recorta o dia local (a camada focos_hoje_* vinha vazia).
+    "today": "dados_abertos:focos_48h_br_todosats",
     "last48h": "dados_abertos:focos_48h_br_todosats",
 }
 

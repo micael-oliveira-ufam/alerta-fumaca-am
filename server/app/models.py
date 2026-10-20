@@ -89,6 +89,24 @@ class Resposta(Base):
     )
 
 
+class CelulaBairro(Base):
+    """Cache do bairro de cada célula de ~1 km (nome obtido do OpenStreetMap/Nominatim).
+
+    Não guarda nada de usuários: só a relação "célula -> bairro". `bairro` nulo = o geocodificador
+    respondeu, mas sem bairro (a célula não é reconsultada).
+    """
+
+    __tablename__ = "celulas_bairro"
+
+    lat: Mapped[Decimal] = mapped_column(Numeric(5, 2), primary_key=True)
+    lon: Mapped[Decimal] = mapped_column(Numeric(5, 2), primary_key=True)
+    bairro: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    cidade: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    resolvido_em: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class RespostaSintoma(Base):
     __tablename__ = "respostas_sintomas"
     __table_args__ = (

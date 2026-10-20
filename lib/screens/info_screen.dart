@@ -77,8 +77,8 @@ class MythsScreen extends StatelessWidget {
           const AppCard(
             color: Color(0xFFFFF8E1),
             child: Text(
-              'Em crises ambientais, receitas milagrosas circulam rápido nas redes. Veja o que '
-              'dizem os textos da equipe e o quanto cada um foi conferido.',
+              'Em crises ambientais, receitas milagrosas circulam rápido nas redes. Veja o que é '
+              'mito e o que é verdade sobre a fumaça.',
               style: TextStyle(height: 1.45, color: AppColors.ink),
             ),
           ),
@@ -99,7 +99,7 @@ class MythsScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(m.explanation, style: const TextStyle(height: 1.45, color: AppColors.ink)),
                   const SizedBox(height: 8),
-                  VerificationBadge(verification: m.verification, note: m.note),
+                  RefLine(refs: m.refs),
                 ],
               ),
             ),

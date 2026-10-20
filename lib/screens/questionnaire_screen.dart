@@ -6,10 +6,8 @@ import '../logic/context_advice.dart';
 import '../logic/risk_assessment.dart';
 import '../models/answer_record.dart';
 import '../models/smoke_context.dart';
-import '../models/smoke_report.dart';
 import '../services/answer_sync.dart';
 import '../services/api_client.dart';
-import '../services/api_config.dart';
 import '../services/location_service.dart';
 import '../services/report_repository.dart';
 import '../theme/app_theme.dart';
@@ -60,10 +58,19 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final _scroll = ScrollController();
 
   RiskResult? _result;
-  bool _sharing = false;
+  /// Compartilhamento das respostas para estudos epidemiológicos (pergunta ao fim do questionário).
+  _ShareState _shareState = _ShareState.ask;
 
-  final _repo = LocalReportRepository();
-  final _consent = ConsentStore();
+  /// Dados da última resposta registrada, enviados só se a pessoa tocar em "Sim, compartilhar".
+  ({
+    RiskResult result,
+    Map<String, int> severities,
+    Exposure exposure,
+    Profile profile,
+    SmokeContext smokeContext,
+    DateTime recordedAt,
+  })? _toShare;
+
   final _location = LocationService();
   final _answers = LocalAnswerStore();
   final _sync = AnswerSync();
@@ -96,25 +103,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
-  void _restart() {
-    setState(() {
-      for (final i in symptomItems) {
-        _severities[i.id] = 0;
-      }
-      _answered.clear();
-      _touched.clear();
-      _exposure = Exposure.under1h;
-      _elderly = _pregnant = _child = _chronicResp = _chronicCard = false;
-      _place = null;
-      _mask = null;
-      _visibleSmoke = _outdoorExercise = _cleanAir = _outdoorWork = null;
-      _immune = _medsAtHand = _medsNotWorking = _worsening = null;
-      _result = null;
-      _lastSignature = null;
-    });
-    _goTo(0);
-  }
-
   Profile get _profile => Profile(
         elderly: _elderly,
         pregnant: _pregnant,
@@ -145,8 +133,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     _registerAnswers(result);
   }
 
-  /// Guarda a resposta neste aparelho (estatísticas locais) e, se o servidor estiver
-  /// configurado e a pessoa consentiu, envia sem identificação.
+  /// Guarda a resposta neste aparelho (estatísticas locais) e a deixa pronta para o envio,
+  /// que só ocorre se a pessoa aceitar compartilhar (ver [_shareAnswers]).
   Future<void> _registerAnswers(RiskResult result) async {
     final severities = {for (final item in symptomItems) item.id: _severities[item.id] ?? 0};
     final exposure = _exposure;
@@ -177,198 +165,61 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       // Falha ao salvar localmente não deve impedir a orientação.
     }
 
-    if (!_sync.isConfigured) return; // modo local: nada é enviado
-    await _sendToServer(
-      result: result,
-      severities: severities,
-      exposure: exposure,
-      profile: profile,
-      smokeContext: smokeContext,
-      recordedAt: recordedAt,
-    );
-  }
-
-  Future<void> _sendToServer({
-    required RiskResult result,
-    required Map<String, int> severities,
-    required Exposure exposure,
-    required Profile profile,
-    required SmokeContext smokeContext,
-    required DateTime recordedAt,
-  }) async {
-    final stored = await _consent.sendDecision();
-    final bool send;
-    if (stored != null) {
-      send = stored;
-    } else {
-      if (!mounted) return;
-      final choice = await _askSendConsent();
-      if (choice == null) return; // fechou o diálogo: pergunta de novo no próximo envio
-      send = choice.send;
-      await _consent.setSendDecision(choice.send);
-      await _consent.setIncludeLocationInSend(choice.send && choice.includeLocation);
-    }
-    if (!send) return;
-
-    double? lat;
-    double? lon;
-    if (await _consent.includeLocationInSend()) {
-      final located = await _location.requestAndGetPosition();
-      final position = located.position;
-      if (located.status == LocationStatus.ok && position != null) {
-        lat = position.latitude;
-        lon = position.longitude;
-      }
-      // Sem permissão ou sem GPS: o envio segue, apenas sem localização.
-    }
-
-    final payload = buildAnswerPayload(
-      submissionId: newSubmissionId(),
-      recordedAt: recordedAt,
-      result: result,
-      exposure: exposure,
-      profile: profile,
-      severities: severities,
-      lat: lat,
-      lon: lon,
-      context: smokeContext,
-    );
-    final outcome = await _sync.send(payload);
-    _snack(switch (outcome) {
-      SyncResult.sent => 'Resposta registrada no servidor, sem identificação.',
-      SyncResult.queued => 'Sem conexão: sua resposta será enviada quando possível.',
-      SyncResult.rejected => 'O servidor não aceitou o envio desta resposta.',
-      SyncResult.notConfigured => 'Servidor não configurado.',
+    // O envio só acontece se a pessoa responder "Sim" à pergunta exibida com o resultado.
+    if (!mounted) return;
+    setState(() {
+      _toShare = (
+        result: result,
+        severities: severities,
+        exposure: exposure,
+        profile: profile,
+        smokeContext: smokeContext,
+        recordedAt: recordedAt,
+      );
+      _shareState = _ShareState.ask;
     });
   }
 
-  /// Consentimento específico para enviar dados de saúde ao servidor (LGPD).
-  /// Retorna `null` se o diálogo for dispensado sem escolha.
-  Future<({bool send, bool includeLocation})?> _askSendConsent() {
-    var includeLocation = false;
-    return showDialog<({bool send, bool includeLocation})>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Ajudar a mapear a fumaça'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Servidor de destino: ${ApiConfig.host}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Se você concordar, o app enviará ao servidor do projeto cada resposta '
-                  'do questionário: os sintomas e suas intensidades, o tempo de exposição, '
-                  'seu perfil (por exemplo, gestante, idoso ou doença crônica), as respostas '
-                  'sobre o local, a proteção usada e a situação atual, e o nível '
-                  'de risco calculado. Esses são dados de saúde.\n\n'
-                  'Não enviamos nome, telefone, e-mail nem identificador do aparelho, e o '
-                  'banco de dados não guarda seu IP. Os dados servem para estatísticas e '
-                  'para o mapa da comunidade, que só mostra áreas com várias respostas.\n\n'
-                  'Como os registros não têm identificação, não será possível apagar um '
-                  'envio específico depois. Em lugares pequenos, saúde somada à localização '
-                  'pode permitir que alguém reconheça você; por isso a localização é opcional. '
-                  'Você pode desativar o envio quando quiser em "Sintomas mais relatados". '
-                  'Recusar não impede o uso do app.',
-                  style: TextStyle(height: 1.4),
-                ),
-                const SizedBox(height: 8),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: includeLocation,
-                  onChanged: (v) => setLocal(() => includeLocation = v ?? false),
-                  title: const Text('Incluir minha localização aproximada (~1 km)'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, (send: false, includeLocation: false)),
-              child: const Text('Não enviar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, (send: true, includeLocation: includeLocation)),
-              child: const Text('Concordar e enviar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  /// Envia a resposta ao servidor, sem identificação, depois que a pessoa disse "Sim".
+  Future<void> _shareAnswers() async {
+    final data = _toShare;
+    if (data == null || _shareState == _ShareState.sending) return;
+    setState(() => _shareState = _ShareState.sending);
 
-  Future<bool> _askConsent() async {
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Compartilhar localização'),
-        content: const Text(
-          'Para mapear áreas de risco, usaremos sua localização apenas no '
-          'momento do envio. Ela será arredondada (~1 km) e salva sem '
-          'identificação pessoal. Nesta versão, os registros ficam apenas '
-          'neste aparelho. Você pode recusar e continuar usando o app.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Não permitir'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Permitir'),
-          ),
-        ],
-      ),
-    );
-    if (accepted == true) await _consent.setConsent(true);
-    return accepted ?? false;
-  }
-
-  void _snack(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(behavior: SnackBarBehavior.floating, content: Text(msg)),
-    );
-  }
-
-  Future<void> _share() async {
-    final result = _result;
-    if (result == null) return;
-
-    setState(() => _sharing = true);
-    try {
-      final hasConsent = await _consent.hasConsent() || await _askConsent();
-      if (!hasConsent) {
-        _snack('Envio cancelado: permissão de localização não concedida.');
-        return;
-      }
-
-      final pos = await _location.currentPosition();
-      if (pos == null) {
-        _snack('Não foi possível obter a localização. Verifique GPS e permissões.');
-        return;
-      }
-
-      await _repo.save(SmokeReport(
-        timestamp: DateTime.now().toUtc(),
-        lat: SmokeReport.coarsen(pos.latitude),
-        lon: SmokeReport.coarsen(pos.longitude),
-        level: result.level,
-        points: result.points,
-      ));
-      _snack('Registro anonimizado salvo neste aparelho.');
-    } finally {
-      if (mounted) setState(() => _sharing = false);
+    double? lat;
+    double? lon;
+    final located = await _location.requestAndGetPosition();
+    final position = located.position;
+    if (located.status == LocationStatus.ok && position != null) {
+      lat = position.latitude;
+      lon = position.longitude;
     }
+    // Sem permissão ou sem GPS: o envio segue, apenas sem a área aproximada.
+
+    final payload = buildAnswerPayload(
+      submissionId: newSubmissionId(),
+      recordedAt: data.recordedAt,
+      result: data.result,
+      exposure: data.exposure,
+      profile: data.profile,
+      severities: data.severities,
+      lat: lat,
+      lon: lon,
+      context: data.smokeContext,
+    );
+    final outcome = await _sync.send(payload);
+    if (!mounted) return;
+    setState(() {
+      _shareState = switch (outcome) {
+        SyncResult.sent => _ShareState.sent,
+        SyncResult.queued => _ShareState.queued,
+        SyncResult.rejected => _ShareState.rejected,
+        SyncResult.notConfigured => _ShareState.ask,
+      };
+    });
   }
+
+  void _declineShare() => setState(() => _shareState = _ShareState.declined);
 
   void _touch(String key, VoidCallback change) {
     setState(() {
@@ -689,6 +540,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         const SizedBox(height: 12),
         _TipsCard(tips: tips),
       ],
+      if (_sync.isConfigured) ...[
+        const SizedBox(height: 12),
+        _ShareCard(state: _shareState, onYes: _shareAnswers, onNo: _declineShare),
+      ],
       const SizedBox(height: 12),
       if (result.level == RiskLevel.emergency) ...[
         const EmergencyBanner(),
@@ -718,46 +573,12 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           minimumSize: const Size(64, 52),
           shape: const StadiumBorder(),
         ),
-        onPressed: _sharing ? null : _share,
-        icon: _sharing
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.share_location_rounded),
-        label: const Text('Compartilhar localização anonimizada'),
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(64, 48),
-                shape: const StadiumBorder(),
-              ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(builder: (_) => const ReferencesScreen()),
-              ),
-              icon: const Icon(Icons.menu_book_rounded),
-              label: const Text('Referências'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(64, 48),
-                shape: const StadiumBorder(),
-              ),
-              onPressed: _restart,
-              icon: const Icon(Icons.restart_alt_rounded),
-              label: const Text('Refazer'),
-            ),
-          ),
-        ],
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const ReferencesScreen()),
+        ),
+        icon: const Icon(Icons.menu_book_rounded),
+        label: const Text('Referências'),
       ),
       const SizedBox(height: 10),
       TextButton.icon(
@@ -1071,6 +892,120 @@ class _ResultCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+
+/// Situação da pergunta "compartilhar suas respostas para estudos epidemiológicos?".
+enum _ShareState { ask, sending, sent, queued, declined, rejected }
+
+class _ShareCard extends StatelessWidget {
+  const _ShareCard({required this.state, required this.onYes, required this.onNo});
+
+  final _ShareState state;
+  final VoidCallback onYes;
+  final VoidCallback onNo;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: switch (state) {
+        _ShareState.ask => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.science_rounded, color: AppColors.brand),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Quer compartilhar suas respostas para estudos epidemiológicos?',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w800, height: 1.3, color: AppColors.ink),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Enviamos seus sintomas, perfil e nível de risco sem nome, telefone nem IP. '
+                'Se a localização do aparelho estiver ativa, vai junto apenas a área aproximada '
+                '(~1 km); o sistema pode pedir sua permissão. Não é possível apagar um envio depois. '
+                'Recusar não muda nada no uso do app.',
+                style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(64, 48), shape: const StadiumBorder()),
+                      onPressed: onNo,
+                      child: const Text('Não'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                          minimumSize: const Size(64, 48), shape: const StadiumBorder()),
+                      onPressed: onYes,
+                      child: const Text('Sim, compartilhar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        _ShareState.sending => const Row(
+            children: [
+              SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4)),
+              SizedBox(width: 14),
+              Expanded(child: Text('Enviando suas respostas…')),
+            ],
+          ),
+        _ShareState.sent => const _ShareNote(
+            icon: Icons.check_circle_rounded,
+            color: AppColors.brand,
+            text: 'Obrigado! Suas respostas foram enviadas, sem identificação.',
+          ),
+        _ShareState.queued => const _ShareNote(
+            icon: Icons.schedule_rounded,
+            color: Color(0xFFB7791F),
+            text: 'Sem conexão agora. Suas respostas serão enviadas assim que possível.',
+          ),
+        _ShareState.declined => const _ShareNote(
+            icon: Icons.lock_outline_rounded,
+            color: AppColors.muted,
+            text: 'Tudo bem. Suas respostas ficam apenas neste aparelho.',
+          ),
+        _ShareState.rejected => const _ShareNote(
+            icon: Icons.error_outline_rounded,
+            color: Color(0xFFC62828),
+            text: 'O servidor não aceitou o envio desta resposta.',
+          ),
+      },
+    );
+  }
+}
+
+class _ShareNote extends StatelessWidget {
+  const _ShareNote({required this.icon, required this.color, required this.text});
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text, style: const TextStyle(height: 1.4, color: AppColors.ink))),
+      ],
     );
   }
 }

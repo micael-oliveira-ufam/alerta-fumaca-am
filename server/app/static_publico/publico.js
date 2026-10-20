@@ -89,6 +89,7 @@
     niveis();
     serie();
     desenharMapa();
+    bairros();
     perfil();
     exposicao();
     contexto();
@@ -248,6 +249,32 @@
       : cel.length ? cel.length + ' área(s) com ' + d.minimo_por_area + ' ou mais respostas nas últimas ' + d.mapa.horas + ' h. Os pontos mostram o centro da área de ~1 km, nunca o local exato de alguém.'
       : 'Nenhuma área tem respostas suficientes nas últimas ' + d.mapa.horas + ' h para ser mostrada.';
     setTimeout(function () { mapa.invalidateSize(); }, 50);
+  }
+
+  function bairros() {
+    var box = limpar($('bairros')), b = dados.bairros, nota = $('bairros-nota');
+    if (!b || !b.bairros.length) {
+      var vazio = h('div', { class: 'mini' });
+      vazio.appendChild(h('p', { class: 'vazio', text: 'Ainda não há bairros com respostas suficientes (mínimo ' +
+        (b ? b.minimo_por_bairro : 3) + ' por bairro).' }));
+      box.appendChild(vazio);
+      nota.textContent = b && b.areas_em_consulta ? 'Identificando bairros de ' + b.areas_em_consulta + ' área(s)…' : (b ? b.fonte : '');
+      return;
+    }
+    var max = Math.max.apply(null, b.bairros.map(function (x) { return x.respostas; }));
+    var lista = h('ol', { class: 'rank' });
+    b.bairros.forEach(function (x, i) {
+      lista.appendChild(h('li', { class: 'rk' + (i < 3 ? ' top' : '') },
+        h('span', { class: 'pos', text: String(i + 1) }),
+        h('span', { class: 'nome', text: x.bairro }),
+        h('span', { class: 'pct' }, document.createTextNode(nf(x.respostas)), h('small', { text: 'respostas' })),
+        h('div', { class: 'barra', role: 'img', 'aria-label': x.bairro + ': ' + x.respostas + ' respostas' },
+          h('b', { class: 'm', style: 'width:' + (100 * x.respostas / max) + '%' })),
+        h('span', { class: 'det', text: x.alto_ou_emergencia === null ? 'Risco alto: poucos casos para detalhar' :
+          nf(x.alto_ou_emergencia) + ' com risco alto ou atendimento' })));
+    });
+    box.appendChild(lista);
+    nota.textContent = (b.areas_em_consulta ? b.areas_em_consulta + ' área(s) ainda sendo identificadas. ' : '') + b.fonte;
   }
 
   function barra(rotulo, n, total) {

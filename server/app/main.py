@@ -36,7 +36,7 @@ from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import focos, publico, stats
+from . import bairros, focos, publico, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -45,10 +45,14 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.6.0"
 
 
-def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    engine: Engine | None = None,
+    geocoder: bairros.Geocoder | None = None,
+) -> FastAPI:
     settings = settings or Settings.from_env()
     owns_engine = engine is None
     engine = engine or make_engine(settings.database_url)
@@ -81,6 +85,9 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.state.focos_locks_guard = threading.Lock()
 
     app.state.publico_cache = {}
+    app.state.geocoder = geocoder or (bairros.nominatim(settings, APP_VERSION) if settings.geocoder_ativo else None)
+    app.state.bairros_lock = threading.Lock()
+    app.state.bairros_thread = None
     app.state.publico_lock = threading.Lock()
 
     register_routes(app)
@@ -133,6 +140,8 @@ def _montar_painel_publico(app: FastAPI) -> None:
                 dados = guardado[1]
             else:
                 dados = publico.montar(session, st.settings, dias)
+                if dados.get("bairros", {}).get("areas_em_consulta"):
+                    bairros.disparar_resolucao(request.app)
                 st.publico_cache[dias] = (agora, dados)
         response.headers["Cache-Control"] = f"public, max-age={PUBLICO_CACHE_SEGUNDOS}"
         response.headers["Access-Control-Allow-Origin"] = "*"
@@ -227,6 +236,18 @@ def register_routes(app: FastAPI) -> None:
         return stats.mapa(
             session, horas=horas, minimo_celula=request.app.state.settings.min_respostas_celula
         )
+
+    @app.get("/bairros")
+    def bairros_afetados(
+        request: Request,
+        dias: int = Query(30, ge=1, le=365),
+        session: Session = Depends(get_session),
+    ) -> dict:
+        """Bairros de Manaus com mais respostas (mínimo por área, como no mapa coletivo)."""
+        dados = bairros.ranking(session, request.app.state.settings, dias)
+        if dados["areas_em_consulta"]:
+            bairros.disparar_resolucao(request.app)
+        return dados
 
     # ------------------------------------------------------------------- exportação
 

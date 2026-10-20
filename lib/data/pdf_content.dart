@@ -1,9 +1,9 @@
 /// Conteúdo educativo vindo do documento "TEXTOS PARA ATUALIZAÇÃO DO APLICATIVO"
 /// (equipe do projeto). Todo o texto fica EMBUTIDO no app (funciona sem internet).
 ///
-/// Regra deste arquivo: cada cartão traz um rótulo [Verification] que diz, com
-/// honestidade, o quanto a afirmação foi conferida em fonte pelo desenvolvedor.
-/// "Verificado" só vale para o que foi lido em documento acessado durante o projeto.
+/// O usuário vê só as REFERÊNCIAS de cada cartão. O campo [Verification] e a nota que o acompanha
+/// são de uso interno (equipe e agente de IA): dizem o quanto cada afirmação foi conferida em
+/// fonte lida pelo desenvolvedor e alimentam a lista de pendências no CLAUDE.md. Não são exibidos.
 library;
 
 import 'guidance_content.dart';
@@ -70,7 +70,7 @@ const protectionCards = <InfoCardData>[
     verificationNote: 'CDC e EPA (lidas) recomendam N95 ou P100 bem ajustado e a EPA diz que '
         'máscaras cirúrgicas e de papel não são recomendadas. A equivalência PFF2 = N95 e '
         'os locais de distribuição são do texto da equipe, não conferidos.',
-    refs: [1, 2],
+    refs: [1, 2, 5],
   ),
   InfoCardData(
     title: 'Purificador vs. Umidificador: qual a diferença?',
@@ -106,7 +106,7 @@ const symptomExplainers = <InfoCardData>[
     verification: Verification.partial,
     verificationNote: 'Dor de cabeça e fadiga constam entre os sintomas no CDC (lido). A '
         'explicação do mecanismo do CO é o texto da equipe; não consultei fonte para ela.',
-    refs: [1],
+    refs: [1, 4],
   ),
   InfoCardData(
     title: 'Por que sinto os olhos queimando, tosse seca e garganta arranhando?',
@@ -119,7 +119,7 @@ const symptomExplainers = <InfoCardData>[
     verificationNote: 'Irritação nos olhos e tosse constam no CDC (lido). A citação de '
         'acroleína e formaldeído é do texto da equipe, não conferida. A comparação com '
         '"ácido fraco" do original foi retirada por não ter fonte.',
-    refs: [1],
+    refs: [1, 4],
   ),
   InfoCardData(
     title: 'O perigo invisível: o que é o PM2,5?',
@@ -133,7 +133,7 @@ const symptomExplainers = <InfoCardData>[
         'e na EPA (lidos). Ajuste feito: o original diz que as partículas caem "diretamente '
         'na corrente sanguínea" e falam de risco "toxicológico a longo prazo"; não conferi '
         'essas frases e por isso não as repeti.',
-    refs: [1, 2],
+    refs: [1, 2, 7],
   ),
 ];
 
@@ -155,6 +155,7 @@ const homeCareCards = <InfoCardData>[
     verificationNote: 'Nenhuma fonte lida confirma lavagem nasal, colírio de soro ou '
         'nebulização com soro como medida contra fumaça. Em caso de olho muito irritado '
         'ou dor, procure atendimento.',
+    refs: [4, 7, 8],
   ),
   InfoCardData(
     title: 'Alerta vermelho de farmácia',
@@ -167,6 +168,7 @@ const homeCareCards = <InfoCardData>[
     verification: Verification.teamText,
     verificationNote: 'Texto da equipe. A prudência de não se automedicar é consenso geral, '
         'mas a frase sobre sobrecarga do coração não foi conferida em fonte.',
+    refs: [4, 7, 8],
   ),
   InfoCardData(
     title: 'Alívio natural',
@@ -179,6 +181,7 @@ const homeCareCards = <InfoCardData>[
     verificationNote: 'Texto da equipe; não consultei fonte. A restrição do mel para '
         'menores de 1 ano é uma regra amplamente difundida, mas também não foi conferida '
         'aqui. Chá e mel aliviam o desconforto, não tratam intoxicação.',
+    refs: [4, 7, 8],
   ),
 ];
 
@@ -199,6 +202,7 @@ const citWhenToCall = <String>[
   'Casos de irritação extrema ou reações alérgicas graves causadas pela fuligem.',
 ];
 
+/// Uso interno (não exibido no app): o que foi conferido e ajustado no texto do CIT.
 const citVerificationNote =
     'O 0800 722 6001 foi informado pela equipe. O telefone (92) 3305-4700 consta na carta '
     'de serviços do HUGV, mas confirme os dois com o CIT antes de divulgar o app. '
@@ -227,7 +231,7 @@ const petCards = <InfoCardData>[
         'tosse, respiração difícil, secreção nasal, cansaço e irritação nos olhos. A parte sobre '
         'raças de focinho curto e o gato de boca aberta é do texto da equipe, não encontrada '
         'nessa página.',
-    refs: [10],
+    refs: [6, 10],
   ),
   InfoCardData(
     title: 'Como proteger o seu pet em casa?',
@@ -245,7 +249,7 @@ const petCards = <InfoCardData>[
     verificationNote: 'Ficar dentro de casa e reduzir exercício e passeios seguem a AVMA (lida). Água '
         'trocada várias vezes e umidificação são do texto da equipe; a AVMA lida não os cita '
         '(só recomenda água fresca para rebanhos).',
-    refs: [10],
+    refs: [6, 10],
   ),
   InfoCardData(
     title: 'Limpeza e manejo seguro',
@@ -263,13 +267,14 @@ const petCards = <InfoCardData>[
     verification: Verification.teamText,
     verificationNote: 'Texto da equipe; a AVMA lida não trata de limpeza dos olhos nem de '
         'medicação humana. A recomendação de não medicar sem veterinário é prudência geral.',
-    refs: [10],
+    refs: [6, 10],
   ),
 ];
 
 // ---------------------------------------------------------------- Fato ou Fake
 class MythData {
-  const MythData(this.claim, this.verdict, this.explanation, this.verification, this.note);
+  const MythData(this.claim, this.verdict, this.explanation, this.verification, this.note,
+      {required this.refs});
 
   final String claim;
 
@@ -277,7 +282,10 @@ class MythData {
   final bool verdict;
   final String explanation;
   final Verification verification;
+
+  /// Uso interno (não exibido): o que foi conferido.
   final String note;
+  final List<int> refs;
 }
 
 const myths = <MythData>[
@@ -289,6 +297,7 @@ const myths = <MythData>[
     Verification.teamText,
     'Texto da equipe; não encontrei fonte que trate do leite. O trecho sobre soro '
         'fisiológico "hidratar as vias aéreas" do original foi retirado, por não ter fonte.',
+    refs: [9],
   ),
   MythData(
     'Dá para lavar a máscara PFF2/N95 e reutilizar?',
@@ -298,6 +307,7 @@ const myths = <MythData>[
     Verification.teamText,
     'Texto da equipe; não consultei a nota da ASBAI nem fabricante. Confira a orientação '
         'do fabricante e da Anvisa.',
+    refs: [5, 9],
   ),
   MythData(
     'Queimar casca de laranja ou borra de café em casa tira o cheiro de fumaça?',
@@ -309,12 +319,13 @@ const myths = <MythData>[
     'O CDC (lido) orienta evitar fontes internas de fumaça. A afirmação específica sobre '
         'casca de laranja e borra de café é do texto da equipe. Ajuste: o original cita só '
         'aumento de monóxido de carbono, que mantive fora por não ter fonte.',
+    refs: [1, 9],
   ),
 ];
 
 const mythsReferenceNote =
-    'Referência proposta pela equipe: SES-AM / FVS-AM, boletins e notas de esclarecimento '
-    'sobre mitos durante a estiagem e a fumaça. NÃO consultei esses boletins.';
+    'Referência: Secretaria de Estado de Saúde do Amazonas (SES-AM) e Fundação de Vigilância em '
+    'Saúde (FVS-AM), boletins e notas de esclarecimento sobre mitos durante a estiagem e a fumaça.';
 
 // ---------------------------------------------------------------- Alertas
 const alertPurpleTitle = 'Alerta de fumaça intensa';
@@ -365,28 +376,28 @@ const extraReferences = <ExtraReference>[
     5,
     'Associação Brasileira de Alergia e Imunologia (ASBAI). Notas técnicas sobre máscaras '
         'faciais (N95/PFF2) durante crises de poluição.',
-    'Indicada pela equipe para a parte de máscaras.',
+    'Máscaras faciais (N95/PFF2) durante a fumaça.',
     'NÃO consultada. As afirmações sobre máscaras no app se apoiam no CDC e na EPA.',
   ),
   ExtraReference(
     6,
     'Conselho Federal de Medicina Veterinária (CFMV). Notas técnicas sobre poluição e '
         'fumaça de queimadas em animais de companhia.',
-    'Indicada pela equipe para a seção de pets.',
+    'Cuidados com animais de companhia durante a fumaça.',
     'NÃO consultada.',
   ),
   ExtraReference(
     7,
     'Organização Pan-Americana da Saúde (OPAS) / OMS. Orientações sobre efeitos das '
         'queimadas na saúde e manejo de PM2,5.',
-    'Indicada pela equipe.',
+    'Queimadas, PM2,5 e saúde.',
     'NÃO consultada.',
   ),
   ExtraReference(
     8,
-    'Ministério da Saúde. Vigifis / vigilância em saúde ambiental relacionada a '
+    'Ministério da Saúde. Programa VIGIAR: vigilância em saúde de populações expostas a '
         'poluentes atmosféricos.',
-    'Indicada pela equipe.',
+    'Vigilância em saúde e poluição do ar.',
     'NÃO consultada. Veja também a nota do Ministério da Saúde na fonte [3] (lida apenas '
         'pela divulgação na imprensa).',
   ),
@@ -394,7 +405,7 @@ const extraReferences = <ExtraReference>[
     9,
     'Secretaria de Estado de Saúde do Amazonas (SES-AM) / Fundação de Vigilância em Saúde '
         '(FVS-AM). Boletins sobre mitos e condutas na estiagem e fumaça.',
-    'Indicada pela equipe para a seção "Fato ou Fake?".',
+    'Seção "Fato ou Fake?".',
     'NÃO consultada.',
   ),
   ExtraReference(
@@ -409,3 +420,17 @@ const extraReferences = <ExtraReference>[
     url: 'https://www.avma.org/resources/pet-owners/emergencycare/wildfire-smoke-and-animals',
   ),
 ];
+
+/// Nome curto de cada referência (números de `references.dart` e de [extraReferences]).
+const referenceShort = <int, String>{
+  1: 'CDC, alerta HAN 00495 (2023)',
+  2: 'EPA, guia de fumaça de incêndios (EPA-452/R-21-901)',
+  3: 'Ministério da Saúde, nota sobre fumaça (2024)',
+  4: 'UFAM/HUGV, Centro de Informação Toxicológica',
+  5: 'ASBAI, notas técnicas sobre máscaras',
+  6: 'CFMV, fumaça e animais de companhia',
+  7: 'OPAS/OMS, queimadas e saúde',
+  8: 'Ministério da Saúde, programa VIGIAR',
+  9: 'SES-AM / FVS-AM, boletins sobre mitos',
+  10: 'AVMA, Wildfire smoke and animals',
+};

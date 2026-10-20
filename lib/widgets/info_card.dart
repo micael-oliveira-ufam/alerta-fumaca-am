@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/pdf_content.dart';
 import '../theme/app_theme.dart';
+import '../screens/references_screen.dart';
 import 'ui.dart';
 
-/// Cartão educativo com selo de verificação e nota de honestidade sobre a fonte.
+/// Cartão educativo com as referências da fonte no rodapé.
 class InfoCard extends StatelessWidget {
   const InfoCard({super.key, required this.data});
   final InfoCardData data;
@@ -65,12 +66,10 @@ class InfoCard extends StatelessWidget {
               text: data.warning!,
             ),
           ],
-          const SizedBox(height: 12),
-          VerificationBadge(
-            verification: data.verification,
-            note: data.verificationNote,
-            refs: data.refs,
-          ),
+          if (data.refs.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            RefLine(refs: data.refs),
+          ],
         ],
       ),
     );
@@ -105,48 +104,31 @@ class _Callout extends StatelessWidget {
   }
 }
 
-/// Selo "Conferido / Parcialmente / Texto da equipe" com a nota expansível.
-class VerificationBadge extends StatelessWidget {
-  const VerificationBadge({super.key, required this.verification, this.note, this.refs = const []});
-  final Verification verification;
-  final String? note;
+/// "Referências: …" no fim de um cartão; toque abre a lista completa.
+class RefLine extends StatelessWidget {
+  const RefLine({super.key, required this.refs});
   final List<int> refs;
-
-  Color get _color => switch (verification) {
-        Verification.checked => const Color(0xFF2E7D32),
-        Verification.partial => const Color(0xFFB7791F),
-        Verification.teamText => const Color(0xFF8A5A00),
-      };
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(bottom: 4),
-        title: Align(
-          alignment: Alignment.centerLeft,
-          child: Pill(label: verification.label, color: _color),
+    if (refs.isEmpty) return const SizedBox.shrink();
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const ReferencesScreen()),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text.rich(
+          TextSpan(
+            style: const TextStyle(fontSize: 12.5, height: 1.4, color: AppColors.muted),
+            children: [
+              const TextSpan(text: 'Referências: ', style: TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(text: refs.map((r) => '[$r] ${referenceShort[r] ?? ''}').join('; ')),
+            ],
+          ),
         ),
-        children: [
-          if (note != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(note!, style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
-            ),
-          if (refs.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Fontes na tela Referências: ${refs.map((r) => '[$r]').join(' ')}',
-                  style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

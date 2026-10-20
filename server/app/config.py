@@ -60,6 +60,16 @@ class Settings:
     #: Ative SOMENTE se a API só for alcançável pelo túnel (senão o cabeçalho pode ser forjado).
     trust_cf_connecting_ip: bool = False
 
+    #: Descobrir o bairro de Manaus de cada célula de ~1 km pelo OpenStreetMap (Nominatim).
+    #: Só coordenadas já arredondadas (~1 km) e sem qualquer identificação são consultadas.
+    geocoder_ativo: bool = True
+
+    #: Servidor de geocodificação reversa compatível com o Nominatim.
+    geocoder_url: str = "https://nominatim.openstreetmap.org"
+
+    #: Contato enviado no User-Agent, como exige a política de uso do Nominatim.
+    geocoder_contato: str = "micael.oliveira@ufam.edu.br"
+
     #: Endereço público fixo da API (túnel nomeado). Vazio = detectar o link aleatório do túnel.
     public_url: str = ""
 
@@ -78,6 +88,9 @@ class Settings:
             admin_token=os.getenv("ADMIN_TOKEN", "").strip(),
             trust_cf_connecting_ip=os.getenv("TRUST_CF_CONNECTING_IP", "").strip().lower()
             in ("1", "true", "yes", "sim"),
+            geocoder_ativo=os.getenv("GEOCODER_ATIVO", "true").strip().lower() in ("1", "true", "yes", "sim"),
+            geocoder_url=os.getenv("GEOCODER_URL", "https://nominatim.openstreetmap.org").strip().rstrip("/"),
+            geocoder_contato=os.getenv("GEOCODER_CONTATO", "micael.oliveira@ufam.edu.br").strip(),
             public_url=os.getenv("PUBLIC_URL", "").strip().rstrip("/"),
             tunnel_metrics_url=os.getenv("TUNNEL_METRICS_URL", "").strip().rstrip("/"),
         )

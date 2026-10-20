@@ -12,7 +12,25 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.5.1.
+Nenhuma mudança desde a 1.6.0.
+
+## [1.6.0] - 2026-10-20
+
+### Adicionado
+- Questionário: pergunta final "Quer compartilhar suas respostas para estudos epidemiológicos?"; "Sim" envia ao servidor (com localização aproximada de ~1 km se permitida), "Não" não envia nada. Termo LGPD 1.2.
+- "Sintomas mais relatados": gráficos sempre visíveis (zerados sem dados), nível de risco e **bairros de Manaus mais afetados** (`GET /bairros`, `server/app/bairros.py`, tabela `celulas_bairro`, geocodificação reversa com Nominatim; variáveis `GEOCODER_ATIVO`, `GEOCODER_URL`, `GEOCODER_CONTATO`).
+- Mapa: seletor que mostra só as datas de imagem de satélite com imagem disponível (`gibs_availability.dart`).
+- Sobre: link da plataforma online e desenvolvedores com foto e e-mail.
+- Plataforma online: bairros, focos de calor detalhados (por satélite, dia e município; mapa de calor com `leaflet.heat` 0.2.0), links oficiais de desmatamento e desenvolvedores.
+
+### Alterado
+- Questionário: removidos os botões "Refazer" e "Compartilhar localização".
+- Fato ou Fake, Farmácia Caseira, Pets e CIT: mostram só as referências, sem texto da equipe nem selo de verificação (o estado de verificação ficou nos dados e no CLAUDE.md).
+- Sobre: removido "Alterar endereço".
+
+### Corrigido
+- Mapa de focos em "Hoje" nunca mostrava focos: agora usa a camada de 48 h recortada pelo dia atual de Manaus (causa provável, não confirmada ao vivo). O servidor mapeia `today` para a camada de 48 h.
+- Mensagem de erro técnica quando a imagem de satélite não existe para a data.
 
 ## [1.5.1] - 2026-10-20
 

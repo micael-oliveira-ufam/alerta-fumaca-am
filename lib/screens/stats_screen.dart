@@ -12,8 +12,11 @@ import '../widgets/ui.dart';
 const _periodDays = 30;
 
 class _StatsData {
-  const _StatsData({required this.snapshot, this.note});
+  const _StatsData({required this.snapshot, this.neighborhoods, this.note});
   final StatsSnapshot snapshot;
+
+  /// Bairros de Manaus mais afetados; `null` sem servidor ou se a consulta falhou.
+  final NeighborhoodsData? neighborhoods;
 
   /// Aviso quando o servidor falhou e os números vêm só deste aparelho.
   final String? note;
@@ -30,18 +33,15 @@ class StatsScreen extends StatefulWidget {
 class _StatsScreenState extends State<StatsScreen> {
   final _api = ApiClient();
   final _answers = LocalAnswerStore();
-  final _consent = ConsentStore();
   late final AnswerSync _sync = AnswerSync(api: _api);
 
   late Future<_StatsData> _future = _load();
-  bool _sendEnabled = false;
-  bool _includeLocation = false;
   int _pending = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadPrivacy();
+    _loadPending();
   }
 
   Future<_StatsData> _load() async {
@@ -50,7 +50,13 @@ class _StatsScreenState extends State<StatsScreen> {
       try {
         await _sync.flush(); // entrega o que ficou pendente antes de ler os números
         final snapshot = await _api.fetchStats(days: _periodDays);
-        return _StatsData(snapshot: snapshot);
+        NeighborhoodsData? neighborhoods;
+        try {
+          neighborhoods = await _api.fetchNeighborhoods(days: _periodDays);
+        } on ApiException {
+          neighborhoods = null; // os demais gráficos continuam
+        }
+        return _StatsData(snapshot: snapshot, neighborhoods: neighborhoods);
       } on ApiException catch (e) {
         note = '${e.message} Mostrando só os dados deste aparelho.';
       }
@@ -59,16 +65,10 @@ class _StatsScreenState extends State<StatsScreen> {
     return _StatsData(snapshot: computeLocalStats(records, days: _periodDays), note: note);
   }
 
-  Future<void> _loadPrivacy() async {
-    final decision = await _consent.sendDecision();
-    final location = await _consent.includeLocationInSend();
+  Future<void> _loadPending() async {
     final pending = await _sync.pendingCount();
     if (!mounted) return;
-    setState(() {
-      _sendEnabled = decision ?? false;
-      _includeLocation = location;
-      _pending = pending;
-    });
+    setState(() => _pending = pending);
   }
 
   void _reload() => setState(() => _future = _load());
@@ -113,38 +113,34 @@ class _StatsScreenState extends State<StatsScreen> {
                 ],
                 _Overview(snapshot: data.snapshot),
                 const SizedBox(height: 16),
-                if (data.snapshot.sufficient) ...[
-                  const SectionTitle('SINTOMAS MAIS RELATADOS'),
-                  AppCard(
-                    child: Column(
-                      children: [
-                        for (final s in data.snapshot.symptoms) _SymptomRow(stat: s),
-                      ],
-                    ),
+                const SectionTitle('SINTOMAS MAIS RELATADOS'),
+                AppCard(
+                  child: Column(
+                    children: [
+                      for (final s in _symptomsToShow(data.snapshot)) _SymptomRow(stat: s),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Relato = sintoma com intensidade leve ou maior. O percentual é sobre o '
-                    'total de respostas do período. Os números descrevem quem usa o app e '
-                    'não representam toda a população.',
-                    style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
-                  ),
-                ],
-                if (_api.isConfigured) ...[
-                  const SizedBox(height: 20),
-                  _PrivacySection(
-                    sendEnabled: _sendEnabled,
-                    includeLocation: _includeLocation,
-                    pending: _pending,
-                    onSendChanged: (v) async {
-                      await _consent.setSendDecision(v);
-                      if (!v) await _consent.setIncludeLocationInSend(false);
-                      await _loadPrivacy();
-                    },
-                    onLocationChanged: (v) async {
-                      await _consent.setIncludeLocationInSend(v);
-                      await _loadPrivacy();
-                    },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  data.snapshot.sufficient
+                      ? 'Relato = sintoma com intensidade leve ou maior. O percentual é sobre o '
+                          'total de respostas do período. Os números descrevem quem usa o app e '
+                          'não representam toda a população.'
+                      : 'Os gráficos aparecem zerados porque ainda não há dados publicados.',
+                  style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
+                ),
+                const SizedBox(height: 16),
+                const SectionTitle('NÍVEL DE RISCO DAS RESPOSTAS'),
+                AppCard(child: _LevelsChart(snapshot: data.snapshot)),
+                const SizedBox(height: 16),
+                const SectionTitle('BAIRROS DE MANAUS MAIS AFETADOS'),
+                _NeighborhoodsCard(data: data.neighborhoods, serverConfigured: _api.isConfigured),
+                if (_pending > 0) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Há $_pending envio(s) aguardando conexão.',
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
                   ),
                 ],
               ],
@@ -154,6 +150,23 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
+}
+
+/// Sintomas do período; se ainda não há dados, a lista completa com zeros (o gráfico não some).
+List<SymptomStat> _symptomsToShow(StatsSnapshot snapshot) {
+  if (snapshot.sufficient && snapshot.symptoms.isNotEmpty) return snapshot.symptoms;
+  return [
+    for (final item in symptomItems)
+      SymptomStat(
+        id: item.id,
+        reports: 0,
+        percent: 0,
+        mild: 0,
+        moderate: 0,
+        intense: 0,
+        meanSeverity: null,
+      ),
+  ];
 }
 
 class _Overview extends StatelessWidget {
@@ -280,57 +293,129 @@ class _SymptomRow extends StatelessWidget {
   static String _pct(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
 }
 
-class _PrivacySection extends StatelessWidget {
-  const _PrivacySection({
-    required this.sendEnabled,
-    required this.includeLocation,
-    required this.pending,
-    required this.onSendChanged,
-    required this.onLocationChanged,
-  });
+/// Barras do nível de risco das respostas (sempre visível, inclusive zerado).
+class _LevelsChart extends StatelessWidget {
+  const _LevelsChart({required this.snapshot});
+  final StatsSnapshot snapshot;
 
-  final bool sendEnabled;
-  final bool includeLocation;
-  final int pending;
-  final ValueChanged<bool> onSendChanged;
-  final ValueChanged<bool> onLocationChanged;
+  static String _label(RiskLevel l) => switch (l) {
+        RiskLevel.low => 'Baixo',
+        RiskLevel.moderate => 'Moderado',
+        RiskLevel.high => 'Alto',
+        RiskLevel.emergency => 'Procure atendimento',
+      };
 
   @override
   Widget build(BuildContext context) {
+    final counts = {
+      for (final l in RiskLevel.values) l: snapshot.sufficient ? (snapshot.levels[l.name] ?? 0) : 0,
+    };
+    final total = counts.values.fold<int>(0, (a, b) => a + b);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle('PRIVACIDADE E ENVIO'),
-        AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Column(
-            children: [
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                title: const Text('Enviar minhas respostas, sem identificação'),
-                subtitle: const Text('Sintomas, perfil e nível de risco (dados de saúde).'),
-                value: sendEnabled,
-                onChanged: onSendChanged,
-              ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                title: const Text('Incluir localização aproximada (~1 km)'),
-                value: includeLocation,
-                onChanged: sendEnabled ? onLocationChanged : null,
-              ),
-            ],
+        for (final level in RiskLevel.values)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(_label(level),
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink)),
+                    ),
+                    Text(
+                      '${counts[level]} · ${total == 0 ? '0' : (100 * counts[level]! / total).toStringAsFixed(1).replaceAll('.', ',')}%',
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: total == 0 ? 0 : counts[level]! / total,
+                    minHeight: 9,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation(levelColor(level)),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          [
-            'O servidor do projeto não guarda nome, telefone, e-mail, IP nem identificador do aparelho.',
-            'Como os registros não têm identificação, não é possível apagar depois um envio específico.',
-            if (pending > 0) 'Há $pending envio(s) aguardando conexão.',
-          ].join(' '),
-          style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
-        ),
       ],
+    );
+  }
+}
+
+/// Ranking dos bairros de Manaus; sem dados, mostra as barras vazias e a explicação.
+class _NeighborhoodsCard extends StatelessWidget {
+  const _NeighborhoodsCard({required this.data, required this.serverConfigured});
+  final NeighborhoodsData? data;
+  final bool serverConfigured;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = data?.items ?? const <NeighborhoodStat>[];
+    final top = items.isEmpty ? 0 : items.first.responses;
+    final rows = items.isEmpty ? 5 : items.length;
+    final message = !serverConfigured
+        ? 'Disponível quando o app estiver conectado ao servidor do projeto.'
+        : data == null
+            ? 'Não foi possível carregar os bairros agora.'
+            : 'Ainda não há dados publicados. Um bairro aparece quando tem pelo menos '
+                '${data!.minimum} respostas.';
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < rows; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          items.isEmpty ? '—' : '${i + 1}. ${items[i].name}',
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+                        ),
+                      ),
+                      Text(
+                        items.isEmpty ? '0' : '${items[i].responses} resposta(s)',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: items.isEmpty || top == 0 ? 0 : items[i].responses / top,
+                      minHeight: 9,
+                      backgroundColor: AppColors.border,
+                    ),
+                  ),
+                  if (items.isNotEmpty && items[i].high > 0) ...[
+                    const SizedBox(height: 3),
+                    Text('${items[i].high} com risco alto ou emergência',
+                        style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                  ],
+                ],
+              ),
+            ),
+          if (items.isEmpty) ...[
+            const SizedBox(height: 6),
+            Text(message, style: const TextStyle(height: 1.4, color: AppColors.muted)),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(data!.source, style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted)),
+          ],
+        ],
+      ),
     );
   }
 }

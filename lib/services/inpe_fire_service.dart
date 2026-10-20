@@ -54,7 +54,9 @@ class FireResult {
 /// Usa as camadas `todosats` (todos os satélites), para poder separar por satélite.
 /// As camadas `satref` trazem apenas o satélite de referência.
 enum FireWindow {
-  today('Hoje', 'dados_abertos:focos_hoje_br_todosats', 'today'),
+  // "Hoje" usa a camada de 48 h e filtra o dia local (Manaus) no cliente: a camada
+  // `focos_hoje_*` do INPE costumava vir sem registros, enquanto a de 48 h sempre trazia focos.
+  today('Hoje', 'dados_abertos:focos_48h_br_todosats', 'today'),
   last48h('Últimas 48 h', 'dados_abertos:focos_48h_br_todosats', 'last48h');
 
   const FireWindow(this.label, this.layer, this.apiName);
@@ -66,6 +68,22 @@ enum FireWindow {
 
   /// Nome usado no servidor próprio (`/focos?window=...`).
   final String apiName;
+
+  /// Fuso de Manaus (UTC-4, sem horário de verão).
+  static const manausOffset = Duration(hours: -4);
+
+  /// Início do dia atual em Manaus, em UTC.
+  static DateTime startOfTodayUtc([DateTime? now]) {
+    final local = (now ?? DateTime.now()).toUtc().add(manausOffset);
+    return DateTime.utc(local.year, local.month, local.day).subtract(manausOffset);
+  }
+
+  /// Aplica o recorte de tempo da janela (só "Hoje" recorta; 48 h já vem da camada).
+  List<FireHotspot> filter(List<FireHotspot> all, [DateTime? now]) {
+    if (this != FireWindow.today) return all;
+    final start = startOfTodayUtc(now);
+    return all.where((h) => !h.detectedAt.toUtc().isBefore(start)).toList();
+  }
 }
 
 /// Abrangência geográfica da consulta.
@@ -191,7 +209,7 @@ class InpeFireService {
         retries: retries,
         retryDelay: retryDelay,
       );
-      final hotspots = parseFeatureCollection(body, onlyState: onlyState);
+      final hotspots = window.filter(parseFeatureCollection(body, onlyState: onlyState));
       final now = DateTime.now().toUtc();
       if (scope == FireScope.amazonas) await _writeCache(window, sats, body, now);
       return FireResult(hotspots: hotspots, fetchedAt: now, fromCache: false);
@@ -286,7 +304,7 @@ class InpeFireService {
       // Só reaproveita se foi salvo com a mesma seleção de satélites.
       if (map['sats'] != _satKey(sats)) return null;
       final savedAt = DateTime.parse(map['savedAt'] as String).toUtc();
-      final hotspots = parseFeatureCollection(map['body'] as String, onlyState: state);
+      final hotspots = window.filter(parseFeatureCollection(map['body'] as String, onlyState: state));
       return FireResult(hotspots: hotspots, fetchedAt: savedAt, fromCache: true);
     } catch (_) {
       return null; // cache ausente, corrompido ou indisponível: ignora

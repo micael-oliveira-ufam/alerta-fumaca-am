@@ -22,11 +22,20 @@ Estas ordens têm prioridade sobre qualquer preferência de estilo do agente. As
 O usuário é cientista: precisa garantir **integridade dos dados e reprodutibilidade**.
 
 1. **Nunca inventar dado.** Número, telefone, URL, citação, versão de biblioteca, resultado de teste ou comportamento de API só entram no código ou na resposta se foram **vistos** (em fonte lida, em saída de comando executado) nesta sessão ou estão registrados neste arquivo como verificados.
-2. **Separar sempre “verificado” de “não verificado”**, na resposta e no código (comentários, `caveat`, rótulos do app). Padrão de rótulos usado no app: *Conferido em fonte*, *Parcialmente conferido*, *Texto da equipe, fonte não consultada*.
+2. **Separar sempre “verificado” de “não verificado”**, na resposta e no código (comentários, `caveat`, rótulos do app). Os rótulos *Conferido em fonte*, *Parcialmente conferido* e *Texto da equipe, fonte não consultada* vivem **só nos dados** (`lib/data/pdf_content.dart`) e na lista de pendências deste arquivo; **o app NÃO os exibe** (ver 1.4).
 3. **Dizer o que não foi executado.** O ambiente do agente **não tem Flutter nem Dart**. Todo código Dart é escrito sem compilar. O agente deve dizer isso e pedir que o usuário rode `flutter analyze` e `flutter test`, e depois **trazer os resultados reais** de volta.
 4. **Fonte de texto de saúde.** Texto de saúde (humana ou veterinária) fornecido pela equipe é preservado, mas cada afirmação sem fonte lida recebe o rótulo de não verificada. Se uma afirmação puder causar dano (telefone de emergência, dose, conduta), o agente **sinaliza** e propõe a correção em vez de aplicar em silêncio. Ajustes feitos pelo agente a um texto da equipe devem ser **declarados** ao usuário e na própria nota do cartão.
 5. **Reprodutibilidade.** Comandos exatos, versões e caminhos devem constar na resposta ou no README. Dependência nova é registrada no `pubspec.yaml` ou no `server/requirements.txt`. Resultado de teste é citado com a contagem real.
 6. **Se não souber ou não conseguir verificar, dizer.** Nunca preencher a lacuna com uma suposição apresentada como fato.
+
+### 1.4 Este arquivo (a SKILL) descreve a versão FINAL para o usuário
+
+Regra do usuário (20/10/2026): tudo o que o usuário final vê deve estar **o mais correto e alinhado possível**, como produto final.
+
+- **Nenhuma nota interna na interface**: nada de "texto da equipe", "não verificado", "não consultei", pendências ou selos de verificação. Cada cartão de saúde mostra só **"Referências: [n] fonte"**. O estado de verificação fica nos dados, neste arquivo (seção de pendências) e na resposta ao usuário.
+- Botões enxutos; sem passos redundantes. Sem telas vazias: gráficos aparecem mesmo sem dados, com mensagem clara.
+- Erros técnicos nunca vão cruas ao usuário: mensagem em português, dizendo o que fazer.
+- Antes de mexer em UI, perguntar-se: "isto é o que o usuário final deveria ler?"
 
 ### 1.2 Idioma e tom
 
@@ -352,6 +361,16 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 
 ### 4.15 Erro "No Podfile found" — versão 1.5.1
 - O usuário colou: `[!] No Podfile' found in the project directory.` ao rodar o fluxo iOS. Causa provável: `ios/Podfile` ainda não existia (o `flutter create` não o gera nesse ponto); **a causa exata no Mac do usuário não foi confirmada**. Correção em `_preparar.sh` (ver CHANGELOG). Se persistir, pedir a saída de `ls ios` e de `flutter build ios --config-only --no-codesign`.
+
+### 4.16 Ajustes de produto final — versão 1.6.0
+- **Questionário:** removidos "Refazer" e "Compartilhar localização". Ao final, pergunta por resposta: "Quer compartilhar suas respostas para estudos epidemiológicos?" Sim → envio ao servidor (com localização ~1 km se permitida; sem ela se negada); Não → nada sai. Causa de o envio "não ocorrer": app sem URL do servidor na compilação (modo local) e fluxo antigo de consentimento em caixas de diálogo. Termo LGPD v1.2.
+- **Referências no lugar de selos** em Fato ou Fake, Farmácia Caseira, Pets e CIT (UI sem notas internas; ver 1.4). Mapa de referências: farmácia → [4, 7, 8]; pets → [6, 10]; mitos → [9] e [5, 9], [1, 9]; sintomas → [1, 2, 4, 7]. **Atenção:** as fontes 5, 6, 7, 8 e 9 **continuam NÃO consultadas** (ver pendências); estão citadas como referência por pedido do usuário.
+- **Sintomas mais relatados:** gráficos sempre visíveis (zerados se não houver dados), nível de risco e **bairros de Manaus** (`server/app/bairros.py`: coordenada de ~1 km → bairro via Nominatim, cache em `celulas_bairro`, mínimo 3 respostas por bairro, só Manaus).
+- **Mapa "Hoje" sem focos:** causa provável (**não confirmada**: o INPE não é acessível daqui) é a camada `focos_hoje_*` vir vazia. Correção: "Hoje" usa a camada de 48 h e recorta o dia atual de Manaus (UTC-4) no app (`FireWindow.filter`) e o servidor mapeia `today` para a camada de 48 h.
+- **Datas de satélite:** `lib/services/gibs_availability.dart` testa um tile (zoom 3, Manaus) por data e mostra só as datas com imagem. **Não verificado ao vivo** (GIBS inacessível daqui): se a GIBS devolver 200 com tile em branco para datas sem dado, a data aparecerá; o aviso de falha de tile segue como segunda proteção.
+- **Sobre:** removido "Alterar endereço"; o link da plataforma abre no navegador. `ApiConfig.save/override` ficou sem tela (código morto, mantido por testes). Desenvolvedores com foto e e-mail (`assets/images/dev_*.jpg`). **Suposição declarada:** a foto de camiseta cinza = Micael e a de óculos/crachá LNCC = Elias (pela ordem enviada); trocar os arquivos se estiver invertido.
+- **Plataforma online:** seções de bairros, focos de calor (KPIs, por satélite/dia/município, mapa de calor), links de desmatamento e desenvolvedores. **Desmatamento: só links oficiais** (TerraBrasilis); nomes de camadas WMS do DETER/PRODES não foram verificados e não foram usados.
+- **Verificado:** testes do servidor; a página pública em Chromium com focos simulados (dados fictícios). **Não verificado:** todo o Dart novo (não compila aqui), Nominatim, GIBS, INPE.
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).

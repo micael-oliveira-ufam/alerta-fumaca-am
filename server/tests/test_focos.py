@@ -20,7 +20,7 @@ SAMPLE = (
 
 def test_parametros_amazonas_com_satelites():
     p = focos.build_params("today", "amazonas", ["NPP-375", "AQUA_M-T"])
-    assert p["typeName"] == "dados_abertos:focos_hoje_br_todosats"
+    assert p["typeName"] == "dados_abertos:focos_48h_br_todosats"
     assert p["CQL_FILTER"] == "estado='AMAZONAS' AND satelite IN ('AQUA_M-T','NPP-375')"
     assert p["propertyName"].startswith("longitude,latitude")  # geometria vem como propriedade
 

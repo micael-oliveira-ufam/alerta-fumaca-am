@@ -91,9 +91,8 @@ class ReferencesScreen extends StatelessWidget {
           const AppCard(
             color: Color(0xFFFFF8E1),
             child: Text(
-              'Estas fontes foram indicadas pela equipe para os textos de proteção, farmácia '
-              'caseira, pets e "Fato ou Fake?". Abaixo está dito o que foi conferido pelo '
-              'desenvolvedor e o que NÃO foi consultado. Nada aqui substitui orientação médica ou veterinária.',
+              'Fontes dos textos de proteção, sintomas, farmácia caseira, pets e "Fato ou Fake?". '
+              'Nada aqui substitui orientação médica ou veterinária.',
               style: TextStyle(height: 1.45, color: AppColors.ink),
             ),
           ),
@@ -108,9 +107,6 @@ class ReferencesScreen extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w700, height: 1.35, color: AppColors.ink)),
                   const SizedBox(height: 8),
                   Text('Usado para: ${r.used}', style: const TextStyle(height: 1.4, color: AppColors.ink)),
-                  const SizedBox(height: 6),
-                  Text('Verificação: ${r.status}',
-                      style: const TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF8A5A00))),
                   if (r.url != null) ...[
                     const SizedBox(height: 6),
                     Text(r.url!,

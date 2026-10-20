@@ -44,6 +44,32 @@ class MapCell {
       );
 }
 
+/// Bairro de Manaus com respostas suficientes (devolvido por `GET /bairros`).
+class NeighborhoodStat {
+  const NeighborhoodStat({required this.name, required this.responses, required this.high});
+
+  final String name;
+  final int responses;
+
+  /// Respostas com nível alto ou de emergência.
+  final int high;
+
+  factory NeighborhoodStat.fromJson(Map<String, dynamic> j) => NeighborhoodStat(
+        name: j['bairro'] as String,
+        responses: (j['respostas'] as num).toInt(),
+        high: (j['alto_ou_emergencia'] as num).toInt(),
+      );
+}
+
+class NeighborhoodsData {
+  const NeighborhoodsData({required this.items, required this.minimum, required this.source});
+
+  /// Do mais para o menos afetado (mais respostas).
+  final List<NeighborhoodStat> items;
+  final int minimum;
+  final String source;
+}
+
 /// UUID v4 aleatório, gerado para CADA envio (não para cada aparelho).
 /// Serve só para o reenvio após falha de rede não duplicar o registro no servidor.
 String newSubmissionId({Random? random}) {
@@ -153,6 +179,23 @@ class ApiClient {
       return StatsSnapshot.fromServerJson(body as Map<String, dynamic>);
     } catch (_) {
       throw const ApiException('As estatísticas vieram em formato inesperado.');
+    }
+  }
+
+  Future<NeighborhoodsData> fetchNeighborhoods({int days = 30}) async {
+    final body = await _getJson('/bairros', {'dias': '$days'});
+    try {
+      final map = body as Map<String, dynamic>;
+      return NeighborhoodsData(
+        items: [
+          for (final b in map['bairros'] as List<dynamic>)
+            NeighborhoodStat.fromJson(b as Map<String, dynamic>),
+        ],
+        minimum: (map['minimo_por_bairro'] as num).toInt(),
+        source: map['fonte'] as String,
+      );
+    } catch (_) {
+      throw const ApiException('Os bairros vieram em formato inesperado.');
     }
   }
 
