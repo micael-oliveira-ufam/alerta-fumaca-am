@@ -48,7 +48,7 @@ dart run flutter_launcher_icons
 dart run flutter_native_splash:create
 flutter analyze
 flutter test
-flutter build apk --release "${DEFINES[@]}"
+flutter build apk --release ${DEFINES[@]+"${DEFINES[@]}"}
 
 APK="build/app/outputs/flutter-apk/app-release.apk"
 DEST="dist/Alerta-Fumaca-AM.apk"

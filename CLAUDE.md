@@ -223,6 +223,9 @@ docker-compose.yml       servidor + banco + túnel Cloudflare
 | Objetivo | Comando |
 |---|---|
 | Gerar APK | `bash tool/gerar_apk.sh` (saída em `dist/`, com `SHA256SUMS`) |
+| Requisitos no macOS | `bash tool/instalar_requisitos_macos.sh` |
+| Abrir emulador e rodar | `bash tool/abrir_emulador.sh ios|android [URL]` |
+| Gerar iOS | `bash tool/gerar_ios.sh simulador|dispositivo [URL]` (dispositivo = .ipa sem assinatura) |
 | Subir servidor | `bash tool/iniciar_servidor.sh` (cria `.env` com segredos aleatórios; painel em `127.0.0.1:8080`) |
 | Testes do servidor | `cd server && python3 -m pytest -q` |
 | Testes do app | `flutter test` |
@@ -332,6 +335,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Efeito no Android/iOS:** o identificador do app deriva de `--org br.ufam.fcf` + nome do pacote (`br.ufam.fcf.respirar_amazonas`). Quem tem a versão antiga instalada terá **um segundo app**, não uma atualização. Aceitável antes de publicar; confirmar com o usuário.
 - **Repositório:** o agente **não consegue renomear** (o proxy devolve 403 para escrita de configurações). O usuário deve renomear em *Settings → General → Repository name* e depois rodar `git remote set-url origin https://github.com/micael-oliveira-ufam/respirar-amazonas.git`. O GitHub redireciona o nome antigo.
 - A pasta local também pode ser renomeada (sem acentos e sem espaços).
+
+### 4.13 iOS e emuladores — versão 1.4.0
+- Pedido: gerar também uma versão para iOS e fornecer todo o código para baixar os pacotes e abrir o emulador.
+- Scripts novos em `tool/`: `gerar_ios.sh`, `abrir_emulador.sh`, `instalar_requisitos_macos.sh`, `_preparar.sh`. Detalhes e limites no README.
+- **Verificado:** `bash -n` e execução completa dos fluxos com comandos simulados (`uname`, `flutter`, `xcrun`, `pod`, `adb` falsos) em Linux: ordem dos passos, argumentos, geração do zip/.ipa e patch do `Info.plist`. **Não verificado:** build iOS real, Simulador, Android real, `brew install --cask flutter`, `xcodebuild -downloadPlatform iOS`.
+- O `.ipa` é **sem assinatura**: não instala em iPhone; exige conta Apple Developer.
+- Corrigido o bug do `DEFINES` vazio no bash 3.2 do macOS (também em `gerar_apk.sh`).
 
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).

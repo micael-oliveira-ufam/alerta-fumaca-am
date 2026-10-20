@@ -12,6 +12,16 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.4.0.
+
+## [1.4.0] - 2026-10-20
+
+### Adicionado
+- **iOS e emuladores**: `tool/gerar_ios.sh` (simulador ou release sem assinatura, com SHA-256), `tool/abrir_emulador.sh ios|android` (baixa pacotes, abre o Simulador/emulador e roda o app), `tool/instalar_requisitos_macos.sh` (Flutter, CocoaPods, runtime do simulador, `flutter doctor`) e `tool/_preparar.sh` (funções comuns). Seção "iOS e emuladores" no README.
+
+### Corrigido
+- `tool/gerar_apk.sh`: no bash 3.2 do macOS, `"${DEFINES[@]}"` com a lista vazia falha com "unbound variable" (por causa do `set -u`) quando o script roda sem URL de servidor. Trocado por `${DEFINES[@]+"${DEFINES[@]}"}`.
+
 Nenhuma mudança desde a 1.3.1.
 
 ## [1.3.1] - 2026-10-19

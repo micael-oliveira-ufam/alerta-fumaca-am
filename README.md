@@ -123,6 +123,46 @@ flutter build apk --release --dart-define=API_BASE_URL=https://api.seudominio.co
 
 Omita `--dart-define` para o modo local.
 
+## iOS e emuladores (macOS)
+
+Requisitos: macOS, **Xcode** (App Store), Flutter e CocoaPods. O Xcode não é instalável por script; o resto sim.
+
+```bash
+# 1) Uma vez: confere/instala Homebrew-Flutter, CocoaPods, runtime do simulador iOS e roda o flutter doctor
+bash tool/instalar_requisitos_macos.sh
+
+# 2) Baixa os pacotes (pub get, precache, pods), abre o Simulador do iPhone e roda o app
+bash tool/abrir_emulador.sh ios                      # modo local
+bash tool/abrir_emulador.sh ios https://SEU-LINK     # com servidor
+
+# Emulador Android (precisa de um AVD criado no Android Studio)
+bash tool/abrir_emulador.sh android
+
+# Gerar o app iOS em dist/
+bash tool/gerar_ios.sh simulador                     # RespirAR-Amazonas-simulador.zip (Runner.app)
+bash tool/gerar_ios.sh dispositivo [URL]             # .ipa SEM assinatura
+```
+
+Variáveis: `SIMULADOR_IOS="iPhone 16"` e `EMULADOR_ANDROID="Pixel_8"` escolhem o aparelho.
+
+Comandos manuais equivalentes (iOS):
+
+```bash
+flutter create --platforms=android,ios --org br.ufam.fcf --project-name respirar_amazonas .   # só se ios/ não existir
+python3 tool/apply_platform_config.py
+flutter pub get && flutter precache --ios
+(cd ios && pod install --repo-update)
+open -a Simulator
+flutter run                       # escolha o simulador, ou: flutter run -d <UDID>
+flutter build ios --simulator --debug
+```
+
+Limites que valem saber:
+- **O `.ipa` do modo `dispositivo` sai sem assinatura e não instala num iPhone.** Para instalar num aparelho ou publicar na App Store é preciso uma conta Apple Developer e configurar *Signing & Capabilities* em `ios/Runner.xcworkspace`.
+- O Simulador **não faz ligações**: o botão de discagem (SAMU e CIT) só funciona num aparelho real.
+- Servidor em `http://` (sem TLS) é bloqueado pelo iOS (App Transport Security). Use o link `https://` do túnel Cloudflare.
+- Os scripts novos foram validados aqui apenas com comandos simulados (Linux, sem Xcode nem Flutter): a lógica dos passos foi conferida, **mas nenhum build iOS real foi feito**.
+
 > **Por que o script de permissões.** Sem `INTERNET` no `AndroidManifest.xml` principal, um APK de release não acessa a rede (o Flutter só injeta essa permissão nos builds de debug). Confira com `python3 tool/apply_platform_config.py --check`.
 
 ### Diagnóstico pelo próprio app
