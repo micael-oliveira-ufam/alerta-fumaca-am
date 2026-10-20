@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/guidance_content.dart';
+import '../data/pdf_content.dart';
 import '../logic/context_advice.dart';
 import '../logic/risk_assessment.dart';
 import '../models/answer_record.dart';
@@ -15,6 +16,7 @@ import '../theme/app_theme.dart';
 import '../widgets/choice_widgets.dart';
 import '../widgets/emergency_banner.dart';
 import '../widgets/ui.dart';
+import 'info_screen.dart';
 import 'references_screen.dart';
 
 class QuestionnaireScreen extends StatefulWidget {
@@ -692,6 +694,25 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         const EmergencyBanner(),
         const SizedBox(height: 12),
       ],
+      FilledButton.icon(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(64, 52),
+          shape: const StadiumBorder(),
+        ),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const InfoScreen(
+              title: 'Entenda seus sintomas',
+              cards: symptomExplainers,
+              showCit: true,
+            ),
+          ),
+        ),
+        icon: const Icon(Icons.psychology_alt_rounded),
+        label: const Text('Entenda seus sintomas'),
+      ),
+      const SizedBox(height: 10),
       OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 52),

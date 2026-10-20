@@ -6,7 +6,9 @@ import '../theme/app_theme.dart';
 import '../widgets/cit_card.dart';
 import '../widgets/ui.dart';
 import 'about_screen.dart';
+import '../data/pdf_content.dart';
 import 'guidance_screen.dart';
+import 'info_screen.dart';
 import 'questionnaire_screen.dart';
 import 'references_screen.dart';
 import 'risk_map_screen.dart';
@@ -96,6 +98,42 @@ class HomeScreen extends StatelessWidget {
                   color: const Color(0xFF546E7A),
                   label: 'Sobre o app',
                   onTap: () => _open(context, const AboutScreen()),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.local_pharmacy_rounded,
+                  color: const Color(0xFFC62828),
+                  label: 'Farmácia caseira',
+                  onTap: () => _open(
+                    context,
+                    const InfoScreen(title: 'Farmácia caseira e cuidados', cards: homeCareCards),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.pets_rounded,
+                  color: const Color(0xFF6D4C41),
+                  label: 'E os nossos pets?',
+                  onTap: () => _open(
+                    context,
+                    const InfoScreen(title: 'E os nossos pets?', cards: petCards),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CircleAction(
+                  icon: Icons.fact_check_rounded,
+                  color: const Color(0xFF283593),
+                  label: 'Fato ou Fake?',
+                  onTap: () => _open(context, const MythsScreen()),
                 ),
               ),
             ],

@@ -1,0 +1,344 @@
+# CLAUDE.md — Alerta Fumaça AM
+
+Instruções permanentes para o agente (Claude Code) que trabalha neste repositório.
+**Leia este arquivo inteiro antes de qualquer alteração.** Ele tem quatro partes:
+
+1. [Ordens obrigatórias](#1-ordens-obrigatórias-ao-agente) — o que o agente DEVE fazer sempre.
+2. [Diretrizes de comportamento (SKILL anexada)](#2-diretrizes-de-comportamento-skill-anexada) — texto original, sem alterações.
+3. [O projeto](#3-o-projeto) — o que é, como está organizado e como rodar.
+4. [Histórico detalhado](#4-histórico-detalhado-do-que-foi-feito) — o que já foi feito, na ordem, e o que ficou pendente ou não verificado.
+
+Autores: Micael Davi Lima de Oliveira e Elias de Souza Barros (FCF · UFAM).
+Repositório: https://github.com/micael-oliveira-ufam/alerta-fumaca-am (ramo `main`).
+
+---
+
+## 1. Ordens obrigatórias ao agente
+
+Estas ordens têm prioridade sobre qualquer preferência de estilo do agente. As diretrizes da seção 2 complementam estas ordens; em caso de conflito, **valem estas**.
+
+### 1.1 Postura científica (a mais importante)
+
+O usuário é cientista: precisa garantir **integridade dos dados e reprodutibilidade**.
+
+1. **Nunca inventar dado.** Número, telefone, URL, citação, versão de biblioteca, resultado de teste ou comportamento de API só entram no código ou na resposta se foram **vistos** (em fonte lida, em saída de comando executado) nesta sessão ou estão registrados neste arquivo como verificados.
+2. **Separar sempre “verificado” de “não verificado”**, na resposta e no código (comentários, `caveat`, rótulos do app). Padrão de rótulos usado no app: *Conferido em fonte*, *Parcialmente conferido*, *Texto da equipe, fonte não consultada*.
+3. **Dizer o que não foi executado.** O ambiente do agente **não tem Flutter nem Dart**. Todo código Dart é escrito sem compilar. O agente deve dizer isso e pedir que o usuário rode `flutter analyze` e `flutter test`, e depois **trazer os resultados reais** de volta.
+4. **Fonte de texto de saúde.** Texto de saúde (humana ou veterinária) fornecido pela equipe é preservado, mas cada afirmação sem fonte lida recebe o rótulo de não verificada. Se uma afirmação puder causar dano (telefone de emergência, dose, conduta), o agente **sinaliza** e propõe a correção em vez de aplicar em silêncio. Ajustes feitos pelo agente a um texto da equipe devem ser **declarados** ao usuário e na própria nota do cartão.
+5. **Reprodutibilidade.** Comandos exatos, versões e caminhos devem constar na resposta ou no README. Dependência nova é registrada no `pubspec.yaml` ou no `server/requirements.txt`. Resultado de teste é citado com a contagem real.
+6. **Se não souber ou não conseguir verificar, dizer.** Nunca preencher a lacuna com uma suposição apresentada como fato.
+
+### 1.2 Idioma e tom
+
+- Responder **em português do Brasil**, com detalhe (preferência permanente do usuário: “seja sempre detalhista nas explicações”).
+- Textos do app, comentários de código, mensagens de commit e `CHANGELOG.md` em português.
+- Nomes de identificadores de código podem ficar em inglês ou português, seguindo o que o arquivo já usa.
+
+### 1.3 Perguntar os próximos passos, sempre com escolhas
+
+**Ao terminar qualquer tarefa, o agente SEMPRE encerra perguntando quais são os próximos passos e oferecendo escolhas.**
+
+Regras de formato:
+
+1. Oferecer de **2 a 4 opções concretas** e mutuamente exclusivas, cada uma com uma linha dizendo o que acontece se for escolhida.
+2. Marcar a opção que o agente recomenda como **(Recomendada)** e colocá-la em primeiro lugar, dizendo por quê.
+3. Permitir resposta livre (“ou diga outra coisa”).
+4. Em ambiente com a ferramenta `AskUserQuestion`, usá-la. Sem ela, escrever as opções em lista numerada no fim da resposta.
+5. Incluir nas opções, quando fizer sentido: o que está **pendente de verificação** pelo usuário (rodar testes, `git push` de tags, confirmar telefones), próxima funcionalidade e dívidas conhecidas.
+6. **Antes de começar** trabalho grande, ambíguo, caro de refazer ou irreversível, perguntar o escopo com escolhas (diretriz 1 da seção 2). Para tarefa clara, começar e perguntar os próximos passos no fim.
+7. Nunca encerrar com “posso ajudar em mais algo?” genérico. A pergunta deve listar escolhas específicas ao projeto.
+
+Exemplo de fecho:
+
+> **Próximos passos — o que você prefere?**
+> 1. **(Recomendada) Rodar `flutter analyze` e `flutter test` e me enviar a saída** — é o único jeito de verificar o Dart novo; corrijo o que aparecer.
+> 2. **Implementar notificações locais do alerta roxo** — avisa o usuário com o app fechado; exige a dependência `flutter_local_notifications`.
+> 3. **Confirmar os telefones do CIT** — remove o aviso do app depois que você validar com o CIT.
+> 4. **Outra coisa** — descreva.
+
+### 1.4 Regras do repositório
+
+- **Sem GitHub Actions e sem APK no repositório.** O usuário pediu explicitamente: o repositório não compila o APK nem usa Actions. O APK é gerado localmente por `tool/gerar_apk.sh`. Não recriar `.github/workflows/` nem commitar `*.apk`.
+- **Nunca commitar segredos.** `.env`, senhas, `ADMIN_TOKEN`, chaves e dados reais de usuários ficam fora do Git (ver `.gitignore`). Se um segredo aparecer em saída ou arquivo, avisar o usuário.
+- **Nome do app:** exibido como **Alerta Fumaça AM** (com acento e espaços). O pacote Dart continua `alerta_fumaca_am`.
+- **Tela cheia:** o app abre em modo imersivo (`immersiveSticky`), reaplicado quando o app volta ao primeiro plano.
+- **Privacidade (LGPD):** nada de dado pessoal novo sem passar pelo termo de consentimento. Localização é anonimizada antes do envio. Qualquer campo novo no servidor deve ser opcional e discutido antes.
+- **Caminho do projeto sem acentos e sem espaços.** Pastas como `Projeto Alerta Fumaça AM` quebram o servidor de análise do Dart (“Unexpected end of input”). Avisar o usuário se vir esse caminho.
+- **Versionamento (SemVer) obrigatório**, ver 1.5.
+- **Mensagens de commit** em português, no imperativo, com o corpo explicando o porquê, e **terminando com as linhas de atribuição** indicadas pelo ambiente (formato atual):
+  ```
+  Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+  Claude-Session: https://claude.ai/code/session_01TbEDFVGCDSk8ajLx5M467Z
+  ```
+  Se o ambiente informar outro modelo ou sessão, usar o que ele informar. Só commitar ou dar `push` quando o usuário pedir ou quando a tarefa em curso incluir isso.
+- **Tags não sobem do sandbox do agente** (o proxy devolve 403 para `git push` de tags). Criar a tag localmente e **avisar o usuário** de que ele precisa rodar `git push origin vX.Y.Z`.
+- **Não usar `pkill -f`** no sandbox: ele mata o próprio shell (saída 144). Parar processos por PID.
+- **Não commitar arquivos gerados** (`build/`, `dist/`, `android/`, `ios/`, zips). O pacote final em `.zip` é entregue ao usuário por fora do Git.
+
+### 1.5 Versionamento — fluxo obrigatório
+
+Fonte única: o arquivo `VERSION`. O script `tool/versao.py` sincroniza `pubspec.yaml` (`version: X.Y.Z+N`), `lib/data/app_info.dart` (`kAppVersion`) e `server/app/main.py` (`APP_VERSION`) e move a seção `## [Não lançado]` do `CHANGELOG.md`.
+
+1. Durante o trabalho, registrar cada mudança em `## [Não lançado]` do `CHANGELOG.md` (seções *Adicionado*, *Alterado*, *Corrigido*, *Removido*), em português, dizendo **o porquê**.
+2. Ao fechar uma entrega: `python3 tool/versao.py nova patch|minor|major` (ou `nova X.Y.Z`).
+   - **PATCH**: correção sem funcionalidade nova.
+   - **MENOR**: funcionalidade nova compatível.
+   - **MAIOR**: quebra de compatibilidade (API, formato de dados, reinstalação).
+3. Conferir com `python3 tool/versao.py verificar` e rodar `python3 tool/test_versao.py`.
+4. Commit de release, tag local `vX.Y.Z`, avisar o usuário do `git push origin vX.Y.Z`.
+
+### 1.6 Verificações antes de entregar
+
+Executar e relatar a saída real:
+
+```bash
+cd server && python3 -m pytest -q          # testes do servidor (SQLite)
+python3 tool/test_versao.py                # testes do versionamento
+python3 tool/versao.py verificar           # versões sincronizadas
+bash -n tool/*.sh                          # sintaxe dos scripts
+```
+
+Para o Dart, o agente **não consegue** rodar. Conferir pelo menos o balanceamento de parênteses/colchetes e, em seguida, pedir ao usuário:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
+
+### 1.7 Entrega
+
+- Arquivo pronto para o usuário: enviar com `SendUserFile`. Pacote final: `.zip` da versão atual (`alerta-fumaca-am-vX.Y.Z-<commit>.zip`), sem `.git`, `build`, `dist`, `.env`.
+- Ao final, dizer em poucas linhas: o que mudou, o que foi verificado, o que **não** foi, e o que o usuário precisa rodar.
+- Terminar com a pergunta de próximos passos (ordem 1.3).
+
+---
+
+## 2. Diretrizes de comportamento (SKILL anexada)
+
+> Texto original, mantido sem alterações. Fonte: arquivo `CLAUDE.md` anexado pelo usuário.
+
+# CLAUDE.md
+
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+### Como as diretrizes se aplicam aqui
+
+- *Think Before Coding* + ordem 1.3: dúvida real vira pergunta com escolhas **antes** de implementar.
+- *Simplicity First*: nada de funcionalidade especulativa (ex.: não criar sistema de push “por precaução”).
+- *Surgical Changes*: toda linha alterada deve se ligar ao pedido; achou código morto alheio, **mencione, não apague**. (Neste projeto isso já se aplica a avisos do analisador que não são do trecho em edição.)
+- *Goal-Driven*: cada mudança vem com teste ou com critério de verificação explícito. Para bug, primeiro um teste que reproduz.
+
+---
+
+## 3. O projeto
+
+**Alerta Fumaça AM** é um app Flutter (Android/iOS) com servidor FastAPI + PostgreSQL (Docker) para orientação, triagem educativa e vigilância comunitária de fumaça de queimadas no Amazonas. Projeto acadêmico (UFAM/FCF). É **orientação educativa, não diagnóstico**.
+
+### 3.1 Estrutura
+
+```
+VERSION                  versão única (SemVer)
+CHANGELOG.md             histórico por versão (Keep a Changelog)
+pubspec.yaml             app Flutter (version X.Y.Z+N)
+analysis_options.yaml    flutter_lints; ignora build/dist/android/ios
+lib/
+  main.dart              modo imersivo, tema, rotas
+  data/                  textos e constantes: guidance_content, pdf_content, references, app_info
+  logic/                 regras puras (testáveis): risk_assessment, context_advice, map_layers, fire_stats…
+  models/                modelos de dados
+  services/              INPE (focos), Open-Meteo (ar), API do servidor, localização
+  screens/               telas (home, questionário, mapa, estatísticas, referências, sobre, LGPD, info_screen)
+  widgets/               componentes (ui, choice_widgets, cit_card, info_card, keep_alive_page)
+test/                    testes Dart (flutter test)
+server/                  FastAPI + SQLAlchemy 2 + psycopg3 + painel; testes em server/tests
+tool/                    gerar_apk.sh, iniciar_servidor.sh, versao.py (+ testes)
+docker-compose.yml       servidor + banco + túnel Cloudflare
+```
+
+### 3.2 Comandos
+
+| Objetivo | Comando |
+|---|---|
+| Gerar APK | `bash tool/gerar_apk.sh` (saída em `dist/`, com `SHA256SUMS`) |
+| Subir servidor | `bash tool/iniciar_servidor.sh` (cria `.env` com segredos aleatórios; painel em `127.0.0.1:8080`) |
+| Testes do servidor | `cd server && python3 -m pytest -q` |
+| Testes do app | `flutter test` |
+| Análise estática | `flutter analyze` |
+| Ver/sincronizar versão | `python3 tool/versao.py mostrar|verificar|sincronizar` |
+| Nova versão | `python3 tool/versao.py nova patch|minor|major|X.Y.Z` |
+
+Ambiente do usuário (informado): macOS, Flutter 3.47.7, Dart 3.13.5. `pubspec.yaml` exige `sdk: '>=3.6.0 <4.0.0'`.
+
+### 3.3 Fontes externas (todas dependem de internet)
+
+- **INPE / TerraBrasilis (WFS):** focos de calor. Consulta com tempo limite de 30 s e 2 repetições.
+- **Open-Meteo Air Quality (modelo CAMS):** estimativa, ~45 km, **não** substitui o IQAr oficial. Uso gratuito só não comercial; atribuição obrigatória. O formato de resposta foi escrito a partir da documentação e **não foi conferido ao vivo** pelo agente.
+- **NASA GIBS (WMTS):** camadas de fundo/aerossol/térmica do mapa. Nomes de camada **não verificados** ao vivo.
+- **Servidor próprio:** recebe respostas anonimizadas (`POST /respostas`, idempotente).
+
+### 3.4 O que funciona sem internet
+
+Orientações, triagem (cálculo local), conteúdo educativo (proteção, sintomas, farmácia caseira, pets, mitos) e telefones (SAMU 192, CIT) estão embutidos no app. Mapas, focos, qualidade do ar e envio ao servidor exigem internet. O envio fica pendente localmente quando não há rede (`report_repository`/`answer_sync`).
+
+---
+
+## 4. Histórico detalhado do que foi feito
+
+Ordem cronológica. “Verificado” = executado ou lido pelo agente; “Não verificado” = depende do usuário.
+
+### 4.1 Versão 1.0.0 (commit `eb29899`)
+- App com focos MODIS/NOAA-20/Suomi (INPE), qualidade do ar (Open-Meteo), mapa comunitário, estatísticas de sintomas e orientações por nível de risco.
+- API FastAPI + PostgreSQL com testes (SQLite).
+- **Verificado:** testes do servidor. **Não verificado:** compilação do Dart pelo agente.
+
+### 4.2 Termo de privacidade (LGPD) — `638ded1`
+- Tela de consentimento na primeira abertura; nada é enviado sem aceite.
+
+### 4.3 CI removido — `f8c0dba` em diante
+- O usuário pediu que o repositório **não compile o APK nem use GitHub Actions**. Workflow e APK removidos. Ver ordem 1.4.
+
+### 4.4 Painel em tempo real e servidor — `2dac1e0`
+- Painel (`127.0.0.1:8080`) com login por `X-Admin-Token`: KPIs, série de 48 h, mapa, últimas respostas e contexto agregado.
+- Túnel Cloudflare (*quick tunnel*) com link aleatório a cada início, exibido no painel com QR code. O endereço do servidor é colado em *Sobre* no app.
+- Coluna `contexto` opcional em `respostas`, com migração idempotente; colunas `ctx_*` no CSV.
+- **Verificado:** 65 testes do servidor (SQLite) passaram. **Não verificado:** Docker Compose real (Docker Hub bloqueado no sandbox).
+
+### 4.5 Questionário, interface e mapa — `09eff61`
+- Questionário em 4 etapas + resultado; botões **circulares** (`CircleChoiceRow`, `SeverityPicker`, `YesNoRow`); 10 perguntas de contexto que **não alteram a pontuação**.
+- Tela **Referências** (CDC HAN 00495, EPA-452/R-21-901, nota do Ministério da Saúde via imprensa) com ressalvas do que foi lido.
+- Mapas **sem rotação** (`InteractionOptions`), botões de zoom, localização, camadas e barra de escala.
+- Tela cheia; nome exibido “Alerta Fumaça AM”; home com grade de ações circulares.
+- **Limiares de pontuação (8 e 15 pontos) são escolha do projeto**, não de escala clínica validada. Ver `scoringNotice`.
+
+### 4.6 Scripts de pacote final — `f8c0dba`
+- `tool/gerar_apk.sh` e `tool/iniciar_servidor.sh`.
+
+### 4.7 Versionamento — `fbe55a7` (v1.1.0)
+- `VERSION`, `tool/versao.py`, `CHANGELOG.md`, testes. Tags `v1.0.0` e `v1.1.0` existem **só localmente** (push de tag dá 403 no sandbox).
+
+### 4.8 Correções feitas a partir de erros reais do usuário
+| Erro relatado | Causa | Correção |
+|---|---|---|
+| `sed: 1: ".env ": invalid command code .` no macOS | `sed -i` do GNU não funciona no BSD | `awk` (`definir_var`) — `5e897bd` |
+| `sha256sum` ausente no macOS | comando só existe no GNU | fallback `shasum -a 256` |
+| Servidor de análise do Dart: `Unexpected end of input` | caminho do projeto com acento/espaço (“Projeto Alerta Fumaça AM”) | mover a pasta; aviso no script e no README — `666687a` |
+| `flutter test`: falha em `lgpd_test` | `ListTile` sobre `DecoratedBox` colorido | cor movida para `Material` — `af33d70` |
+| `flutter analyze`: 7 infos `const` + erro em `widget_test.dart` | `const` faltando; teste padrão do `flutter create` usa `MyApp` | `const` inserido; script remove o teste padrão — `3a4b0e8` |
+| Focos do INPE só carregavam após abrir “qualidade do ar” | `TabBarView` destruía a aba não visível | `KeepAlivePage` + repetição automática (2×) + tempo limite 30 s — `3f3e422`. **Causa exata da falha da 1ª consulta NÃO confirmada**; pedido o texto de “Detalhes técnicos” ao usuário |
+
+Resultados que o usuário já reportou: `flutter analyze` com 8 problemas (agora corrigidos) e `flutter test` com 104 aprovados + a falha de LGPD (corrigida). **Resultados posteriores a `3f3e422` não foram reportados.**
+
+### 4.9 Conteúdo do documento “TEXTOS_APP_FUMAÇA.pdf” — versão 1.2.0
+
+Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/data/pdf_content.dart` (conteúdo) + `lib/widgets/info_card.dart` e `lib/screens/info_screen.dart` (apresentação).
+
+| Item do PDF | Onde está no app | Verificação do conteúdo |
+|---|---|---|
+| Tela 1: máscaras (PFF2/N95) | *O que fazer agora* → “Proteção: máscaras e ambiente” | **Parcial.** CDC e EPA (lidos) recomendam N95/P100 e a EPA desaconselha cirúrgica/papel. PFF2 = N95 e locais de distribuição: texto da equipe |
+| Tela 1: purificador vs. umidificador | idem | **Parcial.** Purificador/ambiente fechado: CDC e EPA. Umidificador, toalhas molhadas e baldes: sem fonte lida |
+| Tela 2: entenda seus sintomas (CO, gases irritantes, PM2,5) | botão no resultado do questionário | **Parcial.** Sintomas constam no CDC; mecanismos (CO, acroleína/formaldeído) sem fonte lida |
+| Tela 3: farmácia caseira (soro 0,9%, nebulização, alerta de remédios, chá e mel) | home → “Farmácia caseira” | **Texto da equipe, sem fonte lida** |
+| Tela 4: painel CIT (HUGV/UFAM, 24 h, discagem direta, quando ligar) | `CitCard(detailed: true)` em *O que fazer agora* e na tela de sintomas | 0800 722 6001 informado pela equipe e **não confirmado**; (92) 3305-4700 consta na carta de serviços do HUGV |
+| Seção “E os nossos pets?” (3 cartões) | home → “E os nossos pets?” | **Parcial.** AVMA (“Wildfire smoke and animals”, lida): pets dentro de casa, sinais de alerta, evitar exercício. Focinho curto, água fresca, limpeza dos olhos e remédios humanos: sem fonte lida |
+| Lista de referências (7) + SES-AM/FVS-AM | tela *Referências* → “Fontes dos textos educativos” (numeradas 4 a 10) | Cada uma com “Verificação:”; CFMV, ASBAI, OPAS/OMS, Vigifis, SES-AM/FVS-AM **não consultadas** |
+| Tela 5.1: alerta roxo | banner na aba de qualidade do ar quando algum ponto tem AQI ≥ 201 (`alertPurpleMinAqi`) | Faixa “muito ruim” da escala dos EUA; usar 201 como limiar do alerta é decisão do projeto |
+| Tela 5.1: alerta laranja (mudança de vento) e notificações push | **Não implementado** | Exige previsão de vento/trajetória e serviço de push; o app não tem nenhum dos dois |
+| Tela 5.2: funcionamento offline | conteúdo embutido; aviso em *O que fazer agora* | Verdadeiro para textos e triagem; mapas, focos e envio exigem internet (dito no aviso) |
+| Tela 5.3: Fato ou Fake? (leite, lavar PFF2, queimar casca/borra) | home → “Fato ou Fake?” | Texto da equipe; um item parcial (CDC: evitar fontes internas de fumaça) |
+| Créditos: “Elias de Souza Barros” | tela *Sobre* e README | — |
+| Sugestões de nome (RespirAR Amazonas etc.) e slogan | **Não aplicado** (decisão de nome é do usuário) | — |
+
+**Ajustes que o agente fez nos textos da equipe (e declarou no app):**
+1. No CIT “quando ligar”, acrescentou que em confusão mental ou desmaio se liga **primeiro ao SAMU (192)**.
+2. Retirou “autoridade máxima” (sem fonte).
+3. Retirou a comparação com “ácido fraco”.
+4. Retirou “caem diretamente na corrente sanguínea” e “riscos toxicológicos a longo prazo”.
+5. Em “leite”, retirou a frase de que soro fisiológico é líquido essencial; em “queimar casca/borra”, retirou a parte do monóxido de carbono.
+6. Manteve o “Alerta vermelho de farmácia” (prudência), marcando a frase sobre o coração como não conferida.
+
+### 4.10 Pendências e dívidas conhecidas
+- **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
+- `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
+- **Confirmar com o CIT** os telefones 0800 722 6001 e (92) 3305-4700 antes de divulgar; depois retirar o aviso do app e de `lib/data/guidance_content.dart`.
+- Consultar as fontes marcadas “não consultada” (ASBAI, CFMV, OPAS/OMS, Vigifis, SES-AM/FVS-AM) e atualizar os rótulos.
+- Revisão por profissional de saúde e médico-veterinário antes de publicar os textos de farmácia caseira e pets.
+- Notificações push/locais do alerta roxo e alerta laranja (precisa de previsão de vento): decisão do usuário.
+- Causa raiz da falha inicial da consulta ao INPE: aguardando o texto de “Detalhes técnicos”.
+- Nome do app (alternativas sugeridas no PDF): decisão do usuário.
+- Camadas GIBS e formato da resposta do Open-Meteo: conferir ao vivo.
+- Limiares de pontuação (8 e 15): validar com a equipe de saúde.
+
+---
+
+## 5. Resumo para o agente (leia se estiver com pressa)
+
+1. Português, detalhado, **sem inventar**; separar verificado de não verificado.
+2. Dart não compila aqui: peça `flutter analyze` e `flutter test` e use os resultados reais.
+3. Mudança pequena e rastreável ao pedido; registre no `CHANGELOG.md`; versão por `tool/versao.py`.
+4. Sem Actions, sem APK no Git, sem segredos.
+5. Tags não sobem do sandbox: avise o usuário.
+6. Texto de saúde: rotule a verificação; sinalize o que pode causar dano.
+7. **Termine sempre perguntando os próximos passos, com 2 a 4 escolhas e uma recomendada.**

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/guidance_content.dart';
+import '../data/pdf_content.dart';
 import '../theme/app_theme.dart';
 import 'ui.dart';
 
@@ -10,7 +11,10 @@ import 'ui.dart';
 /// Usado para dúvidas sobre exposição ou intoxicação por substâncias tóxicas.
 /// Não substitui o SAMU (192) em casos graves.
 class CitCard extends StatelessWidget {
-  const CitCard({super.key});
+  const CitCard({super.key, this.detailed = false});
+
+  /// Mostra apresentação, "quando ligar" e o segundo telefone do HUGV.
+  final bool detailed;
 
   static const _teal = Color(0xFF00695C);
 
@@ -62,6 +66,40 @@ class CitCard extends StatelessWidget {
             'Em sinais graves, como falta de ar, dor no peito ou desmaio, ligue 192 (SAMU).',
             style: TextStyle(fontSize: 12, height: 1.35, color: AppColors.muted),
           ),
+          if (detailed) ...[
+            const SizedBox(height: 12),
+            const Text(citIntro, style: TextStyle(height: 1.45, color: AppColors.ink)),
+            const SizedBox(height: 12),
+            const Text('Quando ligar para o CIT?',
+                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
+            const SizedBox(height: 6),
+            for (final t in citWhenToCall)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6, right: 10),
+                      child: Icon(Icons.circle, size: 7, color: _teal),
+                    ),
+                    Expanded(child: Text(t, style: const TextStyle(height: 1.4, color: AppColors.ink))),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => launchUrl(Uri(scheme: 'tel', path: kCitHugvPhoneAltDial)),
+                icon: const Icon(Icons.call_outlined),
+                label: const Text('Telefone do HUGV $kCitHugvPhoneAlt'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(citVerificationNote,
+                style: TextStyle(fontSize: 12, height: 1.4, color: Color(0xFF8A5A00))),
+          ],
         ],
       ),
     );

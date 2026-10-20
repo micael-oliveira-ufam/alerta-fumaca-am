@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/pdf_content.dart';
 import '../data/references.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui.dart';
@@ -81,6 +82,41 @@ class ReferencesScreen extends StatelessWidget {
                     r.url,
                     style: const TextStyle(fontSize: 12, color: Color(0xFF1565C0), decoration: TextDecoration.underline),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          const SectionTitle('FONTES DOS TEXTOS EDUCATIVOS'),
+          const AppCard(
+            color: Color(0xFFFFF8E1),
+            child: Text(
+              'Estas fontes foram indicadas pela equipe para os textos de proteção, farmácia '
+              'caseira, pets e "Fato ou Fake?". Abaixo está dito o que foi conferido pelo '
+              'desenvolvedor e o que NÃO foi consultado. Nada aqui substitui orientação médica ou veterinária.',
+              style: TextStyle(height: 1.45, color: AppColors.ink),
+            ),
+          ),
+          const SizedBox(height: 10),
+          for (final r in extraReferences) ...[
+            AppCard(
+              onTap: r.url == null ? null : () => _open(context, r.url!),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('[${r.id}] ${r.citation}',
+                      style: const TextStyle(fontWeight: FontWeight.w700, height: 1.35, color: AppColors.ink)),
+                  const SizedBox(height: 8),
+                  Text('Usado para: ${r.used}', style: const TextStyle(height: 1.4, color: AppColors.ink)),
+                  const SizedBox(height: 6),
+                  Text('Verificação: ${r.status}',
+                      style: const TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF8A5A00))),
+                  if (r.url != null) ...[
+                    const SizedBox(height: 6),
+                    Text(r.url!,
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF1565C0), decoration: TextDecoration.underline)),
+                  ],
                 ],
               ),
             ),

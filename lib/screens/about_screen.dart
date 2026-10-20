@@ -12,7 +12,7 @@ const _instituicao = 'Faculdade de Ciências Farmacêuticas (FCF)\nUniversidade 
 
 const _desenvolvedores = <({String nome, String instituicao})>[
   (nome: 'Micael Davi Lima de Oliveira', instituicao: 'FCF · UFAM'),
-  (nome: 'Elias Barros', instituicao: 'FCF · UFAM'),
+  (nome: 'Elias de Souza Barros', instituicao: 'FCF · UFAM'),
 ];
 
 class AboutScreen extends StatelessWidget {

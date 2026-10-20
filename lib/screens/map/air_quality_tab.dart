@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/pdf_content.dart';
 import '../../services/air_quality_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui.dart';
@@ -67,6 +68,10 @@ class _AirQualityTabState extends State<AirQualityTab> {
             children: [
               const _AirNotice(),
               const SizedBox(height: 12),
+              if (readings.any((r) => (r.usAqi ?? 0) >= alertPurpleMinAqi)) ...[
+                const _PurpleAlert(),
+                const SizedBox(height: 12),
+              ],
               for (final r in readings) ...[
                 _AirCard(reading: r),
                 const SizedBox(height: 10),
@@ -82,6 +87,36 @@ class _AirQualityTabState extends State<AirQualityTab> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Alerta roxo (crítico), exibido quando alguma leitura chega a [alertPurpleMinAqi].
+class _PurpleAlert extends StatelessWidget {
+  const _PurpleAlert();
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF6A1B9A);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: purple,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_rounded, color: Colors.white),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$alertPurpleTitle: $alertPurpleText',
+              style: TextStyle(color: Colors.white, height: 1.4, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

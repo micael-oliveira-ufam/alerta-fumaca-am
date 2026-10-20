@@ -12,6 +12,28 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.2.0.
+
+## [1.2.0] - 2026-10-19
+
+### Adicionado
+- **App**: conteúdo do documento "TEXTOS PARA ATUALIZAÇÃO DO APLICATIVO" (`lib/data/pdf_content.dart`), embutido no app e, portanto, disponível sem internet:
+  - *O que fazer agora*: cartões "Qual máscara protege" e "Purificador vs. Umidificador", e o painel do CIT (HUGV/UFAM) detalhado, com discagem direta, "Quando ligar" e segundo telefone.
+  - Botão **Entenda seus sintomas** no resultado do questionário (CO, gases irritantes, PM2,5).
+  - Telas **Farmácia caseira**, **E os nossos pets?** (3 cartões) e **Fato ou Fake?** (3 mitos).
+  - Banner de **alerta roxo** na aba de qualidade do ar quando alguma leitura chega a AQI 201 ou mais.
+  - Referências 4 a 10 na tela *Referências*, cada uma com o que foi e o que NÃO foi verificado.
+  - Selo de verificação ("Conferido", "Parcialmente conferido", "Texto da equipe, fonte não consultada") em todo cartão.
+- `CLAUDE.md`: ordens obrigatórias ao agente, diretrizes de comportamento anexadas, histórico detalhado e regra de sempre perguntar os próximos passos com escolhas.
+- `test/pdf_content_test.dart`.
+
+### Alterado
+- Créditos: "Elias Barros" passou a "Elias de Souza Barros" (tela *Sobre* e README).
+- Ajustes declarados nos textos da equipe: no CIT, confusão/desmaio manda ligar primeiro ao SAMU (192); removidas as frases sem fonte ("autoridade máxima", "ácido fraco", "diretamente na corrente sanguínea", e partes de leite/monóxido).
+
+### Não implementado (pedido no PDF)
+- Alerta laranja (mudança de vento) e notificações push: exigem previsão de vento e serviço de push que o app não tem.
+
 ### Corrigido
 - Focos do INPE só carregavam depois de abrir a aba de qualidade do ar. Causa: o `TabBarView` destruía a aba que não estava visível, e a consulta só era refeita ao voltar a ela; uma primeira consulta que falhava não era repetida. Agora as abas ficam vivas (`KeepAlivePage`) e a consulta do INPE é repetida automaticamente em falha de rede ou de servidor (2 novas tentativas, com espera crescente). O tempo limite caiu de 60 s para 30 s.
 - Sete sugestões do analisador (`prefer_const_constructors` e `prefer_const_literals_to_create_immutables`) aplicadas em `about_screen`, `guidance_screen`, `home_screen`, `air_quality_tab`, `questionnaire_screen` e `cit_card`.

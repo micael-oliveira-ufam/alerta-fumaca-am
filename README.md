@@ -2,7 +2,7 @@
 
 App Flutter (Android e iOS) para **orientação e triagem educativa** durante episódios de fumaça no Amazonas, com focos de calor por satélite (INPE), qualidade do ar estimada e estatísticas anonimizadas dos sintomas. Acompanha um servidor (FastAPI + PostgreSQL) que sobe com um comando via Docker.
 
-Projeto da UFAM / FCF. Desenvolvedores: Micael Davi Lima de Oliveira e Elias Barros.
+Projeto da UFAM / FCF. Desenvolvedores: Micael Davi Lima de Oliveira e Elias de Souza Barros.
 
 > **Aviso.** O app **não faz diagnóstico** e não substitui atendimento médico. Em emergência, ligue **192 (SAMU)**.
 

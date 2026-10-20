@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/guidance_content.dart';
 import '../logic/risk_assessment.dart';
 import '../theme/app_theme.dart';
+import '../data/pdf_content.dart';
 import '../widgets/cit_card.dart';
+import '../widgets/info_card.dart';
 import '../widgets/emergency_banner.dart';
 import '../widgets/ui.dart';
 
@@ -24,14 +26,25 @@ class GuidanceScreen extends StatelessWidget {
         children: [
           const EmergencyBanner(),
           const SizedBox(height: 12),
-          const CitCard(),
+          const CitCard(detailed: true),
           const SizedBox(height: 16),
+          const SectionTitle('PROTEÇÃO: MÁSCARAS E AMBIENTE'),
+          for (final c in protectionCards) ...[
+            InfoCard(data: c),
+            const SizedBox(height: 12),
+          ],
           const SectionTitle('ORIENTAÇÕES POR NÍVEL DE RISCO'),
           for (final level in [RiskLevel.low, RiskLevel.moderate, RiskLevel.high])
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _LevelCard(level: level),
             ),
+          const SizedBox(height: 8),
+          const Text(
+            offlineNotice,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
+          ),
           const SizedBox(height: 8),
           const Text(
             kDisclaimer,
