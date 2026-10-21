@@ -74,4 +74,53 @@ void main() {
     expect(m.body, contains('Estimativa de modelo'));
     expect(m.body, contains('68,9'));
   });
+
+  group('decideFireAlert', () {
+    FireAlertReading fire(int n, {bool stale = false, double? nearest = 12.3, DateTime? last}) => FireAlertReading(
+          municipalityName: 'Manaus',
+          radiusKm: 50,
+          count24h: n,
+          count48h: n + 2,
+          nearestKm: nearest,
+          lastDetectionUtc: last,
+          stale: stale,
+        );
+    const fireOn = AirAlertSettings(fireEnabled: true);
+
+    test('desligado ou desatualizado não avisa', () {
+      expect(decideFireAlert(settings: const AirAlertSettings(), reading: fire(9), state: const FireAlertState(), now: now), AlertAction.none);
+      expect(decideFireAlert(settings: fireOn, reading: fire(9, stale: true), state: const FireAlertState(), now: now), AlertAction.none);
+    });
+    test('primeira detecção avisa; zero focos não avisa e zera o estado', () {
+      expect(decideFireAlert(settings: fireOn, reading: fire(1), state: const FireAlertState(), now: now), AlertAction.notify);
+      expect(decideFireAlert(settings: fireOn, reading: fire(0), state: const FireAlertState(), now: now), AlertAction.none);
+      final st = FireAlertState(lastCount: 3, lastNotifiedAt: now);
+      expect(decideFireAlert(settings: fireOn, reading: fire(0), state: st, now: now), AlertAction.reset);
+    });
+    test('só repete com crescimento forte ou depois de 24 h', () {
+      final st = FireAlertState(lastCount: 4, lastNotifiedAt: now.subtract(const Duration(hours: 2)));
+      expect(decideFireAlert(settings: fireOn, reading: fire(6), state: st, now: now), AlertAction.none); // +2
+      expect(decideFireAlert(settings: fireOn, reading: fire(9), state: st, now: now), AlertAction.notify); // +5 e >=150%
+      final velho = FireAlertState(lastCount: 4, lastNotifiedAt: now.subtract(const Duration(hours: 25)));
+      expect(decideFireAlert(settings: fireOn, reading: fire(4), state: velho, now: now), AlertAction.notify);
+    });
+    test('mensagem: horário de Manaus e ressalva de que não é incêndio confirmado', () {
+      final m = fireMessage(fire(7, last: DateTime.utc(2026, 10, 20, 19, 40)));
+      expect(m.title, contains('Manaus'));
+      expect(m.body, contains('7 focos de calor'));
+      expect(m.body, contains('15:40'));
+      expect(m.body, contains('12,3 km'));
+      expect(m.body, contains('não incêndios confirmados'));
+      expect(fireMessage(fire(1)).body, contains('1 foco de calor'));
+    });
+    test('configurações de focos: ida e volta e valores inválidos', () {
+      const s = AirAlertSettings(fireEnabled: true, fireRadiusKm: 25);
+      final back = AirAlertSettings.fromJson(s.toJson());
+      expect(back.fireEnabled, isTrue);
+      expect(back.fireRadiusKm, 25);
+      expect(AirAlertSettings.fromJson({'foco_raio': 7}).fireRadiusKm, kDefaultFireRadius);
+      expect(const AirAlertSettings(fireEnabled: true).anyEnabled, isTrue);
+      expect(const AirAlertSettings().anyEnabled, isFalse);
+    });
+  });
 }

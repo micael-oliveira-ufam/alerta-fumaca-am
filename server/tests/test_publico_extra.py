@@ -353,3 +353,54 @@ def test_app_ar_devolve_so_o_municipio_pedido(make_client):
 def test_app_ar_sem_servico_e_desativado(make_client):
     client = make_client(qualidade_ar_ativa=False)
     assert client.get("/app/ar", params={"cod": 1302603}).status_code == 404
+
+
+# ------------------------------------------------------------ focos perto do município (alertas do app)
+
+def _foco(lat, lon, quando, frp=10.0):
+    return {"type": "Feature", "geometry": None, "properties": {
+        "data_hora_gmt": quando, "satelite": "NOAA-20", "municipio": "X", "estado": "AMAZONAS",
+        "latitude": lat, "longitude": lon, "frp": frp}}
+
+
+def test_distancia_conhecida():
+    from app.focos_proximos import distancia_km
+    # 1 grau de latitude ≈ 111,2 km
+    assert abs(distancia_km(0, 0, 1, 0) - 111.2) < 0.5
+    assert distancia_km(-3.1, -60.0, -3.1, -60.0) == 0
+
+
+def test_resumir_conta_no_raio_e_na_janela():
+    from app.focos_proximos import resumir
+    agora = dt.datetime(2026, 10, 20, 20, 0, tzinfo=dt.timezone.utc)
+    geo = json.dumps({"type": "FeatureCollection", "features": [
+        _foco(-3.12, -60.02, "2026-10-20 19:00:00", frp=30.5),       # em cima da sede, 1 h atrás
+        _foco(-3.20, -60.02, "2026-10-20T08:00:00Z", frp=5),         # ~9 km, 12 h atrás
+        _foco(-3.12, -60.02, "2026-10-19T00:00:00Z"),                # 44 h atrás: só entra em 48 h
+        _foco(-3.12, -60.02, "2026-10-17T00:00:00Z"),                # velho: fora
+        _foco(-5.00, -60.02, "2026-10-20 19:00:00"),                 # ~208 km: fora do raio
+        {"type": "Feature", "geometry": None, "properties": {"data_hora_gmt": None, "latitude": -3.12, "longitude": -60.02}},
+    ]}).encode()
+    r = resumir(geo, -3.12, -60.02, 50, agora)
+    assert (r["focos_24h"], r["focos_48h"]) == (2, 3)
+    assert r["mais_proximo_km"] == 0.0 and r["frp_max_mw"] == 30.5
+    assert r["ultima_deteccao_utc"] == "2026-10-20T19:00:00Z"
+    vazio = resumir(geo, -3.12, -60.02, 10, agora)
+    assert vazio["focos_48h"] == 3  # os três estão a ≤ 10 km
+    longe = resumir(json.dumps({"features": []}).encode(), -3.12, -60.02, 50, agora)
+    assert longe["focos_24h"] == 0 and longe["mais_proximo_km"] is None and longe["ultima_deteccao_utc"] is None
+
+
+def test_app_focos_endpoint(client, monkeypatch):
+    agora = dt.datetime.now(dt.timezone.utc)
+    quando = (agora - dt.timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+    geo = json.dumps({"type": "FeatureCollection", "features": [_foco(-3.12, -60.02, quando, frp=20)]}).encode()
+    monkeypatch.setattr(focos, "fetch_upstream", lambda *a, **k: geo)
+    r = client.get("/app/focos", params={"cod": 1302603, "raio_km": 25})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["municipio"] == "Manaus" and d["focos_24h"] == 1 and d["desatualizado"] is False
+    assert "não incêndio confirmado" in d["nota"]
+    assert client.get("/app/focos", params={"cod": 1302603, "raio_km": 7}).status_code == 422
+    assert client.get("/app/focos", params={"cod": 1399999}).status_code == 404
+    assert client.get("/app/focos").status_code == 422

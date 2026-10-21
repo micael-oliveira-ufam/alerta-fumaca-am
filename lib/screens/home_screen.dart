@@ -145,8 +145,8 @@ class HomeScreen extends StatelessWidget {
           ModuleCard(
             icon: Icons.notifications_active_rounded,
             color: const Color(0xFF00838F),
-            title: 'Alertas de qualidade do ar',
-            subtitle: 'Receba uma notificação quando o ar piorar na sua cidade.',
+            title: 'Alertas: ar e focos de calor',
+            subtitle: 'Receba uma notificação quando o ar piorar ou houver focos perto da sua cidade.',
             onTap: () => _open(context, const AirAlertScreen()),
           ),
           const SizedBox(height: 20),

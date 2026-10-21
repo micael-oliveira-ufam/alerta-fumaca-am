@@ -17,7 +17,7 @@ void airAlertCallbackDispatcher() {
       WidgetsFlutterBinding.ensureInitialized();
       DartPluginRegistrant.ensureInitialized();
       await ApiConfig.load();
-      await AirAlertService().check();
+      await AirAlertService().checkAll();
     } catch (_) {
       // Falhou: a próxima janela tenta de novo. Não pede reexecução imediata (poupa bateria).
     }

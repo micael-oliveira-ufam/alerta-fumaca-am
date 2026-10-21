@@ -27,6 +27,9 @@ class _AirAlertScreenState extends State<AirAlertScreen> {
   bool _checking = false;
   String? _message;
   AirAlertReading? _reading;
+  FireAlertReading? _fire;
+  bool _checkingFire = false;
+  String? _fireMessage;
 
   bool get _supported => Platform.isAndroid;
 
@@ -63,7 +66,7 @@ class _AirAlertScreenState extends State<AirAlertScreen> {
   Future<void> _save(AirAlertSettings next) async {
     setState(() => _settings = next);
     await _store.saveSettings(next);
-    await AirAlertBackground.sync(enabled: next.enabled);
+    await AirAlertBackground.sync(enabled: next.anyEnabled);
   }
 
   Future<void> _toggle(bool on) async {
@@ -95,6 +98,42 @@ class _AirAlertScreenState extends State<AirAlertScreen> {
     });
   }
 
+  Future<void> _toggleFire(bool on) async {
+    if (on) {
+      final granted = await AirAlertNotifier.requestPermission();
+      if (!granted) {
+        if (!mounted) return;
+        setState(() => _fireMessage =
+            'Sem a permissão de notificações o Android não mostra os alertas. Autorize em Configurações > Apps > RespirAR Amazonas > Notificações.');
+        return;
+      }
+    }
+    setState(() => _fireMessage = null);
+    await _save(_settings.copyWith(fireEnabled: on));
+    if (on) await _checkFireNow();
+  }
+
+  Future<void> _checkFireNow() async {
+    setState(() {
+      _checkingFire = true;
+      _fireMessage = null;
+    });
+    final result = await AirAlertService(api: _api).checkFire(force: true);
+    if (!mounted) return;
+    final reading = result.reading;
+    setState(() {
+      _checkingFire = false;
+      _fire = reading ?? _fire;
+      _fireMessage = result.error ??
+          (reading == null
+              ? null
+              : reading.count24h == 0
+                  ? 'Nenhum foco nas últimas 24 h num raio de ${reading.radiusKm} km de ${reading.municipalityName}.'
+                  : '${reading.count24h} foco(s) nas últimas 24 h num raio de ${reading.radiusKm} km'
+                      '${_settings.fireEnabled && result.action == AlertAction.notify ? ': o alerta foi enviado.' : '.'}');
+    });
+  }
+
   String? _describe(AirCheckResult r) {
     final reading = r.reading;
     if (reading == null) return null;
@@ -112,7 +151,7 @@ class _AirAlertScreenState extends State<AirAlertScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alertas de qualidade do ar'),
+        title: const Text('Alertas: ar e focos de calor'),
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -212,6 +251,57 @@ class _AirAlertScreenState extends State<AirAlertScreen> {
                     style: const TextStyle(color: AppColors.muted),
                   ),
                 ],
+                const SizedBox(height: 20),
+                const SectionTitle('FOCOS DE CALOR PERTO DE VOCÊ'),
+                AppCard(
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Avisar sobre focos de calor', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text('Notificação quando o INPE detectar focos perto de ${_settings.municipalityName}.'),
+                    value: _settings.fireEnabled,
+                    onChanged: _supported && _api.isConfigured ? _toggleFire : null,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                AppCard(
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _settings.fireRadiusKm,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Raio a partir da sede do município', border: OutlineInputBorder()),
+                    items: [for (final r in kFireRadii) DropdownMenuItem(value: r, child: Text('$r km'))],
+                    onChanged: (r) {
+                      if (r != null) _save(_settings.copyWith(fireRadiusKm: r));
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _checkingFire || !_api.isConfigured ? null : _checkFireNow,
+                  icon: const Icon(Icons.local_fire_department_rounded),
+                  label: Text(_checkingFire ? 'Verificando…' : 'Verificar focos agora'),
+                ),
+                if (_fireMessage != null) ...[
+                  const SizedBox(height: 12),
+                  AppCard(
+                    child: Text(_fireMessage!, style: const TextStyle(height: 1.4, color: AppColors.ink)),
+                  ),
+                ],
+                if (_fire != null && _fire!.nearestKm != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Mais próximo: ${_fire!.nearestKm!.toStringAsFixed(1).replaceAll('.', ',')} km · '
+                    '${_fire!.count48h} em 48 h.',
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Focos de calor: são detecções de calor por satélite (INPE, Programa Queimadas), não incêndios '
+                  'confirmados (pode ser queimada controlada, por exemplo), e dependem da passagem do satélite e '
+                  'das nuvens. Contam-se só focos registrados no Amazonas, a partir da sede do município. O app '
+                  'avisa na primeira detecção, quando o total cresce bastante ou após 24 h ainda com focos.',
+                  style: TextStyle(fontSize: 12, height: 1.45, color: AppColors.muted),
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Como funciona: o app confere o índice a cada cerca de 1 hora em segundo plano e também ao '

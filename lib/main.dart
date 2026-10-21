@@ -22,15 +22,15 @@ Future<void> main() async {
   runApp(const AlertaFumacaApp());
 }
 
-/// Reativa os alertas de qualidade do ar (se a pessoa os ligou) e confere uma vez ao abrir.
+/// Reativa os alertas de ar e de focos (se a pessoa os ligou) e confere uma vez ao abrir.
 /// Qualquer falha é ignorada: alerta nunca impede o app de abrir.
 void _startAirAlerts() {
   () async {
     try {
       final settings = await AirAlertStore().loadSettings();
-      if (!settings.enabled) return;
+      if (!settings.anyEnabled) return;
       await AirAlertBackground.sync(enabled: true);
-      await AirAlertService().check();
+      await AirAlertService().checkAll();
     } catch (_) {}
   }();
 }

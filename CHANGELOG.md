@@ -12,7 +12,18 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.9.0.
+Nenhuma mudança desde a 1.10.0.
+
+## [1.10.0] - 2026-10-20
+
+### Adicionado
+- **App: alerta de focos de calor** na tela "Alertas: ar e focos de calor". Notifica quando o INPE detecta focos nas últimas 24 h dentro de um raio (10, 25, 50 ou 100 km) da sede do município escolhido. Avisa na primeira detecção, quando o total cresce (pelo menos +5 e +50%) ou após 24 h ainda com focos; zera quando não há focos. O texto traz o horário da última detecção em Manaus e diz que são detecções por satélite, não incêndios confirmados.
+- Servidor: `GET /app/focos?cod=<IBGE>&raio_km=` (contagem 24 h/48 h, foco mais próximo, última detecção, FRP máximo), usando o cache do INPE já existente (sem consulta extra ao INPE por aparelho).
+- A checagem em segundo plano passa a cobrir ar e focos (`AirAlertService.checkAll`).
+
+### Limites conhecidos
+- Só entram focos registrados no estado do Amazonas (a consulta ao INPE é filtrada por estado) e o raio parte da **sede** do município (coordenada de `municipios_am.csv`), não do limite urbano nem municipal.
+- Foco de calor não é incêndio confirmado (pode ser queimada controlada) e depende da passagem do satélite e de nuvens.
 
 ## [1.9.0] - 2026-10-20
 

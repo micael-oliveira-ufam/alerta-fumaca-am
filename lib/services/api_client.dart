@@ -229,6 +229,16 @@ class ApiClient {
     }
   }
 
+  /// Focos de calor do INPE perto de um município (`GET /app/focos`).
+  Future<FireAlertReading> fetchFireReading(int municipalityCode, int radiusKm) async {
+    final body = await _getJson('/app/focos', {'cod': '$municipalityCode', 'raio_km': '$radiusKm'});
+    try {
+      return FireAlertReading.fromJson(body as Map<String, dynamic>);
+    } catch (_) {
+      throw const ApiException('A leitura de focos de calor veio em formato inesperado.');
+    }
+  }
+
   /// Municípios do Amazonas com código IBGE, a partir da lista que o servidor já publica.
   Future<List<({int code, String name})>> fetchAirMunicipalities() async {
     final body = await _getJson('/publico/qualidade-ar', const {});

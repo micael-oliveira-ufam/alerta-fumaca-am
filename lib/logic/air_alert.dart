@@ -17,6 +17,10 @@ const kDefaultAlertThreshold = 101;
 /// Limiares que a pessoa pode escolher (início de cada faixa do US AQI).
 const kAlertThresholds = <int>[51, 101, 151];
 
+/// Raios (km, a partir da sede do município) que a pessoa pode escolher para os focos de calor.
+const kFireRadii = <int>[10, 25, 50, 100];
+const kDefaultFireRadius = 50;
+
 /// Reenvia o aviso, mesmo sem piora, depois deste tempo com o índice ainda acima do limiar.
 const kAlertRepeatAfter = Duration(hours: 12);
 
@@ -26,19 +30,36 @@ class AirAlertSettings {
     this.municipalityCode = kDefaultAlertMunicipalityCode,
     this.municipalityName = 'Manaus',
     this.threshold = kDefaultAlertThreshold,
+    this.fireEnabled = false,
+    this.fireRadiusKm = kDefaultFireRadius,
   });
+
+  final bool fireEnabled;
+  final int fireRadiusKm;
+
+  /// Alguma checagem em segundo plano precisa rodar?
+  bool get anyEnabled => enabled || fireEnabled;
 
   final bool enabled;
   final int municipalityCode;
   final String municipalityName;
   final int threshold;
 
-  AirAlertSettings copyWith({bool? enabled, int? municipalityCode, String? municipalityName, int? threshold}) =>
+  AirAlertSettings copyWith({
+    bool? enabled,
+    int? municipalityCode,
+    String? municipalityName,
+    int? threshold,
+    bool? fireEnabled,
+    int? fireRadiusKm,
+  }) =>
       AirAlertSettings(
         enabled: enabled ?? this.enabled,
         municipalityCode: municipalityCode ?? this.municipalityCode,
         municipalityName: municipalityName ?? this.municipalityName,
         threshold: threshold ?? this.threshold,
+        fireEnabled: fireEnabled ?? this.fireEnabled,
+        fireRadiusKm: fireRadiusKm ?? this.fireRadiusKm,
       );
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +67,8 @@ class AirAlertSettings {
         'codigo': municipalityCode,
         'nome': municipalityName,
         'limiar': threshold,
+        'foco_ativo': fireEnabled,
+        'foco_raio': fireRadiusKm,
       };
 
   /// Tolerante: qualquer campo ausente ou inválido volta ao padrão.
@@ -58,6 +81,8 @@ class AirAlertSettings {
       municipalityCode: code is int && code >= 1300000 && code <= 1399999 ? code : kDefaultAlertMunicipalityCode,
       municipalityName: name is String && name.trim().isNotEmpty ? name.trim() : 'Manaus',
       threshold: threshold is int && kAlertThresholds.contains(threshold) ? threshold : kDefaultAlertThreshold,
+      fireEnabled: j['foco_ativo'] == true,
+      fireRadiusKm: j['foco_raio'] is int && kFireRadii.contains(j['foco_raio']) ? j['foco_raio'] as int : kDefaultFireRadius,
     );
   }
 }
@@ -160,5 +185,104 @@ String _num(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
     title: 'Qualidade do ar em ${r.municipalityName}: ${category.label}',
     body: 'Índice $aqi (US AQI).$pm Estimativa de modelo (~45 km), não é medição de estação. '
         'Abra o app para ver as orientações.',
+  );
+}
+
+
+// ------------------------------------------------------------------ focos de calor
+
+/// Leitura devolvida por `GET /app/focos`.
+class FireAlertReading {
+  const FireAlertReading({
+    required this.municipalityName,
+    required this.radiusKm,
+    required this.count24h,
+    required this.count48h,
+    required this.nearestKm,
+    required this.lastDetectionUtc,
+    required this.stale,
+  });
+
+  final String municipalityName;
+  final int radiusKm;
+  final int count24h;
+  final int count48h;
+  final double? nearestKm;
+  final DateTime? lastDetectionUtc;
+  final bool stale;
+
+  factory FireAlertReading.fromJson(Map<String, dynamic> j) => FireAlertReading(
+        municipalityName: j['municipio'] as String,
+        radiusKm: (j['raio_km'] as num).toInt(),
+        count24h: (j['focos_24h'] as num).toInt(),
+        count48h: (j['focos_48h'] as num).toInt(),
+        nearestKm: (j['mais_proximo_km'] as num?)?.toDouble(),
+        lastDetectionUtc:
+            j['ultima_deteccao_utc'] is String ? DateTime.tryParse(j['ultima_deteccao_utc'] as String)?.toUtc() : null,
+        stale: j['desatualizado'] == true,
+      );
+}
+
+class FireAlertState {
+  const FireAlertState({this.lastCount, this.lastNotifiedAt});
+
+  final int? lastCount;
+  final DateTime? lastNotifiedAt;
+
+  Map<String, dynamic> toJson() => {'total': lastCount, 'em': lastNotifiedAt?.toUtc().toIso8601String()};
+
+  factory FireAlertState.fromJson(Map<String, dynamic> j) => FireAlertState(
+        lastCount: j['total'] is int ? j['total'] as int : null,
+        lastNotifiedAt: j['em'] is String ? DateTime.tryParse(j['em'] as String)?.toUtc() : null,
+      );
+}
+
+/// Aviso de focos só repete se o total crescer bastante, ou depois de 24 h ainda com focos
+/// (na época de queimadas há focos quase todo dia: sem esta regra seria um aviso diário sem novidade).
+const kFireRepeatAfter = Duration(hours: 24);
+const kFireMinGrowth = 5;
+
+/// Decide o que fazer com a leitura de focos (últimas 24 h dentro do raio).
+///
+/// - desligado ou dado desatualizado: nada;
+/// - nenhum foco: `reset` se havia aviso guardado;
+/// - com focos: avisa se nunca avisou, se o total subiu pelo menos [kFireMinGrowth] E 50% sobre o
+///   último aviso, ou se passaram [kFireRepeatAfter].
+AlertAction decideFireAlert({
+  required AirAlertSettings settings,
+  required FireAlertReading reading,
+  required FireAlertState state,
+  required DateTime now,
+}) {
+  if (!settings.fireEnabled || reading.stale) return AlertAction.none;
+  final n = reading.count24h;
+  if (n <= 0) {
+    return state.lastCount == null && state.lastNotifiedAt == null ? AlertAction.none : AlertAction.reset;
+  }
+  final last = state.lastCount;
+  final when = state.lastNotifiedAt;
+  if (last == null || when == null) return AlertAction.notify;
+  if (n - last >= kFireMinGrowth && n >= last * 1.5) return AlertAction.notify;
+  if (now.toUtc().difference(when) >= kFireRepeatAfter) return AlertAction.notify;
+  return AlertAction.none;
+}
+
+String _two(int n) => n.toString().padLeft(2, '0');
+
+/// Texto da notificação de focos. Horário em Manaus (UTC-4, sem horário de verão).
+({String title, String body}) fireMessage(FireAlertReading r) {
+  final n = r.count24h;
+  final detections = n == 1 ? '1 foco de calor' : '$n focos de calor';
+  final nearest = r.nearestKm == null ? '' : ' O mais próximo está a ${_num(r.nearestKm!)} km.';
+  var last = '';
+  final t = r.lastDetectionUtc;
+  if (t != null) {
+    final m = t.subtract(const Duration(hours: 4));
+    last = ' Última detecção: ${_two(m.day)}/${_two(m.month)} às ${_two(m.hour)}:${_two(m.minute)} (Manaus).';
+  }
+  return (
+    title: 'Focos de calor perto de ${r.municipalityName}',
+    body: '$detections nas últimas 24 h, num raio de ${r.radiusKm} km da sede.$nearest$last '
+        'São detecções por satélite (INPE), não incêndios confirmados.',
   );
 }

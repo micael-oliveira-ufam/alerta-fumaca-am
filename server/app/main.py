@@ -38,7 +38,7 @@ from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import bairros, download_app, exportacao, focos, publico, qualidade_ar as qar, stats
+from . import bairros, download_app, exportacao, focos, focos_proximos, publico, qualidade_ar as qar, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.9.0"
+APP_VERSION = "1.10.0"
 
 
 def create_app(
@@ -196,6 +196,33 @@ def _montar_painel_publico(app: FastAPI) -> None:
             "consultado_em": dados["consultado_em"],
             "desatualizado": dados["desatualizado"],
             "escala": dados["escala"],
+        }
+
+    @app.get("/app/focos")
+    def focos_para_o_app(
+        request: Request,
+        response: Response,
+        cod: int = Query(..., ge=1300000, le=1399999),
+        raio_km: int = Query(50),
+    ) -> dict:
+        """Focos do INPE perto de um município, para os alertas do aplicativo (leve; usa o cache do INPE)."""
+        if raio_km not in focos_proximos.RAIOS_KM:
+            raise HTTPException(status_code=422, detail=f"raio_km deve ser um de {list(focos_proximos.RAIOS_KM)}.")
+        muni = next((m for m in qar.municipios() if m.codigo == cod), None)
+        if muni is None:
+            raise HTTPException(status_code=404, detail="Município do Amazonas não encontrado.")
+        corpo, cache, obtido_em = obter_focos(request.app, "last48h", "amazonas", [])
+        resumo = focos_proximos.resumir(corpo, muni.lat, muni.lon, raio_km, dt.datetime.now(dt.timezone.utc))
+        response.headers["Cache-Control"] = "public, max-age=60"
+        return {
+            "codigo_ibge": muni.codigo,
+            "municipio": muni.nome,
+            **resumo,
+            "consultado_em": None if obtido_em is None else obtido_em.astimezone(dt.timezone.utc).isoformat(),
+            "desatualizado": cache == "STALE",
+            "fonte": "INPE, Programa Queimadas (focos de calor por satélite, estado do Amazonas)",
+            "nota": "Foco de calor é detecção por satélite, não incêndio confirmado. Contados só focos registrados no "
+                    "Amazonas, a partir da sede do município.",
         }
 
     # ------------------------------------------------------------- download em CSV

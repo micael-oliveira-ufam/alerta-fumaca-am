@@ -436,6 +436,12 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Não verificado:** compilação Dart, build Gradle com os plugins, entrega da notificação em aparelho real, comportamento do segundo plano com economia de bateria, permissão POST_NOTIFICATIONS no Android 13+.
 - `RadioListTile` evitado de propósito (parâmetros obsoletos geram *info* no `flutter analyze`, que bloqueia `gerar_apk.sh`).
 
+### 4.30 Alerta de focos de calor — versão 1.10.0
+- **Decisão do usuário (20/10/2026):** "Alerta também para focos de calor". Raios (10/25/50/100 km, padrão 50), mínimo de +5 e +50% para reavisar, e repetição de 24 h foram escolhas minhas (ajustáveis no código, `lib/logic/air_alert.dart`); **validar com a equipe**.
+- Servidor: `focos_proximos.py` (haversine, janelas de 24 h e 48 h; registros sem coordenada/horário ignorados). Verificado por testes com GeoJSON sintético; **não verificado ao vivo contra o INPE** (inacessível no ambiente).
+- Dart novo (decisão, mensagem, tela) **não compilado**; testes em `test/air_alert_test.dart` ainda sem execução.
+- Privacidade: o app envia ao servidor só o código IBGE do município e o raio.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
