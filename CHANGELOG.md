@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.12.2.
+
+## [1.12.2] - 2026-10-20
+
+### Corrigido
+- Arquivos do painel (`/assets`) agora saem com `Cache-Control: no-cache` (revalidação por ETag). O Cloudflare estava aplicando `max-age=14400` (4 h), o que faz o site e a logo parecerem não atualizar depois de uma versão nova. Visto na saída do `curl -sI` do usuário (20/10/2026).
+
 Nenhuma mudança desde a 1.12.1.
 
 ## [1.12.1] - 2026-10-20

@@ -470,3 +470,10 @@ def test_secao_amazonia_camadas_e_csp(client):
     for camada in ["deter-amz:deter_amz", "prodes-amazon-nb:yearly_deforestation_biome",
                    "prodes-amazon-nb:indigenous_area_amazon_biome", "prodes-amazon-nb:conservation_units_amazon_biome"]:
         assert camada in js.text
+
+
+def test_assets_do_painel_revalidam_sempre(client):
+    r = client.get("/assets/logo.png")
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
+    r2 = client.get("/assets/logo.png", headers={"If-None-Match": r.headers["etag"]})
+    assert r2.status_code == 304

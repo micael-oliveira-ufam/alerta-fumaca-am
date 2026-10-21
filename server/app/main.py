@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.12.1"
+APP_VERSION = "1.12.2"
 
 
 def create_app(
@@ -132,6 +132,19 @@ _CSP_PUBLICO = (
 )
 
 
+class _EstaticosRevalidados(StaticFiles):
+    """Arquivos do painel com `Cache-Control: no-cache` (revalida por ETag, barato).
+
+    Sem isso o Cloudflare aplica 4 h de cache de navegador (visto em `cache-control: max-age=14400`) e o site
+    parece não atualizar depois de uma nova versão."""
+
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        if resp.status_code in (200, 304):
+            resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 def _montar_painel_publico(app: FastAPI) -> None:
     """Página pública (sem senha) com dados agregados. Ver `app.publico` para as regras."""
 
@@ -155,7 +168,7 @@ def _montar_painel_publico(app: FastAPI) -> None:
         return FileResponse(PUBLICO_DIR / "favicon.ico", media_type="image/x-icon",
                             headers={"Cache-Control": "public, max-age=86400"})
 
-    app.mount("/assets", StaticFiles(directory=PUBLICO_DIR), name="assets-publicos")
+    app.mount("/assets", _EstaticosRevalidados(directory=PUBLICO_DIR), name="assets-publicos")
     app.mount("/vendor", StaticFiles(directory=VENDOR_DIR), name="vendor-publico")
 
     def dados_publicos(request: Request, session: Session, dias: int) -> dict:
