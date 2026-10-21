@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.1.
+
+## [1.13.1] - 2026-10-20
+
+### Corrigido
+- **Questionário: "Enviando suas respostas…" sem fim.** A etapa de envio não tinha proteção contra demora ou erro inesperado (localização, fila local ou rede): qualquer falha fora do esperado deixava a tela presa. Agora a localização tem limite de 20 s (sem ela o envio segue, sem a área aproximada), o envio todo tem limite de 75 s e, em erro inesperado, a pergunta volta com um aviso para tentar de novo. **Causa exata no aparelho do usuário NÃO confirmada**; Dart não compilado nem testado aqui.
+
 Nenhuma mudança desde a 1.13.0.
 
 ## [1.13.0] - 2026-10-20

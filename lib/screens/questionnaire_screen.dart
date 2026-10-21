@@ -186,37 +186,53 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     if (data == null || _shareState == _ShareState.sending) return;
     setState(() => _shareState = _ShareState.sending);
 
-    double? lat;
-    double? lon;
-    final located = await _location.requestAndGetPosition();
-    final position = located.position;
-    if (located.status == LocationStatus.ok && position != null) {
-      lat = position.latitude;
-      lon = position.longitude;
-    }
-    // Sem permissão ou sem GPS: o envio segue, apenas sem a área aproximada.
+    // Nada aqui pode deixar a tela presa em "Enviando…": cada etapa tem tempo limite e qualquer erro
+    // inesperado devolve a pergunta (a pessoa pode tentar de novo).
+    SyncResult? outcome;
+    try {
+      double? lat;
+      double? lon;
+      try {
+        final located = await _location.requestAndGetPosition().timeout(const Duration(seconds: 20));
+        final position = located.position;
+        if (located.status == LocationStatus.ok && position != null) {
+          lat = position.latitude;
+          lon = position.longitude;
+        }
+      } catch (_) {
+        // Sem permissão, sem GPS ou demora: o envio segue, apenas sem a área aproximada.
+      }
 
-    final payload = buildAnswerPayload(
-      submissionId: newSubmissionId(),
-      recordedAt: data.recordedAt,
-      result: data.result,
-      exposure: data.exposure,
-      profile: data.profile,
-      severities: data.severities,
-      lat: lat,
-      lon: lon,
-      context: data.smokeContext,
-    );
-    final outcome = await _sync.send(payload);
+      final payload = buildAnswerPayload(
+        submissionId: newSubmissionId(),
+        recordedAt: data.recordedAt,
+        result: data.result,
+        exposure: data.exposure,
+        profile: data.profile,
+        severities: data.severities,
+        lat: lat,
+        lon: lon,
+        context: data.smokeContext,
+      );
+      // A fila (reenvio) e a requisição têm tempo limite próprio (20 s cada); este é só a rede de segurança.
+      outcome = await _sync.send(payload).timeout(const Duration(seconds: 75));
+    } catch (_) {
+      outcome = null;
+    }
     if (!mounted) return;
     setState(() {
       _shareState = switch (outcome) {
         SyncResult.sent => _ShareState.sent,
         SyncResult.queued => _ShareState.queued,
         SyncResult.rejected => _ShareState.rejected,
-        SyncResult.notConfigured => _ShareState.ask,
+        SyncResult.notConfigured || null => _ShareState.ask,
       };
     });
+    if (outcome == null) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(
+        content: Text('Não foi possível enviar agora. Toque em "Sim, compartilhar" para tentar de novo.'),
+      ));
+    }
   }
 
   void _declineShare() => setState(() => _shareState = _ShareState.declined);

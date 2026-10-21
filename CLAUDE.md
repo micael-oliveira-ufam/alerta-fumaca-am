@@ -466,6 +466,11 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Interpretação (confirmar):** "restrinja a seleção para Satélite" = só o mapa de fundo Satélite fica disponível com desmatamento ligado.
 - Verificado no Chromium (sem as camadas reais): restrição liga/desliga, restauração do fundo anterior, legenda, barra (mostra falhas), sem erro de JS. Não verificado: carregamento real das camadas do INPE e da NASA.
 
+### 4.35 Envio travado e focos no app — versão 1.13.1
+- Prints do usuário (20/10/2026): "Enviando suas respostas…" indefinido; aba Focos do app com "servidor respondeu 502". **Focos:** o app consulta o servidor (`/focos`), então a internet e a permissão INTERNET estão corretas (senão o erro seria de DNS/conexão); o 502 vem do servidor porque o INPE mudou de endereço (ver 4.32) e a reserva FIRMS só funciona com `FIRMS_MAP_KEY` no `.env` (conferir `curl https://respirar-amazonas.cloud/focos/fontes` → `"firms":true`). O FIRMS só cobre o Amazonas: "Brasil" continua falhando enquanto o INPE estiver fora.
+- **Envio:** o código lido não mostra permissão faltando: `postAnswer` e `flush` já tratam erros; a lacuna era `_shareAnswers` sem `try`/tempo limite (localização e fila poderiam travar a tela). Corrigido com limites e retorno à pergunta. Hipóteses **não confirmadas** para o travamento real: GPS/permissão sem resposta, `getCurrentPosition` ignorando o limite, ou requisição lenta pelo túnel. Para decidir: ver se o POST chega ao servidor (`docker compose logs api | grep respostas`).
+- Dart não compilado; sem teste automatizado novo (a lógica está em widget).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
