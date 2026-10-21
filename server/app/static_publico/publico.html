@@ -25,7 +25,7 @@
   <meta name="twitter:description" content="Fumaça, qualidade do ar e camadas da Amazônia. Dados abertos e anônimos.">
   <meta name="twitter:image" content="{{BASE}}/assets/og-imagem.png">
   <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/assets/publico.css">
+  <link rel="stylesheet" href="/assets/publico.css?v={{VERSAO}}">
 </head>
 <body>
   <header class="hero">
@@ -168,7 +168,7 @@
         <div class="prog-trilho"><div class="prog-barra" id="amz-prog-barra"></div></div>
         <span class="prog-texto" id="amz-prog-texto"></span>
       </div>
-      <div id="mapa-amazonia" role="img" aria-label="Mapa da Amazônia com camadas selecionáveis"></div>
+      <div id="mapa-amazonia" style="height:460px" role="img" aria-label="Mapa da Amazônia com camadas selecionáveis"></div>
       <p class="aviso" id="amz-aviso" hidden></p>
       <div id="amz-legenda" class="sub"></div>
     </section>
@@ -219,11 +219,11 @@
 
   <script src="/vendor/leaflet/leaflet.js"></script>
   <script src="/vendor/leaflet-heat/leaflet-heat.js"></script>
-  <script src="/assets/mapas.js"></script>
-  <script src="/assets/publico.js"></script>
-  <script src="/assets/ar.js"></script>
-  <script src="/assets/amazonia.js"></script>
-  <script src="/assets/baixar.js"></script>
-  <script src="/assets/atualizar.js"></script>
+  <script src="/assets/mapas.js?v={{VERSAO}}"></script>
+  <script src="/assets/publico.js?v={{VERSAO}}"></script>
+  <script src="/assets/ar.js?v={{VERSAO}}"></script>
+  <script src="/assets/amazonia.js?v={{VERSAO}}"></script>
+  <script src="/assets/baixar.js?v={{VERSAO}}"></script>
+  <script src="/assets/atualizar.js?v={{VERSAO}}"></script>
 </body>
 </html>

@@ -333,7 +333,7 @@ def test_pagina_tem_secoes_e_scripts_novos(client):
     # A seção de focos do INPE foi removida do painel (o serviço mudou de endereço; ver CLAUDE.md 4.32/4.34).
     assert 'id="sec-focos"' not in html and "/assets/focos.js" not in html
     pasta = Path(__file__).parent.parent / "app" / "static_publico"
-    for arq in re.findall(r'src="/assets/([^"]+)"', html):
+    for arq in re.findall(r'src="/assets/([^"?]+)', html):
         assert (pasta / arq).is_file(), arq
         assert client.get(f"/assets/{arq}").status_code == 200
 
@@ -484,3 +484,12 @@ def test_assets_do_painel_revalidam_sempre(client):
 def test_amazonia_js_restringe_desmatamento_ao_satelite_e_tem_progresso_e_legenda(client):
     js = client.get("/assets/amazonia.js").text
     assert "DESMAT" in js and "trocarBase('sat')" in js and "GetLegendGraphic" in js and "tileloadstart" in js
+
+
+def test_arquivos_do_painel_levam_a_versao_na_url_contra_cache_antigo(client):
+    html = client.get("/").text
+    assert "{{VERSAO}}" not in html
+    for arq in ["publico.css", "amazonia.js", "mapas.js", "publico.js"]:
+        assert f"/assets/{arq}?v=" in html, arq
+    assert 'id="mapa-amazonia" style="height:460px"' in html  # o mapa nunca colapsa se o CSS estiver velho
+    assert client.get("/assets/publico.css?v=1.0").status_code == 200

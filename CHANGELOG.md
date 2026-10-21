@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.4.
+
+## [1.13.4] - 2026-10-20
+
+### Corrigido
+- **Painel: seção "Amazônia · camadas" sem estilo e sem mapa** (print do usuário, 20/10/2026: botões com aparência padrão do navegador e nenhum mapa). Causa **provável, não confirmada**: o navegador/Cloudflare serviu um `publico.css` antigo (sem as regras de `.camadas` e do mapa) junto com o HTML novo, já que antes os arquivos de `/assets` eram guardados por 4 h. Correções: os arquivos CSS/JS agora levam a versão na URL (`?v=1.13.4`), forçando baixar o arquivo novo a cada versão, e o mapa da Amazônia tem altura definida no próprio HTML (não colapsa mesmo com CSS velho). A legenda gráfica do INPE **carregou** no print (quadrado laranja do bioma), o que indica que o serviço do INPE responde por WMS.
+
 Nenhuma mudança desde a 1.13.3.
 
 ## [1.13.3] - 2026-10-20

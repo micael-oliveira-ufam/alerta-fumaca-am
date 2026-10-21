@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.13.3"
+APP_VERSION = "1.13.4"
 
 
 def create_app(
@@ -155,7 +155,7 @@ def _montar_painel_publico(app: FastAPI) -> None:
             request.app.state.settings.public_url, h.get("host", ""), h.get("x-forwarded-proto", ""),
             request.url.scheme, request.url.netloc,
         )
-        html = (PUBLICO_DIR / "publico.html").read_text(encoding="utf-8").replace("{{BASE}}", base.rstrip("/"))
+        html = (PUBLICO_DIR / "publico.html").read_text(encoding="utf-8").replace("{{BASE}}", base.rstrip("/")).replace("{{VERSAO}}", APP_VERSION)
         resp = Response(html, media_type="text/html; charset=utf-8")
         resp.headers["Content-Security-Policy"] = _CSP_PUBLICO
         resp.headers["X-Content-Type-Options"] = "nosniff"
