@@ -8,6 +8,7 @@ import '../data/app_info.dart';
 import '../logic/risk_assessment.dart';
 import '../logic/symptom_stats.dart';
 import '../models/smoke_context.dart';
+import '../logic/app_update.dart';
 import '../models/smoke_report.dart';
 import 'api_config.dart';
 
@@ -63,6 +64,15 @@ class NeighborhoodStat {
 
 class NeighborhoodsData {
   const NeighborhoodsData({required this.items, required this.minimum, required this.source});
+
+  /// Interpreta o JSON de `GET /bairros`. Lança se o formato for inesperado.
+  factory NeighborhoodsData.fromJson(Map<String, dynamic> map) => NeighborhoodsData(
+        items: [
+          for (final b in map['bairros'] as List<dynamic>) NeighborhoodStat.fromJson(b as Map<String, dynamic>),
+        ],
+        minimum: (map['minimo_por_bairro'] as num).toInt(),
+        source: map['fonte'] as String,
+      );
 
   /// Do mais para o menos afetado (mais respostas).
   final List<NeighborhoodStat> items;
@@ -173,29 +183,48 @@ class ApiClient {
     throw const ApiException('Este endereço não parece ser um servidor do RespirAR Amazonas.');
   }
 
-  Future<StatsSnapshot> fetchStats({int days = 30}) async {
+  /// JSON bruto de `GET /estatisticas` (usado também para guardar a cópia local).
+  Future<Map<String, dynamic>> fetchStatsJson({int days = 30}) async {
     final body = await _getJson('/estatisticas', {'dias': '$days'});
+    if (body is! Map<String, dynamic>) {
+      throw const ApiException('As estatísticas vieram em formato inesperado.');
+    }
+    return body;
+  }
+
+  Future<StatsSnapshot> fetchStats({int days = 30}) async {
+    final body = await fetchStatsJson(days: days);
     try {
-      return StatsSnapshot.fromServerJson(body as Map<String, dynamic>);
+      return StatsSnapshot.fromServerJson(body);
     } catch (_) {
       throw const ApiException('As estatísticas vieram em formato inesperado.');
     }
   }
 
-  Future<NeighborhoodsData> fetchNeighborhoods({int days = 30}) async {
+  Future<Map<String, dynamic>> fetchNeighborhoodsJson({int days = 30}) async {
     final body = await _getJson('/bairros', {'dias': '$days'});
+    if (body is! Map<String, dynamic>) {
+      throw const ApiException('Os bairros vieram em formato inesperado.');
+    }
+    return body;
+  }
+
+  Future<NeighborhoodsData> fetchNeighborhoods({int days = 30}) async {
+    final body = await fetchNeighborhoodsJson(days: days);
     try {
-      final map = body as Map<String, dynamic>;
-      return NeighborhoodsData(
-        items: [
-          for (final b in map['bairros'] as List<dynamic>)
-            NeighborhoodStat.fromJson(b as Map<String, dynamic>),
-        ],
-        minimum: (map['minimo_por_bairro'] as num).toInt(),
-        source: map['fonte'] as String,
-      );
+      return NeighborhoodsData.fromJson(body);
     } catch (_) {
       throw const ApiException('Os bairros vieram em formato inesperado.');
+    }
+  }
+
+  /// Versão do app publicada no servidor (`GET /app/versao`).
+  Future<AppUpdate> fetchAppUpdate() async {
+    final body = await _getJson('/app/versao', const {});
+    try {
+      return AppUpdate.fromJson(body as Map<String, dynamic>);
+    } catch (_) {
+      throw const ApiException('A informação de versão veio em formato inesperado.');
     }
   }
 

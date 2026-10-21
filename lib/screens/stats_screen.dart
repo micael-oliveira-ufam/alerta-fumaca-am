@@ -6,6 +6,7 @@ import '../data/guidance_content.dart';
 import '../services/answer_sync.dart';
 import '../services/api_client.dart';
 import '../services/report_repository.dart';
+import '../services/stats_cache.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui.dart';
 
@@ -31,50 +32,122 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  final _api = ApiClient();
+  // Tempo curto: sem servidor a tela não pode ficar esperando; os dados do aparelho já aparecem antes.
+  final _api = ApiClient(timeout: const Duration(seconds: 8));
   final _answers = LocalAnswerStore();
+  final _cache = StatsCache();
   late final AnswerSync _sync = AnswerSync(api: _api);
 
-  late Future<_StatsData> _future = _load();
+  /// Sempre preenchido logo após abrir (dados deste aparelho); o servidor só substitui.
+  _StatsData? _data;
+  bool _refreshing = false;
   int _pending = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadPending();
+    _refresh();
   }
 
-  Future<_StatsData> _load() async {
-    String? note;
-    if (_api.isConfigured) {
-      try {
-        await _sync.flush(); // entrega o que ficou pendente antes de ler os números
-        final snapshot = await _api.fetchStats(days: _periodDays);
-        NeighborhoodsData? neighborhoods;
-        try {
-          neighborhoods = await _api.fetchNeighborhoods(days: _periodDays);
-        } on ApiException {
-          neighborhoods = null; // os demais gráficos continuam
-        }
-        return _StatsData(snapshot: snapshot, neighborhoods: neighborhoods);
-      } on ApiException catch (e) {
-        note = '${e.message} Mostrando só os dados deste aparelho.';
-      }
+  Future<StatsSnapshot> _localSnapshot() async {
+    try {
+      return computeLocalStats(await _answers.all(), days: _periodDays);
+    } catch (_) {
+      return computeLocalStats(const [], days: _periodDays); // até aqui a tela não fica vazia
     }
-    final records = await _answers.all();
-    return _StatsData(snapshot: computeLocalStats(records, days: _periodDays), note: note);
+  }
+
+  static String _two(int n) => n.toString().padLeft(2, '0');
+
+  static String _when(DateTime t) {
+    final l = t.toLocal();
+    return '${_two(l.day)}/${_two(l.month)}/${l.year} ${_two(l.hour)}:${_two(l.minute)}';
   }
 
   Future<void> _loadPending() async {
-    final pending = await _sync.pendingCount();
-    if (!mounted) return;
-    setState(() => _pending = pending);
+    try {
+      final pending = await _sync.pendingCount();
+      if (mounted) setState(() => _pending = pending);
+    } catch (_) {
+      // contador é só informativo
+    }
   }
 
-  void _reload() => setState(() => _future = _load());
+  /// 1) mostra já os dados deste aparelho; 2) tenta o servidor; 3) se falhar, usa a última cópia
+  /// recebida do servidor; 4) se não houver, mantém os dados do aparelho com um aviso.
+  /// Nenhum caminho deixa a tela em branco ou girando sem fim.
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      final local = await _localSnapshot();
+      if (!mounted) return;
+      if (_data == null) setState(() => _data = _StatsData(snapshot: local));
+
+      if (!_api.isConfigured) return;
+
+      // Entrega o que ficou pendente sem travar a tela.
+      _sync.flush().then((_) => _loadPending()).catchError((Object _) {});
+
+      String? note;
+      try {
+        final statsJson = await _api.fetchStatsJson(days: _periodDays);
+        final snapshot = StatsSnapshot.fromServerJson(statsJson);
+        Map<String, dynamic>? neighborhoodsJson;
+        NeighborhoodsData? neighborhoods;
+        try {
+          neighborhoodsJson = await _api.fetchNeighborhoodsJson(days: _periodDays);
+          neighborhoods = NeighborhoodsData.fromJson(neighborhoodsJson);
+        } catch (_) {
+          neighborhoodsJson = null; // os demais gráficos continuam
+        }
+        await _cache.save(days: _periodDays, stats: statsJson, neighborhoods: neighborhoodsJson);
+        if (!mounted) return;
+        setState(() => _data = _StatsData(snapshot: snapshot, neighborhoods: neighborhoods));
+        return;
+      } on ApiException catch (e) {
+        note = e.message;
+      } catch (_) {
+        note = 'Não foi possível obter os números do servidor agora.';
+      }
+
+      final cached = await _cache.load();
+      if (cached != null && cached.days == _periodDays) {
+        try {
+          final snapshot = StatsSnapshot.fromServerJson(cached.stats);
+          NeighborhoodsData? neighborhoods;
+          try {
+            final nb = cached.neighborhoods;
+            neighborhoods = nb == null ? null : NeighborhoodsData.fromJson(nb);
+          } catch (_) {
+            neighborhoods = null;
+          }
+          if (!mounted) return;
+          setState(() {
+            _data = _StatsData(
+              snapshot: snapshot,
+              neighborhoods: neighborhoods,
+              note: '$note Mostrando os últimos números recebidos do servidor, de ${_when(cached.savedAt)}.',
+            );
+          });
+          return;
+        } catch (_) {
+          // cópia inválida: segue para os dados do aparelho
+        }
+      }
+      if (!mounted) return;
+      setState(() => _data = _StatsData(snapshot: local, note: '$note Mostrando só os dados deste aparelho.'));
+    } catch (_) {
+      // qualquer falha inesperada: a tela segue com o que já tem
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+      _loadPending();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final data = _data;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sintomas mais relatados'),
@@ -85,69 +158,67 @@ class _StatsScreenState extends State<StatsScreen> {
           IconButton(
             tooltip: 'Atualizar',
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: _reload,
+            onPressed: _refreshing ? null : _refresh,
           ),
         ],
       ),
-      body: FutureBuilder<_StatsData>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final data = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async => _reload(),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: [
-                if (data.note != null) ...[
+      body: data == null
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  if (_refreshing) ...[
+                    const LinearProgressIndicator(minHeight: 3),
+                    const SizedBox(height: 8),
+                  ],
+                  if (data.note != null) ...[
+                    AppCard(
+                      color: const Color(0xFFFFF8E1),
+                      child: Text(
+                        data.note!,
+                        style: const TextStyle(fontSize: 13, height: 1.35, color: AppColors.ink),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  _Overview(snapshot: data.snapshot),
+                  const SizedBox(height: 16),
+                  const SectionTitle('SINTOMAS MAIS RELATADOS'),
                   AppCard(
-                    color: const Color(0xFFFFF8E1),
-                    child: Text(
-                      data.note!,
-                      style: const TextStyle(fontSize: 13, height: 1.35, color: AppColors.ink),
+                    child: Column(
+                      children: [
+                        for (final s in _symptomsToShow(data.snapshot)) _SymptomRow(stat: s),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-                _Overview(snapshot: data.snapshot),
-                const SizedBox(height: 16),
-                const SectionTitle('SINTOMAS MAIS RELATADOS'),
-                AppCard(
-                  child: Column(
-                    children: [
-                      for (final s in _symptomsToShow(data.snapshot)) _SymptomRow(stat: s),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  data.snapshot.sufficient
-                      ? 'Relato = sintoma com intensidade leve ou maior. O percentual é sobre o '
-                          'total de respostas do período. Os números descrevem quem usa o app e '
-                          'não representam toda a população.'
-                      : 'Os gráficos aparecem zerados porque ainda não há dados publicados.',
-                  style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
-                ),
-                const SizedBox(height: 16),
-                const SectionTitle('NÍVEL DE RISCO DAS RESPOSTAS'),
-                AppCard(child: _LevelsChart(snapshot: data.snapshot)),
-                const SizedBox(height: 16),
-                const SectionTitle('BAIRROS DE MANAUS MAIS AFETADOS'),
-                _NeighborhoodsCard(data: data.neighborhoods, serverConfigured: _api.isConfigured),
-                if (_pending > 0) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Text(
-                    'Há $_pending envio(s) aguardando conexão.',
-                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    data.snapshot.sufficient
+                        ? 'Relato = sintoma com intensidade leve ou maior. O percentual é sobre o '
+                            'total de respostas do período. Os números descrevem quem usa o app e '
+                            'não representam toda a população.'
+                        : 'Os gráficos aparecem zerados porque ainda não há dados publicados.',
+                    style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
                   ),
+                  const SizedBox(height: 16),
+                  const SectionTitle('NÍVEL DE RISCO DAS RESPOSTAS'),
+                  AppCard(child: _LevelsChart(snapshot: data.snapshot)),
+                  const SizedBox(height: 16),
+                  const SectionTitle('BAIRROS DE MANAUS MAIS AFETADOS'),
+                  _NeighborhoodsCard(data: data.neighborhoods, serverConfigured: _api.isConfigured),
+                  if (_pending > 0) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Há $_pending envio(s) aguardando conexão.',
+                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          );
-        },
-      ),
     );
   }
 }

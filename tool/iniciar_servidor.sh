@@ -140,6 +140,9 @@ for var in API_PORT PAINEL_PORT; do
   fi
 done
 
+# A pasta dist/ (APK para o painel) é montada no contêiner; criar antes evita que o Docker a crie como root.
+mkdir -p dist
+
 # Sobe os serviços. Se o Docker ainda recusar uma porta (alguém a ocupou depois do teste, ou
 # ela só está ocupada em outra interface), troca a porta que falhou pela próxima livre e
 # tenta de novo, até 5 vezes.

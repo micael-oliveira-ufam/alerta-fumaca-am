@@ -22,3 +22,6 @@ ios/
 .vscode/
 *.iml
 .DS_Store
+
+# APK gerado e hashes (distribuídos pelo painel, nunca versionados)
+dist/

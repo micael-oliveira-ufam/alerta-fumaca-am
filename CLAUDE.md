@@ -422,6 +422,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - O usuário escreveu `respira-amazonas.cloud` no pedido; a zona real na Cloudflare é **`respirar-amazonas.cloud`** (print da tela de DNS). O nome sem "r" gerava `DNS_PROBE_FINISHED_NXDOMAIN`. **Erro de propagação meu:** usei o nome digitado sem conferir; ao receber um nome de domínio, pedir/conferir a grafia na fonte (painel do registrador). Todas as menções atuais foram trocadas; as seções 4.26 e o CHANGELOG da 1.7.0 ficam como histórico.
 - **Registros DNS vistos no print:** `A respirar-amazonas.cloud → 2.57.91.91` (proxied) e `CNAME www → respirar-amazonas.cloud` (proxied); *DNS Setup: Full*. **Não verificado:** de quem é o IP 2.57.91.91 (provável página de estacionamento do registrador; não confirmei). O registro A do apex precisa ser removido para que a rota do túnel possa criar o CNAME do túnel no mesmo nome.
 
+### 4.28 Painel completo e atualização — versão 1.8.0
+- **Limite científico:** a qualidade do ar vem do CAMS via Open-Meteo, grade de ~45 km; **não existe valor por bairro**. Mostrar um número por bairro seria inventar precisão. O painel diz isso na tela. Bairros de Manaus continuam só no ranking de relatos do app.
+- **Não verificado:** nomes das camadas NASA GIBS (reutilizados do app, sem acesso ao serviço), comportamento ao vivo de OpenTopoMap/Open-Meteo/INPE, formato de `current.time` do Open-Meteo, todo o Dart novo (`app_update.dart`, `stats_cache.dart`, `update_banner.dart`, `stats_screen.dart`) e o fluxo real de instalação do APK. Verificado: 130 testes do servidor, página no Chromium com dados fictícios (desktop e 390 px, sem rolagem horizontal).
+- **Municípios:** `server/app/dados/municipios_am.csv` (62, coordenadas de sede) com procedência em `LEIAME.md`.
+- **Atualização:** o app consulta `/app/versao` (sem dados pessoais). Sem loja, o Android exige confirmação do usuário; não prometer atualização silenciosa. Para forçar o aviso, defina `APP_VERSAO_MINIMA` no `.env`. Fluxo: `tool/gerar_apk.sh` (grava `dist/VERSION.txt`) e o servidor passa a anunciar a versão nova sem reiniciar.
+- **Tela de sintomas:** regra de projeto: tela de dados nunca depende só da rede; mostrar local primeiro, servidor depois, cópia local em falha.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

@@ -12,7 +12,22 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.7.1.
+Nenhuma mudança desde a 1.8.0.
+
+## [1.8.0] - 2026-10-20
+
+### Adicionado
+- **Painel público:** download dos dados em **CSV** (`GET /publico/export.csv?conjunto=&dias=`), com conjuntos de sintomas, níveis, série diária, bairros, áreas, perfil/contexto, focos do INPE e qualidade do ar. Os CSV reutilizam os mesmos dados e regras de privacidade da página (mínimos de respostas; nada individual), usam UTF-8 com BOM e protegem contra injeção de fórmula em planilhas.
+- **Painel público:** seção **Qualidade do ar do Amazonas** (62 municípios, US AQI, PM2,5, PM10 e fração fina PM2,5/PM10), com mapa, tabela e legenda. Fonte: Open-Meteo/CAMS por proxy do servidor com cache (`GET /publico/qualidade-ar`). É **estimativa de modelo (~45 km)**: por isso **não há valor por bairro de Manaus** (seria o mesmo número repetido); Manaus aparece com o valor do município.
+- **Painel público:** **horário detalhado dos focos** (última detecção em Manaus e UTC, quando o servidor consultou o INPE, quando a página atualizou, aviso se os dados estão desatualizados) e tabela por satélite com a última detecção. Cabeçalho `X-Consultado-Em` em `GET /focos`.
+- **Painel público:** mais mapas: relevo (OpenTopoMap), satélite em cor real e camadas NASA GIBS (aerossóis MODIS e focos VIIRS 375 m); seção de **fontes oficiais** (BDQueimadas, dados abertos do INPE, TerraBrasilis, MapBiomas Fogo).
+- **Painel público:** **cabeçalho com download do app Android e QR code** (`GET /publico/app`, `/baixar/app.apk`, `/publico/qr.svg`), com tamanho, versão e SHA-256. O APK vem de `dist/` (montado no contêiner).
+- **Atualização do app instalado:** `GET /app/versao` informa a última versão (de `dist/VERSION.txt`) e a mínima (`APP_VERSAO_MINIMA`); o app avisa na tela inicial e abre o download. O Android exige a confirmação da pessoa para instalar; o app não se atualiza em silêncio.
+- **Atualização da página aberta:** `GET /publico/versao` (hash do conteúdo da página); a página avisa "Há uma nova versão" sem recarregar sozinha.
+
+### Corrigido
+- **App, tela "Sintomas mais relatados":** podia ficar girando por dezenas de segundos ou em branco sem servidor/banco (a entrega da fila de envios era aguardada antes da consulta, e erros que não fossem de rede não eram tratados). Agora os dados do aparelho aparecem na hora, o servidor tem limite de 8 s, a **última cópia recebida do servidor** é usada se ele falhar, e os gráficos aparecem zerados se não houver dado algum.
+- `tool/gerar_apk.sh` grava `dist/VERSION.txt`; `dist/` entrou no `.gitignore`.
 
 ## [1.7.1] - 2026-10-20
 

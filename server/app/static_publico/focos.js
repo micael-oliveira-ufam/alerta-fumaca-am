@@ -7,6 +7,7 @@
   };
   var MANAUS_MS = -4 * 3600 * 1000; // UTC-4, sem horário de verão
   var janela = 'hoje', modo = 'calor', todos = null, mapa = null, camadaPontos = null, camadaCalor = null;
+  var meta = { consultado: null, cache: '', pagina: null }; // quando o servidor consultou o INPE, e quando esta página atualizou
 
   function $(id) { return document.getElementById(id); }
   function h(tag, attrs) {
@@ -32,10 +33,30 @@
     var t = Date.parse(s); return isFinite(t) ? t : null;
   }
   function diaManaus(t) { return new Date(t + MANAUS_MS).toISOString().slice(0, 10); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  /* "20/10/2026 10:30" no horário de Manaus (UTC-4) e "14:30 UTC". */
+  function manaus(t) {
+    var d = new Date(t + MANAUS_MS);
+    return p2(d.getUTCDate()) + '/' + p2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear() + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes());
+  }
+  function utcHora(t) { var d = new Date(t); return p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) + ' UTC'; }
+  function ha(ms) {
+    var m = Math.max(0, Math.round(ms / 60000));
+    if (m < 1) return 'agora há pouco';
+    if (m < 60) return 'há ' + m + ' min';
+    var hh = Math.floor(m / 60), mm = m % 60;
+    if (hh < 48) return 'há ' + hh + ' h' + (mm ? ' ' + mm + ' min' : '');
+    return 'há ' + Math.floor(hh / 24) + ' dias';
+  }
 
   function carregar() {
     fetch('/focos?window=last48h&scope=amazonas', { headers: { Accept: 'application/json' } })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var c = r.headers.get('X-Consultado-Em'), t = c ? Date.parse(c) : NaN;
+        meta.consultado = isFinite(t) ? t : null; meta.cache = r.headers.get('X-Cache') || ''; meta.pagina = Date.now();
+        return r.json();
+      })
       .then(function (g) {
         todos = (g.features || []).map(function (f) {
           var p = f.properties || {}, t = quando(p), lat = num(p.latitude), lon = num(p.longitude);
@@ -67,11 +88,33 @@
   function desenhar() {
     var d = recorte();
     kpis(d); porSatelite(d); porDia(todos); tabela(d); mapaFocos(d);
+    atualizacao();
+    $('focos-nota').textContent = 'Fonte: INPE, Programa Queimadas (TerraBrasilis), via cópia em cache do servidor. ' +
+      'Um foco indica fogo detectado por satélite, com atraso de passagem e processamento; vários focos podem ser o mesmo incêndio.';
+  }
+
+  /* Faixa "quando foi atualizado": três instantes diferentes, que não se confundem. */
+  function atualizacao() {
+    var el = limpar($('focos-quando'));
+    var agora = Date.now();
     var ult = todos.reduce(function (m, x) { return Math.max(m, x.t); }, 0);
-    $('focos-nota').textContent = 'Fonte: INPE, Programa Queimadas (TerraBrasilis), via cópia em cache do servidor' +
-      (ult ? '. Detecção mais recente: ' + new Date(ult + MANAUS_MS).toISOString().replace('T', ' ').slice(8, 10) + '/' +
-        new Date(ult + MANAUS_MS).toISOString().slice(5, 7) + ' às ' + new Date(ult + MANAUS_MS).toISOString().slice(11, 16) + ' (Manaus)' : '') +
-      '. Um foco indica fogo detectado por satélite, com atraso de passagem e processamento; vários focos podem ser o mesmo incêndio.';
+    function chip(rotulo, valor, detalhe) {
+      return h('div', { class: 'chip' }, h('span', { class: 'cl', text: rotulo }), h('b', { text: valor }),
+        detalhe ? h('span', { class: 'cd', text: detalhe }) : null);
+    }
+    el.appendChild(chip('Detecção mais recente do satélite',
+      ult ? manaus(ult) + ' (Manaus)' : 'nenhuma em 48 h',
+      ult ? utcHora(ult) + ' · ' + ha(agora - ult) : 'sem focos no Amazonas nas últimas 48 h'));
+    el.appendChild(chip('Servidor consultou o INPE',
+      meta.consultado ? manaus(meta.consultado) + ' (Manaus)' : 'horário não informado',
+      meta.consultado ? ha(agora - meta.consultado) + ' · a consulta é reaproveitada por até 5 min' : ''));
+    el.appendChild(chip('Esta página atualizou', manaus(meta.pagina || agora) + ' (Manaus)', 'recarrega sozinha a cada 5 min'));
+    var aviso = $('focos-defasagem');
+    if (meta.cache === 'STALE') {
+      aviso.hidden = false;
+      aviso.textContent = 'O servidor do INPE não respondeu agora; os focos abaixo são da última consulta bem-sucedida' +
+        (meta.consultado ? ' (' + manaus(meta.consultado) + ', horário de Manaus)' : '') + '.';
+    } else { aviso.hidden = true; }
   }
 
   function kpi(l, v, dt, cor) {
@@ -102,9 +145,17 @@
     });
   }
   function porSatelite(d) {
-    var c = {}; d.forEach(function (x) { c[x.sat] = (c[x.sat] || 0) + 1; });
+    var c = {}, ultimo = {};
+    d.forEach(function (x) { c[x.sat] = (c[x.sat] || 0) + 1; ultimo[x.sat] = Math.max(ultimo[x.sat] || 0, x.t); });
     barras($('focos-sat'), Object.keys(c).map(function (k) { return [SAT[k] || k, c[k]]; })
       .sort(function (a, b) { return b[1] - a[1]; }), '#E65100');
+    var corpo = limpar($('focos-sat-tab').querySelector('tbody'));
+    var ks = Object.keys(c).sort(function (a, b) { return ultimo[b] - ultimo[a]; });
+    if (!ks.length) { corpo.appendChild(h('tr', {}, h('td', { colspan: 3, text: 'Sem focos neste recorte.' }))); return; }
+    ks.forEach(function (k) {
+      corpo.appendChild(h('tr', {}, h('td', { text: SAT[k] || k }), h('td', { text: nf(c[k]) }),
+        h('td', { text: manaus(ultimo[k]) + ' · ' + ha(Date.now() - ultimo[k]) })));
+    });
   }
   function porDia(d) {
     var c = {}; d.forEach(function (x) { var k = diaManaus(x.t); c[k] = (c[k] || 0) + 1; });
@@ -135,8 +186,8 @@
   function mapaFocos(d) {
     if (!mapa) {
       mapa = L.map('mapa-focos', { scrollWheelZoom: false }).setView([-4.0, -64.5], 5);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(mapa);
       camadaPontos = L.layerGroup();
+      RespirarMapas.configurar(mapa, { aviso: $('focos-mapa-aviso') });
       mapa.on('focus', function () { mapa.scrollWheelZoom.enable(); });
       mapa.on('blur', function () { mapa.scrollWheelZoom.disable(); });
     }
@@ -171,4 +222,6 @@
 
   carregar();
   setInterval(function () { if (!document.hidden) carregar(); }, 5 * 60 * 1000);
+  // Atualiza só os textos "há X min", sem mexer no mapa (o usuário pode estar com ele aberto).
+  setInterval(function () { if (todos && !document.hidden) { atualizacao(); porSatelite(recorte()); } }, 60 * 1000);
 })();

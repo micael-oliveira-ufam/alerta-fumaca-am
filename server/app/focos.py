@@ -19,6 +19,7 @@ Camadas e campos conferidos no servidor do INPE (GetCapabilities e GetFeature):
 
 from __future__ import annotations
 
+import datetime as dt
 import time
 from collections import OrderedDict
 from typing import Callable, Iterable
@@ -88,11 +89,15 @@ class FocosCache:
         ttl_s: int,
         max_entries: int = 24,
         clock: Callable[[], float] = time.monotonic,
+        wall: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.timezone.utc),
     ) -> None:
         self.ttl_s = ttl_s
         self.max_entries = max_entries
         self._clock = clock
+        self._wall = wall
         self._entries: OrderedDict[str, tuple[float, bytes]] = OrderedDict()
+        #: Horário (UTC) em que cada resposta foi obtida do INPE: é o "consultado em" mostrado ao público.
+        self._obtido_em: dict[str, dt.datetime] = {}
 
     def fresh(self, key: str) -> bytes | None:
         entry = self._entries.get(key)
@@ -107,12 +112,19 @@ class FocosCache:
 
     def store(self, key: str, body: bytes) -> None:
         self._entries[key] = (self._clock(), body)
+        self._obtido_em[key] = self._wall()
         self._entries.move_to_end(key)
         while len(self._entries) > self.max_entries:
-            self._entries.popitem(last=False)  # descarta a mais antiga
+            velha, _ = self._entries.popitem(last=False)  # descarta a mais antiga
+            self._obtido_em.pop(velha, None)
+
+    def obtido_em(self, key: str) -> dt.datetime | None:
+        """Quando (UTC) a resposta guardada foi obtida do INPE, ou None se não há resposta."""
+        return self._obtido_em.get(key)
 
     def clear(self) -> None:
         self._entries.clear()
+        self._obtido_em.clear()
 
     def __len__(self) -> int:
         return len(self._entries)

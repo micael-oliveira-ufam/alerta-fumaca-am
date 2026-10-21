@@ -226,8 +226,8 @@
     var d = dados;
     if (!mapa) {
       mapa = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView([-3.12, -60.02], 5);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(mapa);
       camada = L.layerGroup().addTo(mapa);
+      RespirarMapas.configurar(mapa, { aviso: $('mapa-aviso'), extras: { 'Áreas com relatos (app)': camada } });
       mapa.on('focus', function () { mapa.scrollWheelZoom.enable(); });
       mapa.on('blur', function () { mapa.scrollWheelZoom.disable(); });
     }

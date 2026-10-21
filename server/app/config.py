@@ -76,6 +76,20 @@ class Settings:
     #: Servidor de métricas do `cloudflared`, de onde se lê o link do túnel rápido.
     tunnel_metrics_url: str = ""
 
+    #: Pasta (dentro do contêiner) onde está o APK para download (`Alerta-Fumaca-AM.apk`).
+    apk_dir: str = "/srv/dist"
+    #: Versão mínima do app (X.Y.Z). Abaixo dela o app mostra aviso de atualização obrigatória.
+    app_versao_minima: str = ""
+
+    #: Consultar a qualidade do ar (Open-Meteo/CAMS) para a seção do painel público.
+    qualidade_ar_ativa: bool = True
+
+    #: Segundos em que a consulta de qualidade do ar é reaproveitada (protege a cota gratuita).
+    qualidade_ar_cache_seconds: int = 1800
+
+    #: Endereço da API de qualidade do ar (configurável para testes).
+    qualidade_ar_url: str = "https://air-quality-api.open-meteo.com/v1/air-quality"
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -93,4 +107,9 @@ class Settings:
             geocoder_contato=os.getenv("GEOCODER_CONTATO", "micael.oliveira@ufam.edu.br").strip(),
             public_url=os.getenv("PUBLIC_URL", "").strip().rstrip("/"),
             tunnel_metrics_url=os.getenv("TUNNEL_METRICS_URL", "").strip().rstrip("/"),
+            apk_dir=os.getenv("APK_DIR", "/srv/dist").strip() or "/srv/dist",
+            app_versao_minima=os.getenv("APP_VERSAO_MINIMA", "").strip(),
+            qualidade_ar_ativa=os.getenv("QUALIDADE_AR_ATIVA", "true").strip().lower() in ("1", "true", "yes", "sim"),
+            qualidade_ar_cache_seconds=_int("QUALIDADE_AR_CACHE_SECONDS", 1800),
+            qualidade_ar_url=os.getenv("QUALIDADE_AR_URL", "https://air-quality-api.open-meteo.com/v1/air-quality").strip(),
         )

@@ -65,6 +65,8 @@ if command -v sha256sum >/dev/null; then
 else
   ( cd dist && shasum -a 256 Alerta-Fumaca-AM.apk > SHA256SUMS.txt )  # macOS
 fi
+# O painel público e o app instalado leem a versão daqui (GET /app/versao, /publico/app).
+cp VERSION dist/VERSION.txt
 echo
 echo "APK pronto: $DEST"
 echo "Versão: $(cat VERSION)"

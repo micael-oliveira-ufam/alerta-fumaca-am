@@ -132,7 +132,7 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 .tabela{width:100%;border-collapse:collapse;font-size:.9rem}
 .tabela th,.tabela td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 .tabela th:first-child,.tabela td:first-child{text-align:left}
-.tabela th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tabela th{font-size:.78rem;letter-spacing:.02em;font-weight:600;color:var(--muted)}
 .links{margin:10px 0 0;padding-left:18px}
 .links li{margin:6px 0}
 .links a{color:var(--brand-d)}
@@ -143,3 +143,47 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 .dev span{display:block;color:var(--muted);font-size:.88rem;margin-bottom:4px}
 .dev a{color:var(--brand-d);word-break:break-all}
 .kpis-s{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+
+/* ---------- 1.8.0: cabeçalho com download do app ---------- */
+.hero-grid{display:grid;gap:22px 32px;grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);align-items:center}
+.app-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:18px;padding:16px 18px;backdrop-filter:blur(4px)}
+.app-card h2{font-size:1rem;margin:0 0 10px;color:#fff}
+.app-linha{display:flex;gap:14px;align-items:flex-start}
+.app-linha .qr{background:#fff;border-radius:12px;padding:6px;flex:0 0 auto;line-height:0}
+.app-linha .qr img{width:112px;height:112px;display:block}
+.app-txt{min-width:0}
+.btn{display:inline-block;background:#fff;color:var(--brand-d);font-weight:700;text-decoration:none;padding:10px 16px;border-radius:999px;min-height:44px;line-height:24px;box-sizing:border-box}
+.btn:hover{background:var(--accent)}
+.btn:focus-visible,.btn-s:focus-visible,.csv-item:focus-visible,.atualizar button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app-meta{margin:8px 0 4px;font-size:.84rem;color:#E3F1E5}
+.app-nota,.app-nd{margin:6px 0;font-size:.8rem;color:#CFE8D2;line-height:1.4}
+.app-card details{font-size:.8rem;color:#E3F1E5}
+.app-card summary{cursor:pointer}
+.hash{display:block;word-break:break-all;font-size:.72rem;margin-top:4px;background:rgba(0,0,0,.25);padding:6px;border-radius:8px}
+@media (max-width:760px){.hero-grid{grid-template-columns:1fr}.app-linha{flex-direction:column;align-items:flex-start}}
+
+/* ---------- CSV ---------- */
+.csv-lista{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));margin:12px 0}
+.csv-item{display:flex;flex-direction:column;gap:3px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--ink);text-decoration:none}
+.csv-item:hover{border-color:var(--brand)}
+.csv-item span{font-size:.82rem;color:var(--muted)}
+.csv-item em{font-style:normal;font-size:.82rem;font-weight:700;color:var(--brand-d)}
+
+/* ---------- qualidade do ar ---------- */
+.aqi{display:inline-block;min-width:2.6em;text-align:center;padding:2px 9px;border-radius:999px;color:#fff;font-weight:700;font-variant-numeric:tabular-nums}
+.aqi.nd{background:var(--line);color:var(--muted);font-weight:500}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted);margin:6px 0 10px}
+.legenda i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+#mapa-ar{height:min(55vh,460px);min-height:300px;border-radius:14px;border:1px solid var(--line);margin:8px 0;z-index:0;background:var(--soft)}
+.btn-s{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;min-height:40px}
+.aviso[hidden]{display:none}
+
+/* ---------- focos: horários ---------- */
+.quando{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));margin:10px 0}
+.chip{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.chip .cl{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chip .cd{font-size:.8rem;color:var(--muted)}
+
+/* ---------- aviso de nova versão da página ---------- */
+.atualizar{position:fixed;left:16px;right:16px;bottom:16px;max-width:460px;margin:0 auto;z-index:2000;display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--brand-d);color:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.atualizar button{font:inherit;font-weight:700;border:0;border-radius:999px;background:#fff;color:var(--brand-d);padding:8px 14px;cursor:pointer;min-height:40px}

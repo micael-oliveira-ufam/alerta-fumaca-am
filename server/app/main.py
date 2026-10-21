@@ -16,6 +16,7 @@ Com Docker:       docker compose up -d --build   (na raiz do repositório)
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import io
 import logging
 import secrets
@@ -31,12 +32,13 @@ import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+import segno
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import bairros, focos, publico, stats
+from . import bairros, download_app, exportacao, focos, publico, qualidade_ar as qar, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -45,13 +47,14 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.7.1"
+APP_VERSION = "1.8.0"
 
 
 def create_app(
     settings: Settings | None = None,
     engine: Engine | None = None,
     geocoder: bairros.Geocoder | None = None,
+    qualidade_ar: qar.QualidadeAr | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     owns_engine = engine is None
@@ -89,6 +92,10 @@ def create_app(
     app.state.bairros_lock = threading.Lock()
     app.state.bairros_thread = None
     app.state.publico_lock = threading.Lock()
+    app.state.qualidade_ar = qualidade_ar or (
+        qar.QualidadeAr(settings.qualidade_ar_url, settings.qualidade_ar_cache_seconds)
+        if settings.qualidade_ar_ativa else None
+    )
 
     register_routes(app)
     _montar_painel_publico(app)
@@ -102,7 +109,8 @@ VENDOR_DIR = Path(__file__).parent / "static" / "vendor"
 PUBLICO_CACHE_SEGUNDOS = 10
 
 _CSP_PUBLICO = (
-    "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
+    "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org https://*.tile.opentopomap.org "
+    "https://gibs.earthdata.nasa.gov; "
     "style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; "
     "frame-ancestors 'none'; base-uri 'none'"
 )
@@ -123,13 +131,7 @@ def _montar_painel_publico(app: FastAPI) -> None:
     app.mount("/assets", StaticFiles(directory=PUBLICO_DIR), name="assets-publicos")
     app.mount("/vendor", StaticFiles(directory=VENDOR_DIR), name="vendor-publico")
 
-    @app.get("/publico/painel")
-    def painel_publico(
-        request: Request,
-        response: Response,
-        dias: int = Query(30),
-        session: Session = Depends(get_session),
-    ) -> dict:
+    def dados_publicos(request: Request, session: Session, dias: int) -> dict:
         if dias not in publico.PERIODOS:
             raise HTTPException(status_code=422, detail=f"dias deve ser um de {publico.PERIODOS}.")
         st = request.app.state
@@ -137,15 +139,134 @@ def _montar_painel_publico(app: FastAPI) -> None:
             agora = time.monotonic()
             guardado = st.publico_cache.get(dias)
             if guardado and agora - guardado[0] < PUBLICO_CACHE_SEGUNDOS:
-                dados = guardado[1]
-            else:
-                dados = publico.montar(session, st.settings, dias)
-                if dados.get("bairros", {}).get("areas_em_consulta"):
-                    bairros.disparar_resolucao(request.app)
-                st.publico_cache[dias] = (agora, dados)
+                return guardado[1]
+            dados = publico.montar(session, st.settings, dias)
+            if dados.get("bairros", {}).get("areas_em_consulta"):
+                bairros.disparar_resolucao(request.app)
+            st.publico_cache[dias] = (agora, dados)
+            return dados
+
+    @app.get("/publico/painel")
+    def painel_publico(
+        request: Request,
+        response: Response,
+        dias: int = Query(30),
+        session: Session = Depends(get_session),
+    ) -> dict:
+        dados = dados_publicos(request, session, dias)
         response.headers["Cache-Control"] = f"public, max-age={PUBLICO_CACHE_SEGUNDOS}"
         response.headers["Access-Control-Allow-Origin"] = "*"
         return dados
+
+    # ------------------------------------------------------- qualidade do ar (modelo)
+
+    @app.get("/publico/qualidade-ar")
+    def qualidade_do_ar(request: Request, response: Response) -> dict:
+        q: qar.QualidadeAr | None = request.app.state.qualidade_ar
+        if q is None:
+            raise HTTPException(status_code=404, detail="Consulta de qualidade do ar desativada.")
+        try:
+            dados = q.obter()
+        except (requests.RequestException, ValueError) as exc:
+            log.warning("Qualidade do ar indisponível: %s", exc.__class__.__name__)
+            raise HTTPException(status_code=502, detail="Serviço de qualidade do ar indisponível no momento.")
+        response.headers["Cache-Control"] = "public, max-age=60"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return dados
+
+    # ------------------------------------------------------------- download em CSV
+
+    @app.get("/publico/export.csv")
+    def exportar_publico(
+        request: Request,
+        conjunto: str = Query(...),
+        dias: int = Query(30),
+        session: Session = Depends(get_session),
+    ) -> Response:
+        if conjunto not in exportacao.CONJUNTOS:
+            raise HTTPException(status_code=422, detail=f"conjunto deve ser um de {list(exportacao.CONJUNTOS)}.")
+        agora = dt.datetime.now(dt.timezone.utc)
+        if conjunto == "focos":
+            body, _, obtido_em = obter_focos(request.app, "last48h", "amazonas", list(focos.SATELLITES))
+            conteudo = exportacao.focos(body, obtido_em)
+            sufixo = "48h"
+        elif conjunto == "qualidade_ar":
+            q = request.app.state.qualidade_ar
+            if q is None:
+                raise HTTPException(status_code=404, detail="Consulta de qualidade do ar desativada.")
+            try:
+                conteudo = exportacao.qualidade_ar(q.obter())
+            except (requests.RequestException, ValueError):
+                raise HTTPException(status_code=502, detail="Serviço de qualidade do ar indisponível no momento.")
+            sufixo = "atual"
+        else:
+            dados = dados_publicos(request, session, dias)
+            conteudo = getattr(exportacao, conjunto)(dados)
+            sufixo = f"{dias}d"
+        nome = f"respirar-amazonas_{conjunto}_{sufixo}_{agora:%Y%m%dT%H%MZ}.csv"
+        return Response(
+            conteudo,
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="{nome}"',
+                "Cache-Control": "no-store",
+                "Access-Control-Allow-Origin": "*",
+            },
+        )
+
+    # ------------------------------------------------------- download do aplicativo
+
+    @app.get("/publico/app")
+    def info_app(request: Request, response: Response) -> dict:
+        response.headers["Cache-Control"] = "no-cache"
+        return download_app.info(request.app.state.settings.apk_dir)
+
+    def _base(request: Request) -> str:
+        h = request.headers
+        return download_app.base_publica(
+            request.app.state.settings.public_url, h.get("host", ""), h.get("x-forwarded-proto", ""),
+            request.url.scheme, request.url.netloc,
+        )
+
+    @app.get("/app/versao")
+    def versao_app(request: Request, response: Response) -> dict:
+        """Consultada pelo aplicativo instalado: há versão nova? É pública e não identifica ninguém."""
+        response.headers["Cache-Control"] = "public, max-age=60"
+        st = request.app.state.settings
+        return download_app.atualizacao_app(st.apk_dir, st.app_versao_minima, _base(request))
+
+    build = download_app.build_site(PUBLICO_DIR, APP_VERSION)
+
+    @app.get("/publico/versao")
+    def versao_site(response: Response) -> dict:
+        """Consultada pela página aberta: se `build` mudar, ela avisa para recarregar."""
+        response.headers["Cache-Control"] = "no-cache"
+        return {"build": build, "servidor": APP_VERSION}
+
+    @app.get("/baixar/app.apk")
+    def baixar_app(request: Request) -> FileResponse:
+        apk_dir = request.app.state.settings.apk_dir
+        if not download_app.info(apk_dir)["disponivel"]:
+            raise HTTPException(status_code=404, detail="O aplicativo ainda não está disponível para download.")
+        return FileResponse(
+            download_app.caminho(apk_dir),
+            media_type="application/vnd.android.package-archive",
+            filename="RespirAR-Amazonas.apk",
+            headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-cache"},
+        )
+
+    @app.get("/publico/qr.svg")
+    def qr_publico(request: Request, alvo: str = Query("app", pattern="^(app|site)$")) -> Response:
+        """QR code do download do app (ou da própria página). Só texto público: nada identifica ninguém."""
+        h = request.headers
+        base = download_app.base_publica(
+            request.app.state.settings.public_url, h.get("host", ""), h.get("x-forwarded-proto", ""),
+            request.url.scheme, request.url.netloc,
+        )
+        destino = f"{base}/baixar/app.apk" if alvo == "app" else f"{base}/"
+        buf = io.BytesIO()
+        segno.make(destino, error="m").save(buf, kind="svg", scale=6, border=2, dark="#1B5E20")
+        return Response(buf.getvalue(), media_type="image/svg+xml", headers={"Cache-Control": "no-cache"})
 
 
 def get_session(request: Request) -> Iterator[Session]:
@@ -282,28 +403,35 @@ def register_routes(app: FastAPI) -> None:
         ),
     ) -> Response:
         sats = _parse_satellites(satellites)
-        key = focos.cache_key(window, scope, sats)
-        cache: focos.FocosCache = request.app.state.focos_cache
+        body, status, obtido_em = obter_focos(request.app, window, scope, sats)
+        return _geojson(body, status, obtido_em)
 
+
+def obter_focos(app: FastAPI, window: str, scope: str, sats: list[str]) -> tuple[bytes, str, dt.datetime | None]:
+    """Resposta do INPE com cache. Devolve (corpo, HIT|MISS|STALE, quando foi obtida).
+    Lança HTTPException 502 se o INPE falhar e não houver nada guardado."""
+    key = focos.cache_key(window, scope, sats)
+    cache: focos.FocosCache = app.state.focos_cache
+
+    fresh = cache.fresh(key)
+    if fresh is not None:
+        return fresh, "HIT", cache.obtido_em(key)
+
+    with _lock_for(app, key):
+        # Outra requisição pode ter preenchido o cache enquanto esperávamos.
         fresh = cache.fresh(key)
         if fresh is not None:
-            return _geojson(fresh, "HIT")
-
-        with _lock_for(request.app, key):
-            # Outra requisição pode ter preenchido o cache enquanto esperávamos.
-            fresh = cache.fresh(key)
-            if fresh is not None:
-                return _geojson(fresh, "HIT")
-            try:
-                body = focos.fetch_upstream(window, scope, sats)
-            except (requests.RequestException, ValueError) as exc:
-                log.warning("INPE indisponível (%s): %s", key, exc.__class__.__name__)
-                stale = cache.last_valid(key)
-                if stale is not None:
-                    return _geojson(stale, "STALE")
-                raise HTTPException(status_code=502, detail="INPE indisponível no momento.")
-            cache.store(key, body)
-        return _geojson(body, "MISS")
+            return fresh, "HIT", cache.obtido_em(key)
+        try:
+            body = focos.fetch_upstream(window, scope, sats)
+        except (requests.RequestException, ValueError) as exc:
+            log.warning("INPE indisponível (%s): %s", key, exc.__class__.__name__)
+            stale = cache.last_valid(key)
+            if stale is not None:
+                return stale, "STALE", cache.obtido_em(key)
+            raise HTTPException(status_code=502, detail="INPE indisponível no momento.")
+        cache.store(key, body)
+    return body, "MISS", cache.obtido_em(key)
 
 
 # ---------------------------------------------------------------------- auxiliares
@@ -344,12 +472,12 @@ def _lock_for(app: FastAPI, key: str) -> threading.Lock:
         return app.state.focos_locks[key]
 
 
-def _geojson(body: bytes, cache_status: str) -> Response:
-    return Response(
-        content=body,
-        media_type="application/json",
-        headers={"X-Cache": cache_status, "Cache-Control": "no-store"},
-    )
+def _geojson(body: bytes, cache_status: str, obtido_em: dt.datetime | None = None) -> Response:
+    headers = {"X-Cache": cache_status, "Cache-Control": "no-store"}
+    if obtido_em is not None:
+        # Quando o servidor obteve estes dados do INPE (UTC); o painel público mostra isso.
+        headers["X-Consultado-Em"] = obtido_em.astimezone(dt.timezone.utc).isoformat()
+    return Response(content=body, media_type="application/json", headers=headers)
 
 
 def _celula_ctx(valor: object) -> object:

@@ -5,6 +5,7 @@ import '../data/guidance_content.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cit_card.dart';
 import '../widgets/ui.dart';
+import '../widgets/update_banner.dart';
 import 'about_screen.dart';
 import '../data/pdf_content.dart';
 import 'guidance_screen.dart';
@@ -40,6 +41,7 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          const UpdateBanner(),
           _Hero(),
           const SizedBox(height: 16),
           const SectionTitle('O QUE VOCÊ PRECISA AGORA'),

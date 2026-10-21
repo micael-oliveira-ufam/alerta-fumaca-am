@@ -52,6 +52,14 @@ services:
       # Atrás do túnel, o IP real vem no cabeçalho CF-Connecting-IP. Só é seguro porque a
       # porta da API fica em 127.0.0.1 (API_BIND): ninguém de fora alcança a API sem o túnel.
       TRUST_CF_CONNECTING_IP: ${TRUST_CF_CONNECTING_IP:-true}
+      # Download do app e QR code do painel público (a pasta dist/ é gerada por tool/gerar_apk.sh).
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      APK_DIR: /srv/dist
+      APP_VERSAO_MINIMA: ${APP_VERSAO_MINIMA:-}
+      QUALIDADE_AR_ATIVA: ${QUALIDADE_AR_ATIVA:-true}
+      QUALIDADE_AR_CACHE_SECONDS: ${QUALIDADE_AR_CACHE_SECONDS:-1800}
+    volumes:
+      - ./dist:/srv/dist:ro
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
 

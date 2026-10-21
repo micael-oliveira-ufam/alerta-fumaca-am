@@ -4,27 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RespirAR Amazonas · Painel público</title>
-  <meta name="description" content="Sintomas relatados por usuários do RespirAR Amazonas durante episódios de fumaça: dados anônimos e agregados, de livre visualização.">
+  <meta name="description" content="Sintomas relatados por usuários do RespirAR Amazonas durante episódios de fumaça, focos de calor e qualidade do ar no Amazonas: dados anônimos e agregados, de livre visualização.">
   <meta name="theme-color" content="#1B5E20">
   <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="/assets/publico.css">
 </head>
 <body>
   <header class="hero">
-    <div class="wrap">
-      <p class="eyebrow">UFAM · Faculdade de Ciências Farmacêuticas</p>
-      <h1>Respir<span>AR</span> Amazonas <small>painel público</small></h1>
-      <p class="lead">Sintomas relatados por quem usa o app durante episódios de fumaça no Amazonas.
-        Dados <strong>anônimos e agregados</strong>, abertos a qualquer pessoa.</p>
-      <div class="hero-bar">
-        <div class="seg" id="periodo" role="group" aria-label="Período">
-          <button type="button" data-dias="1">24 h</button>
-          <button type="button" data-dias="7">7 dias</button>
-          <button type="button" data-dias="30" class="on" aria-pressed="true">30 dias</button>
-          <button type="button" data-dias="90">90 dias</button>
+    <div class="wrap hero-grid">
+      <div class="hero-txt">
+        <p class="eyebrow">UFAM · Faculdade de Ciências Farmacêuticas</p>
+        <h1>Respir<span>AR</span> Amazonas <small>painel público</small></h1>
+        <p class="lead">Sintomas relatados por quem usa o app durante episódios de fumaça no Amazonas, focos de calor e qualidade do ar.
+          Dados <strong>anônimos e agregados</strong>, abertos a qualquer pessoa.</p>
+        <div class="hero-bar">
+          <div class="seg" id="periodo" role="group" aria-label="Período">
+            <button type="button" data-dias="1">24 h</button>
+            <button type="button" data-dias="7">7 dias</button>
+            <button type="button" data-dias="30" class="on" aria-pressed="true">30 dias</button>
+            <button type="button" data-dias="90">90 dias</button>
+          </div>
+          <span class="live" id="live" role="status" aria-live="polite"><i></i><span id="live-txt">Carregando…</span></span>
         </div>
-        <span class="live" id="live" role="status" aria-live="polite"><i></i><span id="live-txt">Carregando…</span></span>
       </div>
+      <aside class="app-card" id="app-card" aria-labelledby="app-titulo">
+        <h2 id="app-titulo">Baixe o aplicativo</h2>
+        <div id="app-conteudo"><p class="app-nd">Verificando o download…</p></div>
+      </aside>
     </div>
   </header>
 
@@ -32,6 +38,17 @@
     <section id="aviso" class="aviso" hidden></section>
 
     <section class="kpis" id="kpis" aria-label="Resumo"></section>
+
+    <section class="card" id="sec-csv">
+      <div class="card-h">
+        <div>
+          <h2>Baixar os dados (CSV)</h2>
+          <p class="sub">Arquivos de planilha (UTF-8, vírgula como separador) com os mesmos dados agregados desta página. Os conjuntos da pesquisa seguem o período escolhido no topo: <b id="csv-periodo">últimos 30 dias</b>.</p>
+        </div>
+      </div>
+      <div class="csv-lista" id="csv-lista"></div>
+      <p class="sub">Privacidade: não há respostas individuais nem identificadores. As mesmas regras da página valem nos arquivos (mínimo de respostas por período e por área; contagens muito pequenas ficam vazias). Focos e qualidade do ar são dados abertos de terceiros (INPE e Open-Meteo/CAMS), reunidos aqui com o horário da consulta.</p>
+    </section>
 
     <section class="card" id="sec-sintomas">
       <div class="card-h">
@@ -74,6 +91,7 @@
         <span><i class="n-low"></i>Baixo</span><span><i class="n-moderate"></i>Moderado</span><span><i class="n-high"></i>Alto</span><span><i class="n-emergency"></i>Procure atendimento</span>
       </div>
       <div id="mapa" role="img" aria-label="Mapa das áreas com respostas"></div>
+      <p class="aviso" id="mapa-aviso" hidden></p>
       <p class="sub" id="mapa-nota"></p>
     </section>
 
@@ -90,6 +108,36 @@
       <section class="card"><h2>Situação de quem respondeu</h2><p class="sub">Perguntas opcionais do app.</p><div id="contexto"></div></section>
     </div>
 
+    <section class="card" id="sec-ar">
+      <div class="card-h">
+        <div>
+          <h2>Qualidade do ar · Amazonas</h2>
+          <p class="sub">Índice e partículas (PM2,5 e PM10) estimados por modelo para os 62 municípios. Estimativa, não medição de estação.</p>
+        </div>
+        <div class="seg small" id="ar-ordem" role="group" aria-label="Ordenar municípios">
+          <button type="button" data-o="aqi" class="on" aria-pressed="true">Pior índice</button>
+          <button type="button" data-o="pm25">Mais PM2,5</button>
+          <button type="button" data-o="nome">A–Z</button>
+        </div>
+      </div>
+      <p class="aviso" id="ar-erro" hidden></p>
+      <p class="aviso" id="ar-defasagem" hidden></p>
+      <div class="kpis kpis-s" id="ar-kpis"></div>
+      <div class="legenda" id="ar-legenda" aria-hidden="true"></div>
+      <div id="mapa-ar" role="img" aria-label="Mapa da qualidade do ar estimada nos municípios do Amazonas"></div>
+      <p class="aviso" id="ar-mapa-aviso" hidden></p>
+      <p class="sub">Cor = categoria do índice; tamanho do círculo = PM2,5. Use o botão de camadas do mapa para ver aerossóis (fumaça e poeira) da NASA.</p>
+      <h3>Municípios</h3>
+      <div class="tabela-box"><table class="tabela" id="ar-tab">
+        <thead><tr><th>Município</th><th>Índice (US AQI)</th><th>Categoria</th><th>PM2,5 (µg/m³)</th><th>PM10 (µg/m³)</th><th>Fração fina</th></tr></thead>
+        <tbody></tbody></table></div>
+      <p><button type="button" class="btn-s" id="ar-todos" hidden></button></p>
+      <p class="sub"><b>Tamanho das partículas:</b> PM2,5 são partículas com até 2,5 µm e PM10 as com até 10 µm; a <i>fração fina</i> é PM2,5 ÷ PM10 (quanto maior, mais da poeira inalável é fina, típica de fumaça de queimadas e capaz de chegar mais fundo nos pulmões).</p>
+      <h3>Manaus e seus bairros</h3>
+      <p class="sub" id="ar-manaus-nota"></p>
+      <p class="sub" id="ar-fonte"></p>
+    </section>
+
     <section class="card" id="sec-focos">
       <div class="card-h">
         <div>
@@ -102,6 +150,8 @@
         </div>
       </div>
       <p class="aviso" id="focos-erro" hidden></p>
+      <p class="aviso" id="focos-defasagem" hidden></p>
+      <div class="quando" id="focos-quando" aria-label="Quando os focos foram atualizados"></div>
       <div class="kpis kpis-s" id="focos-kpis"></div>
       <div class="duo">
         <div>
@@ -111,10 +161,13 @@
               <button type="button" data-m="pontos">Pontos</button>
             </div></div>
           <div id="mapa-focos" role="img" aria-label="Mapa de focos de calor"></div>
-          <p class="sub">Calor: concentração de focos. Pontos: cada detecção (cor = potência radiativa, FRP).</p>
+          <p class="aviso" id="focos-mapa-aviso" hidden></p>
+          <p class="sub">Calor: concentração de focos. Pontos: cada detecção (cor = potência radiativa, FRP). O botão de camadas troca o mapa de base (relevo, satélite) e liga aerossóis e focos da NASA.</p>
         </div>
         <div>
           <h3>Por satélite</h3><div id="focos-sat" class="mini"></div>
+          <div class="tabela-box"><table class="tabela" id="focos-sat-tab">
+            <thead><tr><th>Satélite</th><th>Focos</th><th>Última detecção (Manaus)</th></tr></thead><tbody></tbody></table></div>
           <h3>Por dia (horário de Manaus)</h3><div id="focos-dia" class="mini"></div>
         </div>
       </div>
@@ -126,11 +179,16 @@
     </section>
 
     <section class="card" id="sec-desmat">
-      <h2>Desmatamento e uso da terra</h2>
-      <p class="sub">Os dados de desmatamento são produzidos pelo INPE e não são reproduzidos aqui: consulte a fonte oficial, sempre atualizada.</p>
+      <h2>Dados oficiais de queimadas, focos e desmatamento</h2>
+      <p class="sub">Fontes oficiais e abertas, sempre atualizadas. O painel mostra um resumo; para análise completa, consulte a origem.</p>
       <ul class="links">
-        <li><a href="https://terrabrasilis.dpi.inpe.br/" target="_blank" rel="noopener noreferrer"><b>TerraBrasilis (INPE)</b></a>: painéis e mapas do PRODES (taxa anual de desmatamento) e do DETER (alertas quase diários).</li>
+        <li><a href="https://terrabrasilis.dpi.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener noreferrer"><b>BDQueimadas (INPE)</b></a>: mapas e tabelas de focos de calor com filtros por período, satélite e região, e exportação (CSV, GeoJSON, KML, Shapefile).</li>
+        <li><a href="https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/" target="_blank" rel="noopener noreferrer"><b>Dados abertos de focos (INPE, CSV)</b></a>: arquivos CSV de focos, organizados em pastas de 10 minutos, diários, mensais e anuais.</li>
         <li><a href="https://terrabrasilis.dpi.inpe.br/queimadas/" target="_blank" rel="noopener noreferrer"><b>Programa Queimadas (INPE)</b></a>: focos de calor, risco de fogo e área queimada.</li>
+        <li><a href="https://terrabrasilis.dpi.inpe.br/" target="_blank" rel="noopener noreferrer"><b>TerraBrasilis (INPE)</b></a>: painéis e mapas do PRODES (taxa anual de desmatamento) e do DETER (alertas quase diários).</li>
+        <li><a href="https://brasil.mapbiomas.org/en/metodo-mapbiomas-fogo/" target="_blank" rel="noopener noreferrer"><b>MapBiomas Fogo</b></a>: método e produtos de mapeamento de cicatrizes de fogo.</li>
+        <li><a href="https://nasa-gibs.github.io/gibs-api-docs/available-visualizations/" target="_blank" rel="noopener noreferrer"><b>NASA GIBS</b></a>: catálogo das imagens de satélite usadas nas camadas dos mapas desta página.</li>
+        <li><a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener noreferrer"><b>Open-Meteo · qualidade do ar</b></a>: documentação do modelo (CAMS) usado na seção de qualidade do ar.</li>
       </ul>
     </section>
 
@@ -161,12 +219,16 @@
 
   <footer class="wrap foot">
     <span>RespirAR Amazonas · projeto acadêmico UFAM/FCF</span>
-    <a id="baixar" href="/publico/painel?dias=30" download="respirar-amazonas-dados-agregados.json">Baixar dados agregados (JSON)</a>
+    <span><a href="#sec-csv">Baixar dados (CSV)</a> · <a id="baixar" href="/publico/painel?dias=30" download="respirar-amazonas-dados-agregados.json">JSON</a></span>
   </footer>
 
   <script src="/vendor/leaflet/leaflet.js"></script>
   <script src="/vendor/leaflet-heat/leaflet-heat.js"></script>
+  <script src="/assets/mapas.js"></script>
   <script src="/assets/publico.js"></script>
+  <script src="/assets/ar.js"></script>
   <script src="/assets/focos.js"></script>
+  <script src="/assets/baixar.js"></script>
+  <script src="/assets/atualizar.js"></script>
 </body>
 </html>
