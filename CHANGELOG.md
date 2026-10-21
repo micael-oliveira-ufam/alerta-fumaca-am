@@ -12,6 +12,15 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.7.
+
+## [1.13.7] - 2026-10-20
+
+### Corrigido
+- **A fila local de reenvio do app falhava em build de release** (diagnóstico real, graças aos "Detalhes técnicos" da 1.13.5): `PlatformException ... NoSuchMethodError ... SharedPreferencesApiRegistrar.getAll`. Causa (apontada por relato público de outro projeto, não reproduzida aqui): `shared_preferences_android` 2.5.0 passou a usar JNI e o R8 remove o método em release. Correção: `dependency_overrides` fixando `shared_preferences_android: 2.4.28` (versão confirmada no pub.dev). Efeitos do defeito: a fila de reenvio e as outras gravações locais (estatísticas em cache, ajustes de alertas) não funcionavam no APK release. **Não testado em aparelho**; remover o pin quando houver versão corrigida confirmada.
+- O envio ao servidor já funcionava (o app enviou); o erro só aparecia nos "Detalhes técnicos".
+- **"Detalhes técnicos" agora ficam recolhidos** (pedido do usuário): só aparecem se a pessoa tocar em "Mostrar detalhes técnicos", e só em falhas. Envio bem-sucedido não mostra a opção. Dart não compilado.
+
 Nenhuma mudança desde a 1.13.6.
 
 ## [1.13.6] - 2026-10-20

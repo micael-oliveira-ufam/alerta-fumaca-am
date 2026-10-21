@@ -930,7 +930,7 @@ class _ResultCard extends StatelessWidget {
 /// Situação da pergunta "compartilhar suas respostas para estudos epidemiológicos?".
 enum _ShareState { ask, sending, sent, queued, declined, rejected }
 
-class _ShareCard extends StatelessWidget {
+class _ShareCard extends StatefulWidget {
   const _ShareCard({required this.state, required this.onYes, required this.onNo, this.detail});
 
   final _ShareState state;
@@ -939,7 +939,19 @@ class _ShareCard extends StatelessWidget {
   final VoidCallback onNo;
 
   @override
+  State<_ShareCard> createState() => _ShareCardState();
+}
+
+class _ShareCardState extends State<_ShareCard> {
+  /// Os detalhes técnicos só aparecem se a pessoa pedir.
+  bool _showDetail = false;
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final onYes = widget.onYes;
+    final onNo = widget.onNo;
+    final detail = widget.detail;
     final conteudo = switch (state) {
         _ShareState.ask => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1018,19 +1030,32 @@ class _ShareCard extends StatelessWidget {
             text: 'O servidor não aceitou o envio desta resposta.',
           ),
     };
-    final d = detail;
+    final texto = detail ?? '';
+    // Sucesso e envio em andamento não mostram detalhes técnicos; só as falhas, e recolhidos.
+    final mostrarOpcao = detail != null && state != _ShareState.sending && state != _ShareState.sent;
     return AppCard(
-      child: d == null || state == _ShareState.sending
+      child: !mostrarOpcao
           ? conteudo
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 conteudo,
-                const SizedBox(height: 10),
-                SelectableText(
-                  'Detalhes técnicos: $d',
-                  style: const TextStyle(fontSize: 11.5, height: 1.35, color: AppColors.muted),
+                const SizedBox(height: 6),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.centerLeft,
+                  ),
+                  onPressed: () => setState(() => _showDetail = !_showDetail),
+                  child: Text(_showDetail ? 'Ocultar detalhes técnicos' : 'Mostrar detalhes técnicos'),
                 ),
+                if (_showDetail)
+                  SelectableText(
+                    texto,
+                    style: const TextStyle(fontSize: 11.5, height: 1.35, color: AppColors.muted),
+                  ),
               ],
             ),
     );
