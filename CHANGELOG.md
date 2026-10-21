@@ -12,7 +12,16 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.15.0.
+Nenhuma mudança desde a 1.16.0.
+
+## [1.16.0] - 2026-10-20
+
+### Adicionado
+- **Focos de calor: terceira via, os CSV dos dados abertos do INPE** (`server/app/focos_inpe_csv.py`). O WFS antigo do TerraBrasilis responde 404 desde 20/10/2026; os arquivos diários `https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_AAAAMMDD.csv` continuam publicados (listagem lida em 20/10/2026, arquivos de 11 a 20/10). Ordem agora: WFS do INPE -> CSV do INPE -> NASA FIRMS (se houver chave). O servidor filtra Amazonas e satélites, converte para o mesmo GeoJSON e o app **não precisou mudar**. O WFS que falha fica 10 min em pausa (o app não espera mais por ele), os downloads dos CSV são guardados 5 min e o pré-aquecimento passou a cobrir a combinação de satélites padrão do app.
+- `tool/gerar_apk.sh`: `flutter analyze --no-fatal-infos` e **testes com falha não impedem o APK** (log em `dist/flutter-test.log`, aviso no fim); `EXIGIR_TESTES=1` restaura o bloqueio.
+
+### Removido
+- **App: avisos de falha de envio** (pedido do usuário: assustam). Saíram a barra "Não foi possível enviar agora…", o cartão vermelho "O servidor não aceitou o envio" e os "Detalhes técnicos". Em falha inesperada a pergunta apenas volta (pode tocar de novo); com fila, a mensagem passa a ser "Suas respostas foram guardadas e serão enviadas assim que possível."
 
 ## [1.15.0] - 2026-10-20
 

@@ -38,7 +38,7 @@ from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import bairros, download_app, exportacao, focos, focos_firms, focos_proximos, publico, qualidade_ar as qar, stats
+from . import bairros, download_app, exportacao, focos, focos_firms, focos_inpe_csv, focos_proximos, publico, qualidade_ar as qar, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.15.0"
+APP_VERSION = "1.16.0"
 
 
 def create_app(
@@ -66,10 +66,15 @@ def create_app(
     def preaquecer_focos() -> None:
         """Mantém o cache dos focos quente: a página abre já com dados e o INPE é consultado 1 vez por janela."""
         while not parar.is_set():
-            pedidos = [("today", "inpe"), ("last48h", "inpe")] + ([("last48h", "firms")] if settings.firms_map_key else [])
-            for janela, fonte in pedidos:
+            # Combinações que o app pede por padrão (MODIS, NOAA-20 e Suomi NPP) e a que a página usa (todos).
+            padrao_app = ["AQUA_M-T", "NOAA-20", "NPP-375", "NPP-375D", "TERRA_M-T"]
+            pedidos = [("today", "inpe", padrao_app), ("last48h", "inpe", padrao_app),
+                       ("today", "inpe", list(focos.SATELLITES)), ("last48h", "inpe", list(focos.SATELLITES))]
+            if settings.firms_map_key:
+                pedidos.append(("last48h", "firms", list(focos.SATELLITES)))
+            for janela, fonte, sats_ in pedidos:
                 try:
-                    obter_focos(app, janela, "amazonas", list(focos.SATELLITES), fonte)
+                    obter_focos(app, janela, "amazonas", sats_, fonte)
                 except Exception as exc:  # noqa: BLE001 - segundo plano nunca derruba o servidor
                     log.info("Pré-aquecimento dos focos (%s, %s) falhou: %s", janela, fonte, focos.motivo(exc))
             parar.wait(max(60, settings.cache_seconds))
@@ -550,28 +555,38 @@ def obter_focos(
         fresh = cache.fresh(key)
         if fresh is not None:
             return fresh, "HIT", cache.obtido_em(key)
-        origens = ["firms"] if fonte == "firms" else ["inpe"] + (["firms"] if chave_firms and scope == "amazonas" else [])
+        # Ordem: WFS do INPE -> CSV dos dados abertos do INPE -> NASA FIRMS (se houver chave).
+        origens = ["firms"] if fonte == "firms" else ["inpe", "inpe_csv"] + (["firms"] if chave_firms and scope == "amazonas" else [])
+        rotulos = {"inpe": "INPE (WFS)", "inpe_csv": "INPE (CSV)", "firms": "NASA FIRMS"}
         motivos: list[str] = []
         for origem in origens:
+            agora_m = time.monotonic()
+            if origem == "inpe" and agora_m < getattr(app.state, "wfs_pausa_ate", 0.0):
+                motivos.append(f"{rotulos[origem]}: pulado (falhou há pouco)")
+                continue
             try:
                 if origem == "inpe":
                     body = focos.fetch_upstream(window, scope, sats)
+                elif origem == "inpe_csv":
+                    body = focos_inpe_csv.fetch_geojson(scope, sats)
                 else:
                     body = focos_firms.fetch_geojson(chave_firms, sats)
-            except (requests.RequestException, ValueError, focos_firms.FirmsErro) as exc:
+            except (requests.RequestException, ValueError, focos_firms.FirmsErro, focos_inpe_csv.CsvInpeErro) as exc:
                 motivo = focos.motivo(exc)
-                motivos.append(f"{'INPE' if origem == 'inpe' else 'NASA FIRMS'}: {motivo}")
+                motivos.append(f"{rotulos[origem]}: {motivo}")
+                if origem == "inpe":  # não gasta tempo tentando de novo a cada pedido; volta a tentar em 10 min
+                    app.state.wfs_pausa_ate = time.monotonic() + 600
                 # O texto da exceção do FIRMS é seguro; o de `requests` pode ter URL (com chave) só no FIRMS, que não o usa.
-                detalhe = "" if origem == "firms" else str(exc)[:300]
+                detalhe = "" if origem != "inpe" else str(exc)[:300]
                 log.warning("Focos (%s, %s) indisponíveis: %s | %r", key, origem, motivo, detalhe)
                 continue
-            cache.store(key, body, fonte="INPE" if origem == "inpe" else "FIRMS")
+            cache.store(key, body, fonte="FIRMS" if origem == "firms" else "INPE")
             return body, "MISS", cache.obtido_em(key)
         stale = cache.last_valid(key)
         if stale is not None:
             return stale, "STALE", cache.obtido_em(key)
-        if len(motivos) == 1 and origens == ["inpe"]:
-            detalhe_502 = f"INPE indisponível no momento ({motivos[0].split(': ', 1)[1]})."
+        if len(motivos) == 1:
+            detalhe_502 = f"{motivos[0].split(': ', 1)[0]} indisponível no momento ({motivos[0].split(': ', 1)[1]})."
         else:
             detalhe_502 = "Focos indisponíveis no momento (" + "; ".join(motivos) + ")."
         raise HTTPException(status_code=502, detail=detalhe_502)

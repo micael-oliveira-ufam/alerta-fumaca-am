@@ -8,7 +8,6 @@ import '../models/answer_record.dart';
 import '../models/smoke_context.dart';
 import '../services/answer_sync.dart';
 import '../services/api_client.dart';
-import '../services/api_config.dart';
 import '../services/location_service.dart';
 import '../services/report_repository.dart';
 import '../theme/app_theme.dart';
@@ -75,9 +74,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final _location = LocationService();
   final _answers = LocalAnswerStore();
   final _sync = AnswerSync();
-
-  /// Texto técnico da última falha de envio, mostrado na tela para facilitar o diagnóstico.
-  String? _shareDetail;
 
   /// Assinatura da última resposta registrada: evita registrar duas vezes a mesma
   /// resposta se a pessoa tocar em "Ver minha orientação" repetidamente.
@@ -188,16 +184,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   Future<void> _shareAnswers() async {
     final data = _toShare;
     if (data == null || _shareState == _ShareState.sending) return;
-    setState(() {
-      _shareState = _ShareState.sending;
-      _shareDetail = null;
-    });
+    setState(() => _shareState = _ShareState.sending);
 
     // Nada aqui pode deixar a tela presa em "Enviando…": cada etapa tem tempo limite e qualquer erro
-    // inesperado devolve a pergunta (a pessoa pode tentar de novo).
+    // inesperado devolve a pergunta, sem alarme (a pessoa pode tentar de novo).
     SyncResult? outcome;
-    String? detail;
-    var etapa = 'localização';
     try {
       double? lat;
       double? lon;
@@ -212,7 +203,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         // Sem permissão, sem GPS ou demora: o envio segue, apenas sem a área aproximada.
       }
 
-      etapa = 'montagem do envio';
       final payload = buildAnswerPayload(
         submissionId: newSubmissionId(),
         recordedAt: data.recordedAt,
@@ -225,28 +215,19 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         context: data.smokeContext,
       );
       // A fila (reenvio) e a requisição têm tempo limite próprio (20 s cada); este é só a rede de segurança.
-      etapa = 'envio ao servidor';
       outcome = await _sync.send(payload).timeout(const Duration(seconds: 75));
-      detail = _sync.lastDetail;
-    } catch (e) {
-      outcome = null;
-      detail = '$etapa: ${e.runtimeType}: $e';
+    } catch (_) {
+      outcome = null; // sem aviso de erro: a pergunta volta e a pessoa pode tentar de novo
     }
     if (!mounted) return;
     setState(() {
-      _shareDetail = detail == null ? null : '$detail | servidor: ${ApiConfig.host}';
       _shareState = switch (outcome) {
         SyncResult.sent => _ShareState.sent,
         SyncResult.queued => _ShareState.queued,
-        SyncResult.rejected => _ShareState.rejected,
+        SyncResult.rejected => _ShareState.declined,
         SyncResult.notConfigured || null => _ShareState.ask,
       };
     });
-    if (outcome == null) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(
-        content: Text('Não foi possível enviar agora. Toque em "Sim, compartilhar" para tentar de novo.'),
-      ));
-    }
   }
 
   void _declineShare() => setState(() => _shareState = _ShareState.declined);
@@ -572,7 +553,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       ],
       if (_sync.isConfigured) ...[
         const SizedBox(height: 12),
-        _ShareCard(state: _shareState, detail: _shareDetail, onYes: _shareAnswers, onNo: _declineShare),
+        _ShareCard(state: _shareState, onYes: _shareAnswers, onNo: _declineShare),
       ],
       const SizedBox(height: 12),
       if (result.level == RiskLevel.emergency) ...[
@@ -928,30 +909,17 @@ class _ResultCard extends StatelessWidget {
 
 
 /// Situação da pergunta "compartilhar suas respostas para estudos epidemiológicos?".
-enum _ShareState { ask, sending, sent, queued, declined, rejected }
+enum _ShareState { ask, sending, sent, queued, declined }
 
-class _ShareCard extends StatefulWidget {
-  const _ShareCard({required this.state, required this.onYes, required this.onNo, this.detail});
+class _ShareCard extends StatelessWidget {
+  const _ShareCard({required this.state, required this.onYes, required this.onNo});
 
   final _ShareState state;
-  final String? detail;
   final VoidCallback onYes;
   final VoidCallback onNo;
 
   @override
-  State<_ShareCard> createState() => _ShareCardState();
-}
-
-class _ShareCardState extends State<_ShareCard> {
-  /// Os detalhes técnicos só aparecem se a pessoa pedir.
-  bool _showDetail = false;
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
-    final onYes = widget.onYes;
-    final onNo = widget.onNo;
-    final detail = widget.detail;
     final conteudo = switch (state) {
         _ShareState.ask => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1016,49 +984,16 @@ class _ShareCardState extends State<_ShareCard> {
           ),
         _ShareState.queued => const _ShareNote(
             icon: Icons.schedule_rounded,
-            color: Color(0xFFB7791F),
-            text: 'Sem conexão agora. Suas respostas serão enviadas assim que possível.',
+            color: AppColors.brand,
+            text: 'Suas respostas foram guardadas e serão enviadas assim que possível.',
           ),
         _ShareState.declined => const _ShareNote(
             icon: Icons.lock_outline_rounded,
             color: AppColors.muted,
             text: 'Tudo bem. Suas respostas ficam apenas neste aparelho.',
           ),
-        _ShareState.rejected => const _ShareNote(
-            icon: Icons.error_outline_rounded,
-            color: Color(0xFFC62828),
-            text: 'O servidor não aceitou o envio desta resposta.',
-          ),
     };
-    final texto = detail ?? '';
-    // Sucesso e envio em andamento não mostram detalhes técnicos; só as falhas, e recolhidos.
-    final mostrarOpcao = detail != null && state != _ShareState.sending && state != _ShareState.sent;
-    return AppCard(
-      child: !mostrarOpcao
-          ? conteudo
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                conteudo,
-                const SizedBox(height: 6),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 32),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    alignment: Alignment.centerLeft,
-                  ),
-                  onPressed: () => setState(() => _showDetail = !_showDetail),
-                  child: Text(_showDetail ? 'Ocultar detalhes técnicos' : 'Mostrar detalhes técnicos'),
-                ),
-                if (_showDetail)
-                  SelectableText(
-                    texto,
-                    style: const TextStyle(fontSize: 11.5, height: 1.35, color: AppColors.muted),
-                  ),
-              ],
-            ),
-    );
+    return AppCard(child: conteudo);
   }
 }
 

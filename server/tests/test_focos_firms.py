@@ -140,7 +140,7 @@ def test_tudo_cai_502_combina_motivos_sem_vazar_chave(app_com_chave, monkeypatch
     with caplog.at_level(logging.DEBUG):
         r = app_com_chave.get("/focos?window=last48h&scope=amazonas")
     d = r.json()["detail"]
-    assert r.status_code == 502 and "INPE:" in d and "NASA FIRMS: chave do FIRMS recusada" in d
+    assert r.status_code == 502 and "INPE (WFS):" in d and "INPE (CSV):" in d and "NASA FIRMS: chave do FIRMS recusada" in d
     assert CHAVE not in r.text and CHAVE not in caplog.text.replace(f"k={CHAVE}", "")
 
 

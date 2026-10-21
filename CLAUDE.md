@@ -487,6 +487,12 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Nome `RespirAR-Amazonas-vX.Y.Z.apk`; `download_app.caminho()` escolhe a maior versão por tupla numérica e só aceita o padrão exato; nome antigo `Alerta-Fumaca-AM.apk` ainda aceito como reserva.
 - Manual: `tool/gerar_manual.py` (reportlab), imagens em `assets/manual/` (splash enviada pelo usuário; capturas reaproveitadas do PDF antigo, reordenadas porque no original a imagem de cada etapa vinha na página seguinte). Autores/data de elaboração (18/10/2026) preservados do manual original do usuário.
 
+### 4.40 Focos pelo CSV do INPE, sem avisos de envio, testes não bloqueantes — versão 1.16.0
+- Relato do usuário (20/10/2026): `gerar_apk.sh` parava nos testes (**saída não enviada; teste que falha desconhecido**) e as abas de focos do app carregavam sem fim. Pedido: "volte a versão em que o módulo funcionava". **Não há o que reverter:** `inpe_fire_service.dart` não muda desde a 1.6.0; o que mudou foi o endereço do WFS do INPE (404, ver 4.32). A correção é no servidor (app consulta `/focos`).
+- Verificado por leitura (WebFetch, 20/10/2026): `dataserver-coids.inpe.br/.../focos/csv/diario/Brasil/` lista arquivos diários até o dia corrente; cabeçalho `id,lat,lon,data_hora_gmt,satelite,municipio,estado,pais,municipio_id,estado_id,pais_id,numero_dias_sem_chuva,precipitacao,risco_fogo,bioma,frp`; há linhas do Amazonas. **Não verificado:** separador exato, grafia de `estado`/`satelite`, o que o INPE faz com o arquivo do dia corrente (parcial; o de 20/10 tinha 239 KB às 08:06), tempo de download a partir do servidor do usuário, contagens frente ao WFS antigo. O código aceita `,`/`;`, estado sem acento/caixa. Nota: 4.31 descartava o CSV de 10 min por não ter estado; o diário **tem** `estado`.
+- Testes novos: `server/tests/test_focos_inpe_csv.py`; `conftest.py` impede acesso à internet nos testes (via CSV falha por padrão).
+- Avisos de envio removidos do app (questionário); sobra apenas o texto discreto "Há N envio(s) aguardando conexão" na tela de estatísticas (não removido: informativo; avisar se quiser sair).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

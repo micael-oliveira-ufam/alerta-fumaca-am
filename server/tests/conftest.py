@@ -85,3 +85,14 @@ def payload(**over) -> dict:
     }
     base.update(over)
     return base
+
+
+@pytest.fixture(autouse=True)
+def _sem_rede_nos_csv_do_inpe(monkeypatch):
+    """Os testes nunca acessam a internet: a via dos CSV do INPE falha por padrão (testes específicos a trocam)."""
+    from app import focos_inpe_csv
+
+    def _falha(*a, **k):
+        raise focos_inpe_csv.CsvInpeErro("sem conexão com o INPE")
+
+    monkeypatch.setattr(focos_inpe_csv, "fetch_geojson", _falha)
