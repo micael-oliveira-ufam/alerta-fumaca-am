@@ -12,7 +12,12 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.16.0.
+Nenhuma mudança desde a 1.16.1.
+
+## [1.16.1] - 2026-10-20
+
+### Corrigido
+- **Único teste do app que falhava** (`context_test.dart`, "toda pergunta cita referências existentes"; saída real do `flutter test` do usuário na 1.16.0: 149 passaram, 1 falhou). Causa: o teste só procurava as fontes 1 a 3 (`references`), mas "Máscara usada" cita as fontes 8 e 11, que ficam em `extraReferences` (pdf_content.dart). Era erro do teste, não do app: o teste agora junta as duas listas. `flutter analyze`: sem problemas.
 
 ## [1.16.0] - 2026-10-20
 

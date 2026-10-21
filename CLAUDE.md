@@ -493,6 +493,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Testes novos: `server/tests/test_focos_inpe_csv.py`; `conftest.py` impede acesso à internet nos testes (via CSV falha por padrão).
 - Avisos de envio removidos do app (questionário); sobra apenas o texto discreto "Há N envio(s) aguardando conexão" na tela de estatísticas (não removido: informativo; avisar se quiser sair).
 
+### 4.41 Teste do app que bloqueava o APK — versão 1.16.1
+- Saída real do usuário (1.16.0): `flutter analyze` sem problemas; `flutter test` 149 aprovados e 1 falha: `context_test.dart` "toda pergunta cita referências existentes" (o teste ignorava `extraReferences`). Corrigido o teste. Primeira execução real de toda a suíte Dart desde as versões 1.8 a 1.16 e ela passou, exceto esse teste. Não confirmado: se o APK da 1.16.0 foi gerado (a saída termina no aviso do workmanager/KGP, que é informativo).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

@@ -1,3 +1,4 @@
+import 'package:respirar_amazonas/data/pdf_content.dart' show extraReferences;
 import 'package:respirar_amazonas/data/references.dart';
 import 'package:respirar_amazonas/logic/context_advice.dart';
 import 'package:respirar_amazonas/logic/risk_assessment.dart';
@@ -115,7 +116,8 @@ void main() {
 
   group('referências', () {
     test('toda pergunta cita referências existentes', () {
-      final ids = references.map((r) => r.id).toSet();
+      // As perguntas citam as fontes numeradas de `references` e as de `extraReferences` (de 4 em diante).
+      final ids = {...references.map((r) => r.id), ...extraReferences.map((r) => r.id)};
       for (final q in questionSources) {
         for (final id in q.refs) {
           expect(ids, contains(id), reason: q.question);
