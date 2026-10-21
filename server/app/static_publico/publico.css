@@ -187,3 +187,9 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 /* ---------- aviso de nova versão da página ---------- */
 .atualizar{position:fixed;left:16px;right:16px;bottom:16px;max-width:460px;margin:0 auto;z-index:2000;display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--brand-d);color:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
 .atualizar button{font:inherit;font-weight:700;border:0;border-radius:999px;background:#fff;color:var(--brand-d);padding:8px 14px;cursor:pointer;min-height:40px}
+
+/* ---------- logo no cabeçalho ---------- */
+.marca{display:flex;align-items:center;gap:14px;margin:4px 0 8px}
+.marca h1{margin:0}
+.logo{width:64px;height:64px;border-radius:16px;flex:0 0 auto;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+@media (max-width:520px){.logo{width:52px;height:52px;border-radius:13px}}

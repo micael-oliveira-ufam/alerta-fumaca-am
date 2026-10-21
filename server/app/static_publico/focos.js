@@ -49,10 +49,15 @@
     return 'há ' + Math.floor(hh / 24) + ' dias';
   }
 
+  var retentar = null;
   function carregar() {
     fetch('/focos?window=last48h&scope=amazonas', { headers: { Accept: 'application/json' } })
       .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            var err = new Error('HTTP ' + r.status); err.detalhe = j && typeof j.detail === 'string' ? j.detail : ''; throw err;
+          });
+        }
         var c = r.headers.get('X-Consultado-Em'), t = c ? Date.parse(c) : NaN;
         meta.consultado = isFinite(t) ? t : null; meta.cache = r.headers.get('X-Cache') || ''; meta.pagina = Date.now();
         return r.json();
@@ -73,9 +78,12 @@
         $('focos-erro').hidden = true;
         desenhar();
       })
-      .catch(function () {
+      .catch(function (err) {
         var e = $('focos-erro'); e.hidden = false;
-        e.textContent = 'Não foi possível obter os focos de calor agora (o servidor do INPE pode estar indisponível). Tente novamente em instantes.';
+        e.textContent = 'Não foi possível obter os focos de calor agora' +
+          (err && err.detalhe ? ' (' + err.detalhe.replace(/^INPE indisponível no momento \(?/, 'motivo: ').replace(/\)?\.?$/, '') + ')' : ' (o servidor do INPE pode estar indisponível)') +
+          '. A página tenta de novo sozinha a cada minuto.';
+        clearTimeout(retentar); retentar = setTimeout(carregar, 60000);
       });
   }
 

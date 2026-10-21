@@ -27,7 +27,10 @@ from typing import Callable, Iterable
 import requests
 
 UPSTREAM_URL = "https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/ows"
-UPSTREAM_TIMEOUT_S = 40
+#: (conexão, leitura). A camada de 48 h do Amazonas pode ter vários MB e o servidor do INPE às vezes demora.
+UPSTREAM_TIMEOUT_S = (10, 90)
+UPSTREAM_TENTATIVAS = 2
+USER_AGENT = "RespirAR-Amazonas/1.0 (UFAM/FCF; painel de saude e queimadas)"
 
 LAYERS = {
     # "Hoje" usa a camada de 48 h; o app recorta o dia local (a camada focos_hoje_* vinha vazia).
@@ -134,15 +137,50 @@ def cache_key(window: str, scope: str, satellites: Iterable[str]) -> str:
     return f"{window}|{scope}|{','.join(sorted(set(satellites)))}"
 
 
+def motivo(exc: BaseException) -> str:
+    """Motivo curto e seguro (sem URL nem dados) para mostrar ao público e registrar no log."""
+    if isinstance(exc, requests.exceptions.SSLError):
+        return "falha de certificado HTTPS"
+    if isinstance(exc, requests.exceptions.ConnectTimeout):
+        return "tempo esgotado ao conectar"
+    if isinstance(exc, requests.exceptions.ReadTimeout):
+        return "tempo esgotado esperando resposta"
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        texto = str(exc).lower()
+        if "name resolution" in texto or "nodename" in texto or "getaddrinfo" in texto or "resolve" in texto:
+            return "falha de DNS"
+        return "sem conexão com o servidor do INPE"
+    if isinstance(exc, requests.exceptions.RequestException):
+        return "erro de rede"
+    if isinstance(exc, ValueError):
+        texto = str(exc)
+        return f"o INPE respondeu {texto}" if texto.startswith("status ") else "resposta do INPE fora do formato"
+    return "erro inesperado"
+
+
 def fetch_upstream(window: str, scope: str, satellites: Iterable[str]) -> bytes:
-    """Consulta o INPE. Lança requests.RequestException ou ValueError se a resposta for inválida."""
-    response = requests.get(
-        UPSTREAM_URL,
-        params=build_params(window, scope, satellites),
-        timeout=UPSTREAM_TIMEOUT_S,
-    )
-    if response.status_code != 200:
-        raise ValueError(f"status {response.status_code}")
-    if not is_feature_collection(response.content):
-        raise ValueError("resposta fora do formato GeoJSON")
-    return response.content
+    """Consulta o INPE (até `UPSTREAM_TENTATIVAS` vezes em falha de rede ou HTTP 5xx).
+
+    Lança requests.RequestException ou ValueError se a resposta for inválida."""
+    params = build_params(window, scope, satellites)
+    ultimo: Exception | None = None
+    for tentativa in range(UPSTREAM_TENTATIVAS):
+        if tentativa:
+            time.sleep(2)
+        try:
+            response = requests.get(
+                UPSTREAM_URL, params=params, timeout=UPSTREAM_TIMEOUT_S, headers={"User-Agent": USER_AGENT},
+            )
+        except requests.RequestException as exc:
+            ultimo = exc
+            continue
+        if response.status_code >= 500:
+            ultimo = ValueError(f"status {response.status_code}")
+            continue
+        if response.status_code != 200:
+            raise ValueError(f"status {response.status_code}")
+        if not is_feature_collection(response.content):
+            raise ValueError("resposta fora do formato GeoJSON")
+        return response.content
+    assert ultimo is not None
+    raise ultimo

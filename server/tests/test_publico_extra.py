@@ -404,3 +404,57 @@ def test_app_focos_endpoint(client, monkeypatch):
     assert client.get("/app/focos", params={"cod": 1302603, "raio_km": 7}).status_code == 422
     assert client.get("/app/focos", params={"cod": 1399999}).status_code == 404
     assert client.get("/app/focos").status_code == 422
+
+
+# ------------------------------------------------------------ INPE: motivo, tentativas e logo
+
+def test_motivo_do_erro_do_inpe_e_curto_e_sem_dados():
+    import requests
+    assert focos.motivo(requests.exceptions.ReadTimeout()) == "tempo esgotado esperando resposta"
+    assert focos.motivo(requests.exceptions.ConnectTimeout()) == "tempo esgotado ao conectar"
+    assert focos.motivo(requests.exceptions.SSLError()) == "falha de certificado HTTPS"
+    assert focos.motivo(requests.exceptions.ConnectionError("Failed to resolve 'x' (getaddrinfo)")) == "falha de DNS"
+    assert focos.motivo(ValueError("status 503")) == "o INPE respondeu status 503"
+    assert focos.motivo(ValueError("resposta fora do formato GeoJSON")) == "resposta do INPE fora do formato"
+
+
+def test_fetch_upstream_tenta_de_novo_em_falha_de_rede(monkeypatch):
+    import requests
+    chamadas = []
+    corpo = json.dumps({"type": "FeatureCollection", "features": []}).encode()
+
+    class R:
+        status_code, content = 200, corpo
+
+    def get(url, **kw):
+        chamadas.append(kw["headers"]["User-Agent"])
+        if len(chamadas) == 1:
+            raise requests.exceptions.ConnectTimeout()
+        return R()
+
+    monkeypatch.setattr(focos.requests, "get", get)
+    monkeypatch.setattr(focos.time, "sleep", lambda s: None)
+    assert focos.fetch_upstream("last48h", "amazonas", []) == corpo
+    assert len(chamadas) == 2 and chamadas[0].startswith("RespirAR-Amazonas")
+
+
+def test_502_do_inpe_informa_o_motivo(client, monkeypatch):
+    import requests
+
+    def falha(*a, **k):
+        raise requests.exceptions.ReadTimeout()
+
+    monkeypatch.setattr(focos, "fetch_upstream", falha)
+    r = client.get("/focos?window=last48h&scope=amazonas")
+    assert r.status_code == 502 and "tempo esgotado esperando resposta" in r.json()["detail"]
+
+
+def test_pagina_tem_logo_icone_e_previa_de_compartilhamento(client):
+    html = client.get("/", headers={"host": "exemplo.test"}).text
+    assert 'class="logo"' in html and "/assets/logo.png" in html
+    assert 'property="og:image" content="http://exemplo.test/assets/og-imagem.png"' in html
+    assert 'name="twitter:card" content="summary_large_image"' in html
+    assert "{{BASE}}" not in html
+    for caminho in ["/assets/logo.png", "/assets/og-imagem.png", "/assets/apple-touch-icon.png", "/favicon.ico"]:
+        r = client.get(caminho)
+        assert r.status_code == 200 and len(r.content) > 500, caminho

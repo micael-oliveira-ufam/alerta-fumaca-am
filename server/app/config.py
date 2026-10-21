@@ -78,6 +78,8 @@ class Settings:
 
     #: Pasta (dentro do contêiner) onde está o APK para download (`Alerta-Fumaca-AM.apk`).
     apk_dir: str = "/srv/dist"
+    #: Busca os focos do INPE em segundo plano a cada `cache_seconds` (a página abre já com dados).
+    focos_preaquecer: bool = False
     #: Versão mínima do app (X.Y.Z). Abaixo dela o app mostra aviso de atualização obrigatória.
     app_versao_minima: str = ""
 
@@ -108,6 +110,7 @@ class Settings:
             public_url=os.getenv("PUBLIC_URL", "").strip().rstrip("/"),
             tunnel_metrics_url=os.getenv("TUNNEL_METRICS_URL", "").strip().rstrip("/"),
             apk_dir=os.getenv("APK_DIR", "/srv/dist").strip() or "/srv/dist",
+            focos_preaquecer=os.getenv("FOCOS_PREAQUECER", "false").strip().lower() in ("1", "true", "yes", "sim"),
             app_versao_minima=os.getenv("APP_VERSAO_MINIMA", "").strip(),
             qualidade_ar_ativa=os.getenv("QUALIDADE_AR_ATIVA", "true").strip().lower() in ("1", "true", "yes", "sim"),
             qualidade_ar_cache_seconds=_int("QUALIDADE_AR_CACHE_SECONDS", 1800),

@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.10.0"
+APP_VERSION = "1.10.1"
 
 
 def create_app(
@@ -61,10 +61,25 @@ def create_app(
     engine = engine or make_engine(settings.database_url)
     session_factory = make_session_factory(engine)
 
+    parar = threading.Event()
+
+    def preaquecer_focos() -> None:
+        """Mantém o cache dos focos quente: a página abre já com dados e o INPE é consultado 1 vez por janela."""
+        while not parar.is_set():
+            for janela in ("today", "last48h"):
+                try:
+                    obter_focos(app, janela, "amazonas", [])
+                except Exception as exc:  # noqa: BLE001 - segundo plano nunca derruba o servidor
+                    log.info("Pré-aquecimento dos focos (%s) falhou: %s", janela, focos.motivo(exc))
+            parar.wait(max(60, settings.cache_seconds))
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         init_schema(engine)
+        if settings.focos_preaquecer:
+            threading.Thread(target=preaquecer_focos, name="focos-preaquecer", daemon=True).start()
         yield
+        parar.set()
         if owns_engine:  # um engine injetado (testes) é de quem o criou
             engine.dispose()
 
@@ -120,13 +135,24 @@ def _montar_painel_publico(app: FastAPI) -> None:
     """Página pública (sem senha) com dados agregados. Ver `app.publico` para as regras."""
 
     @app.get("/", include_in_schema=False)
-    def pagina_publica() -> FileResponse:
-        resp = FileResponse(PUBLICO_DIR / "publico.html", media_type="text/html; charset=utf-8")
+    def pagina_publica(request: Request) -> Response:
+        h = request.headers
+        base = download_app.base_publica(
+            request.app.state.settings.public_url, h.get("host", ""), h.get("x-forwarded-proto", ""),
+            request.url.scheme, request.url.netloc,
+        )
+        html = (PUBLICO_DIR / "publico.html").read_text(encoding="utf-8").replace("{{BASE}}", base.rstrip("/"))
+        resp = Response(html, media_type="text/html; charset=utf-8")
         resp.headers["Content-Security-Policy"] = _CSP_PUBLICO
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         resp.headers["Cache-Control"] = "no-cache"
         return resp
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> FileResponse:
+        return FileResponse(PUBLICO_DIR / "favicon.ico", media_type="image/x-icon",
+                            headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/assets", StaticFiles(directory=PUBLICO_DIR), name="assets-publicos")
     app.mount("/vendor", StaticFiles(directory=VENDOR_DIR), name="vendor-publico")
@@ -476,11 +502,12 @@ def obter_focos(app: FastAPI, window: str, scope: str, sats: list[str]) -> tuple
         try:
             body = focos.fetch_upstream(window, scope, sats)
         except (requests.RequestException, ValueError) as exc:
-            log.warning("INPE indisponível (%s): %s", key, exc.__class__.__name__)
+            motivo = focos.motivo(exc)
+            log.warning("INPE indisponível (%s): %s | %r", key, motivo, str(exc)[:300])
             stale = cache.last_valid(key)
             if stale is not None:
                 return stale, "STALE", cache.obtido_em(key)
-            raise HTTPException(status_code=502, detail="INPE indisponível no momento.")
+            raise HTTPException(status_code=502, detail=f"INPE indisponível no momento ({motivo}).")
         cache.store(key, body)
     return body, "MISS", cache.obtido_em(key)
 

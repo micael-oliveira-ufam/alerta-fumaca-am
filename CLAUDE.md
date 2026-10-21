@@ -442,6 +442,11 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Dart novo (decisão, mensagem, tela) **não compilado**; testes em `test/air_alert_test.dart` ainda sem execução.
 - Privacidade: o app envia ao servidor só o código IBGE do município e o raio.
 
+### 4.31 Logo no painel e diagnóstico do INPE — versão 1.10.1
+- Print do usuário (20/10/2026): aviso "Não foi possível obter os focos de calor" no painel público. **Causa NÃO confirmada** (o INPE não é acessível do ambiente do agente; testei com `curl` e `WebFetch`: bloqueado). Hipóteses não verificadas: tempo de resposta acima de 40 s (camada grande), DNS/saída do contêiner, bloqueio do INPE a IPs de datacenter ou ao `User-Agent` padrão do `requests`. Mudanças: motivo na resposta 502 e na página, 2 tentativas, leitura 90 s, `User-Agent`, pré-aquecimento (`FOCOS_PREAQUECER`) e `tool/diagnostico_inpe.sh`. **Pedir ao usuário a saída do diagnóstico.**
+- Pesquisado e descartado como reserva: CSV aberto do INPE (`dataserver-coids.inpe.br/.../csv/10min/`, colunas `lat,lon,satelite,data`, inclui satélites geoestacionários e **não traz estado nem município**), então não serve sem recorte geográfico que eu não pude verificar.
+- Logo: arquivos em `server/app/static_publico/` gerados de `assets/icon/app_icon.png` (`logo.png`, `favicon.*`, `apple-touch-icon.png`, `og-imagem.png`). Prévia de compartilhamento usa `{{BASE}}` substituído no servidor. **Não verificado:** como WhatsApp/Telegram/Instagram exibem a prévia (têm cache próprio; usar o depurador de cada um após publicar).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

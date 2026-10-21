@@ -12,7 +12,17 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.10.0.
+Nenhuma mudança desde a 1.10.1.
+
+## [1.10.1] - 2026-10-20
+
+### Adicionado
+- **Logo do app no painel público:** no cabeçalho, no ícone da aba (favicon e `apple-touch-icon`) e na prévia ao compartilhar o link (Open Graph e Twitter Card, imagem 1200×630 `og-imagem.png`). Os endereços absolutos da prévia usam `PUBLIC_URL` (ou o Host da requisição).
+- `tool/diagnostico_inpe.sh`: roda DNS, HTTPS e uma consulta ao INPE de dentro do contêiner da API e mostra os logs recentes, para achar por que os focos não carregam.
+
+### Corrigido
+- **Focos do INPE:** a página mostrava só "não foi possível obter". Agora o servidor informa o **motivo** (tempo esgotado, falha de DNS, certificado, HTTP 5xx, formato), registra a causa no log, envia `User-Agent` próprio, usa tempo de leitura de 90 s (antes 40 s) e tenta 2 vezes; a página tenta de novo sozinha a cada minuto. Com `FOCOS_PREAQUECER=true` (padrão no compose) o servidor busca os focos em segundo plano, e a página abre já com dados.
+- **A causa raiz da falha na máquina do usuário continua NÃO confirmada** (o INPE é inacessível no ambiente do agente).
 
 ## [1.10.0] - 2026-10-20
 
