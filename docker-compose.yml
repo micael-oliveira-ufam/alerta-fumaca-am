@@ -12,7 +12,8 @@
 #
 # O banco NÃO é publicado no host (só a API e o painel enxergam o Postgres, pela rede interna).
 # Os dados ficam no volume `pgdata`; `docker compose down` mantém os dados,
-# `docker compose down -v` APAGA tudo.
+# `docker compose down -v` APAGA tudo. Antes de apagar/trocar de pasta: `bash tool/backup_dados.sh`
+# (e `bash tool/restaurar_dados.sh` na versão nova). Cada pasta tem o próprio volume.
 
 services:
   db:

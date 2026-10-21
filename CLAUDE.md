@@ -504,6 +504,10 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.43 Mapa estável nas atualizações e data do ar — versão 1.17.1
 - Bug do usuário (21/10/2026): atualizações constantes reiniciavam os mapas da plataforma. Causa: `fitBounds` + `clearLayers` a cada 15 s em `publico.js`. Correção por assinatura dos dados (`assinaturaMapa`) e `mapaAjustado`; `ar.js` idem. Só o mapa de relatos tinha `fitBounds` repetido; o da Amazônia não atualiza. Data do ar: `referencia_modelo` (hora do modelo, UTC no JSON) e `consultado_em`, exibidas em Manaus com ano.
 
+### 4.44 Backup e restauração do banco ao atualizar — versão 1.18.0
+- Pedido do usuário (21/10/2026): ao atualizar o site/ferramenta e precisar excluir o Docker, salvar os dados para a próxima versão reaproveitar. Fato verificado no compose: o volume `pgdata` é por projeto (nome da pasta), então pasta nova = banco vazio. Solução: `tool/backup_dados.sh`, `tool/restaurar_dados.sh`, `tool/_backup_comum.sh`; `parar_tudo.sh --apagar` faz backup antes e aborta se falhar. Backups em `~/respirar-backups` (fora do projeto). O `.env` NÃO entra no backup (tem segredos): copiar à mão para a pasta nova. A API nova acrescenta colunas faltantes (`db.py`), então backup de versão anterior é aceito. Fluxo de atualização: `bash tool/backup_dados.sh` → extrair versão nova → copiar `.env` → `bash tool/iniciar_servidor.sh` → `bash tool/restaurar_dados.sh`.
+- Verificado: ciclo real com PostgreSQL 16 local (sem daemon Docker no sandbox; `docker` simulado por um script que repassa `exec` ao Postgres). NÃO verificado: execução com Docker de verdade, `iniciar_servidor.sh` (só `bash -n`), macOS.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

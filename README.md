@@ -62,6 +62,7 @@ bash tool/smoke_test_api.sh   # envia 1 resposta de teste e confere os endpoints
 
 - O banco **não é publicado no host**; só a API o acessa pela rede interna. Dados no volume `pgdata`.
 - `docker compose down` mantém os dados. `docker compose down -v` **apaga tudo**.
+- **Atualizar o site/ferramenta sem perder os dados:** cada pasta de versão tem o próprio volume `pgdata`, então uma pasta nova começa com banco vazio. Faça `bash tool/backup_dados.sh` (salva em `~/respirar-backups`), extraia a versão nova, copie o `.env` da antiga, rode `bash tool/iniciar_servidor.sh` e depois `bash tool/restaurar_dados.sh`. `bash tool/parar_tudo.sh --apagar` já faz o backup antes de apagar e não apaga se ele falhar.
 - Documentação interativa da API: `http://localhost:8000/docs`.
 
 | Endpoint | Função |

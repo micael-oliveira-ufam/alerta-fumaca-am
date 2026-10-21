@@ -178,6 +178,18 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
+# Banco vazio + backups existentes (típico de pasta de versão nova): avisa como recuperar os dados.
+if ls "${BACKUP_DIR:-$HOME/respirar-backups}"/respirar-*.dump >/dev/null 2>&1; then
+  db_ctr="$("${COMPOSE[@]}" ps -q db 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$db_ctr" ]]; then
+    n_resp="$("${DOCKER[@]}" exec "$db_ctr" sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tA -c "SELECT count(*) FROM respostas"' 2>/dev/null | tr -d ' \r' || true)"
+    if [[ "$n_resp" == "0" ]]; then
+      echo "ATENÇÃO: o banco desta pasta está VAZIO e há backups em ${BACKUP_DIR:-$HOME/respirar-backups}."
+      echo "         Para reaproveitar os dados da versão anterior:  bash tool/restaurar_dados.sh"
+    fi
+  fi
+fi
+
 echo "Painel em tempo real: http://127.0.0.1:$PAINEL_PORTA (digite o ADMIN_TOKEN do .env na tela de entrada)"
 
 if [[ "$MODO_DOMINIO" == "1" ]]; then

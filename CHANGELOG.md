@@ -12,7 +12,17 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.17.1.
+Nenhuma mudança desde a 1.18.0.
+
+## [1.18.0] - 2026-10-21
+
+### Adicionado
+- **Backup e restauração do banco ao atualizar a plataforma.** Causa do problema: cada pasta de versão vira um projeto Docker com o PRÓPRIO volume `pgdata`; subir a versão nova em outra pasta cria um banco vazio, e `docker compose down -v` ou `parar_tudo.sh --apagar` apagam as respostas.
+  - `tool/backup_dados.sh`: `pg_dump` (formato custom) para `~/respirar-backups` (fora da pasta do projeto; mude com `BACKUP_DIR`), com `.sha256` e `.txt` (data, versão, contagem de linhas por tabela); descarta backup vazio ou ilegível. Opções `--container`, `--todos`, `--rotulo`.
+  - `tool/restaurar_dados.sh`: confere o SHA-256, guarda o banco atual (rótulo `antes-da-restauracao`) se tiver dados, para API e painel, restaura com `pg_restore --clean`, compara as contagens com o `.txt` e sobe API e painel. Pede a palavra RESTAURAR (ou `--sim`).
+  - `tool/parar_tudo.sh --apagar` agora faz o backup ANTES de apagar e, se falhar, não apaga (`--sem-backup` para dispensar).
+  - `tool/iniciar_servidor.sh` avisa quando o banco da pasta está vazio e há backups.
+  - Testes: `tool/test_backup_dados.py` (6, com `docker` de mentira) e ciclo real com PostgreSQL 16 (37 respostas, 37 sintomas, 2 células: backup, banco apagado, restauração, contagens iguais).
 
 ## [1.17.1] - 2026-10-21
 

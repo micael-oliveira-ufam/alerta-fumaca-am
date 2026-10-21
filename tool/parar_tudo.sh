@@ -10,17 +10,23 @@
 # Uso:
 #   bash tool/parar_tudo.sh            # só PARA os contêineres (não apaga nada; os dados ficam nos volumes)
 #   bash tool/parar_tudo.sh --apagar   # APAGA contêineres, volumes, redes e imagens (pede confirmação)
+#                                      # ANTES faz backup do banco em ~/respirar-backups (tool/backup_dados.sh);
+#                                      # se o backup falhar, NÃO apaga.
+#   bash tool/parar_tudo.sh --apagar --sem-backup   # apaga sem backup (perde as respostas salvas)
+# Para reaproveitar os dados na versão nova:  bash tool/restaurar_dados.sh
 #
 # Só mexe em nomes que começam com "respirar-amazonas". Outros projetos (gaia, icam, atlas...) não são tocados.
 set -uo pipefail
 
-MODO=parar
-case "${1:-}" in
-  "") ;;
-  --apagar) MODO=apagar ;;
-  -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
-  *) echo "Opção desconhecida: $1 (use --apagar ou nenhuma)"; exit 2 ;;
-esac
+MODO=parar; BACKUP=1
+for arg in "$@"; do
+  case "$arg" in
+    --apagar) MODO=apagar ;;
+    --sem-backup) BACKUP=0 ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    *) echo "Opção desconhecida: $arg (use --apagar, --sem-backup ou nenhuma)"; exit 2 ;;
+  esac
+done
 
 if ! command -v docker >/dev/null 2>&1; then echo "Docker não encontrado."; exit 1; fi
 D=(docker)
@@ -43,6 +49,15 @@ if [ "$MODO" = parar ]; then
   exit 0
 fi
 
+if [ "$BACKUP" = 1 ] && [ -n "$volumes" ]; then
+  echo "Fazendo backup do banco antes de apagar..."
+  if ! bash "$(dirname "$0")/backup_dados.sh" --todos; then
+    echo "O backup FALHOU; nada foi apagado. Resolva o erro acima, ou use --sem-backup se aceitar perder os dados."
+    exit 1
+  fi
+  echo "Backups em: ${BACKUP_DIR:-$HOME/respirar-backups}"
+fi
+
 echo
 echo "ATENÇÃO: vai APAGAR, para sempre, os volumes (banco de dados com as respostas), contêineres, redes e imagens:"
 for l in "$containers" "$volumes" "$redes" "$imagens"; do [ -n "$l" ] && printf '  %s\n' $l; done
@@ -56,3 +71,4 @@ if [ "$resp" != "APAGAR" ]; then echo "Cancelado. Nada foi apagado."; exit 1; fi
 [ -n "$volumes" ] && printf '%s\n' "$volumes" | xargs "${D[@]}" volume rm >/dev/null
 [ -n "$imagens" ] && printf '%s\n' "$imagens" | xargs "${D[@]}" rmi -f >/dev/null 2>&1
 echo "Pronto. Para subir de novo, na pasta do projeto: bash tool/iniciar_servidor.sh"
+if [ "$BACKUP" = 1 ]; then echo "Depois de subir, para recuperar os dados salvos: bash tool/restaurar_dados.sh"; fi
