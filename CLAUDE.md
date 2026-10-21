@@ -471,6 +471,11 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Envio:** o código lido não mostra permissão faltando: `postAnswer` e `flush` já tratam erros; a lacuna era `_shareAnswers` sem `try`/tempo limite (localização e fila poderiam travar a tela). Corrigido com limites e retorno à pergunta. Hipóteses **não confirmadas** para o travamento real: GPS/permissão sem resposta, `getCurrentPosition` ignorando o limite, ou requisição lenta pelo túnel. Para decidir: ver se o POST chega ao servidor (`docker compose logs api | grep respostas`).
 - Dart não compilado; sem teste automatizado novo (a lógica está em widget).
 
+### 4.36 Vários conjuntos Docker no mesmo túnel — versão 1.13.2
+- **Descoberto (20/10/2026, `docker ps` do usuário):** 5 conjuntos `respirar-amazonas-v….` com `tunnel_dominio` (versões 1.10.0, 1.10.1, 1.11.0, 1.12.2, 1.13.0) usando o **mesmo token**; a Cloudflare reparte as visitas entre os conectores, então o domínio respondia versões diferentes (`/health` = 1.10.0). Cada projeto tem banco próprio. Contagem de `respostas`: só o banco da 1.10.0 tinha linhas (10, todas do `tool/teste_comunicacao.py` do dia); **nenhuma resposta real de celular chegou a algum servidor**. Isso aponta o travamento do "Enviando…" para o aparelho/APK (ver 4.35), não para o servidor.
+- Regra nova: **uma pasta só** (git clone + git pull); parar sobras com `tool/parar_tudo.sh`. `--apagar` é destrutivo e pede confirmação.
+- `uvicorn --no-access-log` (privacidade) faz com que `docker compose logs | grep respostas` **não mostre** envios: use contagem no banco (`select count(*), max(criado_em) from respostas;`).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

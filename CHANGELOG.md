@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.2.
+
+## [1.13.2] - 2026-10-20
+
+### Adicionado
+- `tool/parar_tudo.sh`: para (ou, com `--apagar` e confirmação digitada, apaga) todos os contêineres, túneis, volumes, redes e imagens cujo nome começa com `respirar-amazonas`, em qualquer pasta. Motivo (20/10/2026): o usuário tinha cinco conjuntos rodando, quatro conectados ao mesmo túnel da Cloudflare, e o domínio respondia versões diferentes a cada visita. Verificado com `docker` simulado (parar, apagar cancelado, apagar confirmado; projetos `gaia-*`/`icam-*` intocados); **não testado em Docker real**. README ganhou a seção "Parar ou limpar tudo".
+
 Nenhuma mudança desde a 1.13.1.
 
 ## [1.13.1] - 2026-10-20

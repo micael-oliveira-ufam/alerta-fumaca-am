@@ -75,6 +75,19 @@ bash tool/smoke_test_api.sh   # envia 1 resposta de teste e confere os endpoints
 
 Configuração (`.env`): `POSTGRES_*`, `API_PORT`, `ADMIN_TOKEN`, `INPE_CACHE_SECONDS`, `RATE_LIMIT_PER_MIN`, `MIN_RESPOSTAS_PUBLICAS` (padrão 5), `MIN_RESPOSTAS_CELULA` (padrão 3), `GEOCODER_ATIVO` (padrão `true`: consulta o Nominatim para dar nome de bairro às áreas de ~1 km de Manaus; política de uso: ≤1 consulta/s, com `User-Agent` identificado e cache em `celulas_bairro`), `GEOCODER_CONTATO`.
 
+### Parar ou limpar tudo (todas as pastas e versões)
+
+Cada pasta onde você extrai o projeto vira **um projeto Docker diferente** (o prefixo dos contêineres é o nome da pasta), com banco de dados e túnel próprios. Se vários ficarem ligados ao mesmo tempo com o **mesmo token de túnel**, a Cloudflare reparte as visitas entre eles e o domínio passa a responder versões diferentes. Para evitar: use **uma só pasta** (`git clone` uma vez e `git pull` nas atualizações) e, quando houver sobras, rode:
+
+```bash
+bash tool/parar_tudo.sh            # PARA contêineres e túneis (api, painel, db, tunnel, tunnel_dominio); não apaga nada
+bash tool/parar_tudo.sh --apagar   # APAGA contêineres, volumes (o BANCO), redes e imagens; pede para digitar APAGAR
+```
+
+O script só mexe em nomes que começam com `respirar-amazonas`; outros projetos do Docker não são tocados. `--apagar` é definitivo: antes, confira onde estão as respostas (`select count(*) from respostas;` em cada banco). Para subir de novo: `bash tool/iniciar_servidor.sh`.
+
+Um único comando equivalente, sem o script, só para **parar** (não apaga): `docker ps -a --format '{{.Names}}' | grep -E '^respirar-amazonas' | xargs -r docker stop`.
+
 ### Painel em tempo real e link público (Cloudflare)
 
 - **Painel** (`http://localhost:8080`, só neste computador): total e ritmo de respostas, níveis de risco, sintomas mais relatados, respostas por hora, mapa de áreas (~1 km), perfil, últimas respostas anônimas, estado do banco e o **link do servidor com QR code**. Atualiza a cada 5 s (consulta periódica, não conexão contínua). Exige o `ADMIN_TOKEN` quando definido. É outro processo e **não passa pelo túnel**.
