@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.12.1.
+
+## [1.12.1] - 2026-10-20
+
+### Corrigido
+- **Logo do cabeçalho não aparecia** (print do usuário: ícone de imagem quebrada). Causa **não confirmada** no servidor dele (aqui `/assets/logo.png` responde 200 `image/png`; hipóteses: cache de 404 antigo no Cloudflare, ou arquivo ausente na imagem Docker). A logo agora vai **embutida no HTML** (data URI de 128 px, ~10 KB), sem depender de `/assets` nem de cache. Favicon e prévia de compartilhamento continuam em arquivos.
+
 Nenhuma mudança desde a 1.12.0.
 
 ## [1.12.0] - 2026-10-20

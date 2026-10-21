@@ -451,7 +451,7 @@ def test_502_do_inpe_informa_o_motivo(client, monkeypatch):
 
 def test_pagina_tem_logo_icone_e_previa_de_compartilhamento(client):
     html = client.get("/", headers={"host": "exemplo.test"}).text
-    assert 'class="logo"' in html and "/assets/logo.png" in html
+    assert "class=\"logo\" src=\"data:image/png;base64," in html  # embutida: não depende de /assets nem de cache do Cloudflare
     assert 'property="og:image" content="http://exemplo.test/assets/og-imagem.png"' in html
     assert 'name="twitter:card" content="summary_large_image"' in html
     assert "{{BASE}}" not in html
