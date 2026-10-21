@@ -328,8 +328,10 @@ def test_pagina_tem_secoes_e_scripts_novos(client):
     from pathlib import Path
     html = client.get("/").text
     for i in ["app-conteudo", "sec-csv", "csv-lista", "sec-ar", "ar-tab", "mapa-ar",
-              "focos-quando", "focos-defasagem", "focos-sat-tab", "mapa-aviso"]:
+              "amz-progresso", "amz-nota-base", "amz-legenda", "mapa-aviso"]:
         assert f'id="{i}"' in html, i
+    # A seção de focos do INPE foi removida do painel (o serviço mudou de endereço; ver CLAUDE.md 4.32/4.34).
+    assert 'id="sec-focos"' not in html and "/assets/focos.js" not in html
     pasta = Path(__file__).parent.parent / "app" / "static_publico"
     for arq in re.findall(r'src="/assets/([^"]+)"', html):
         assert (pasta / arq).is_file(), arq
@@ -477,3 +479,8 @@ def test_assets_do_painel_revalidam_sempre(client):
     assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
     r2 = client.get("/assets/logo.png", headers={"If-None-Match": r.headers["etag"]})
     assert r2.status_code == 304
+
+
+def test_amazonia_js_restringe_desmatamento_ao_satelite_e_tem_progresso_e_legenda(client):
+    js = client.get("/assets/amazonia.js").text
+    assert "DESMAT" in js and "trocarBase('sat')" in js and "GetLegendGraphic" in js and "tileloadstart" in js

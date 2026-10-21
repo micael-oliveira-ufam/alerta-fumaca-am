@@ -460,6 +460,12 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Não verificado:** WMS dessas camadas (nome do parâmetro, CRS, estilo padrão, desempenho de `municipalities_amazon_biome`), atribuição/licença, GIBS. Testado no Chromium só a mecânica dos botões e as requisições emitidas.
 - Teste `test_bairros::test_disparo_em_segundo_plano_resolve_as_celulas` é intermitente (falha ~1 em 10, também antes desta mudança; corrida de thread). Dívida conhecida, não corrigida.
 
+### 4.34 Painel sem focos, com legenda e progresso — versão 1.13.0
+- **Pedido (20/10/2026):** remover a seção de focos do INPE do painel online; ao escolher desmatamento, restringir o fundo ao Satélite; legenda do que significam os pontos; barra de carregamento. Feito; a seção de focos (inclusive o seletor FIRMS) saiu da **página**, mas o servidor e o app mantêm os endpoints.
+- A cor/classe de cada camada do INPE **não está descrita por mim**: a página usa a legenda gráfica do próprio GeoServer (`GetLegendGraphic`, **não verificada ao vivo**). Textos das camadas NASA são descrições genéricas do produto, sem escala numérica.
+- **Interpretação (confirmar):** "restrinja a seleção para Satélite" = só o mapa de fundo Satélite fica disponível com desmatamento ligado.
+- Verificado no Chromium (sem as camadas reais): restrição liga/desliga, restauração do fundo anterior, legenda, barra (mostra falhas), sem erro de JS. Não verificado: carregamento real das camadas do INPE e da NASA.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

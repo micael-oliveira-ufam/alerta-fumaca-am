@@ -53,7 +53,6 @@
     ['bairros', 'Bairros de Manaus', 'só bairros com respostas suficientes', true],
     ['areas', 'Áreas do mapa (~1 km)', 'centro da área, respostas e pior nível', true],
     ['perfil_contexto', 'Perfil e situação', 'grupos de atenção, exposição e contexto', true],
-    ['focos', 'Focos de calor (INPE)', 'detecções das últimas 48 h no Amazonas', false],
     ['qualidade_ar', 'Qualidade do ar', 'índice, PM2,5 e PM10 por município (modelo)', false]
   ];
 

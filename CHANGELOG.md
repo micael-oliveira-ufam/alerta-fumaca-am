@@ -12,6 +12,18 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.0.
+
+## [1.13.0] - 2026-10-20
+
+### Removido
+- Seção **"Focos de calor · INPE"** do painel público (e o botão de CSV de focos), a pedido do usuário: o serviço do INPE mudou de endereço e nada carregava. O servidor mantém `/focos`, a reserva NASA FIRMS e `/app/focos` (usados pelo app).
+
+### Adicionado
+- **Barra de progresso** do mapa da Amazônia: conta as imagens baixadas (`N de M`, %), diz quais camadas ainda carregam e informa quantas falharam.
+- **Legenda** por camada: texto explicativo e, para as camadas do INPE, a legenda gráfica oficial do GeoServer (`GetLegendGraphic`; não verificada ao vivo, com aviso se não carregar). Para as camadas da NASA, texto sobre o que cada ponto/cor representa.
+- **Restrição automática ao fundo Satélite** quando qualquer camada de desmatamento (DETER, PRODES, acumulado, sem floresta) está ligada; os fundos Mapa e Relevo ficam desabilitados e voltam ao desligar.
+
 Nenhuma mudança desde a 1.12.2.
 
 ## [1.12.2] - 2026-10-20
