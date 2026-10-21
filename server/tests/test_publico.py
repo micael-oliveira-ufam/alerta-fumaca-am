@@ -113,3 +113,26 @@ def test_referrer_policy_permite_tiles_do_osm(client):
     """O OpenStreetMap bloqueia (403) tiles pedidos sem Referer; a página precisa enviar ao menos a origem."""
     r = client.get("/")
     assert r.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+
+def test_minimo_zero_mostra_graficos_mesmo_sem_respostas(make_client):
+    client = make_client(min_respostas_publicas=0)
+    d = client.get("/publico/painel?dias=30").json()
+    assert d["suficiente"] is True
+    assert d["total_respostas"] == 0
+    assert d["serie_diaria"] == [] and d["sintomas"] == []
+
+
+def test_minimo_zero_com_poucas_respostas_mostra_graficos_mas_esconde_area(make_client):
+    client = make_client(min_respostas_publicas=0)
+    _enviar(client, 2, sintomas={"cough": 2, "headache": 0, "dyspnea": 0})
+    d = client.get("/publico/painel?dias=30").json()
+    assert d["suficiente"] is True and d["total_respostas"] == 2
+    assert {s["id"]: s["relatos"] for s in d["sintomas"]}["cough"] == 2
+    assert d["mapa"]["celulas"] == []  # 2 respostas < 3 por área: a área segue escondida
+
+
+def test_padrao_do_servidor_nao_exige_minimo(monkeypatch):
+    from app.config import Settings
+    monkeypatch.delenv("MIN_RESPOSTAS_PUBLICAS", raising=False)
+    assert Settings.from_env().min_respostas_publicas == 0

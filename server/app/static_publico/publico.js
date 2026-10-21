@@ -189,7 +189,8 @@
 
   function serie() {
     var box = limpar($('serie')), d = dados;
-    if (!d.suficiente || !d.serie_diaria.length) { box.appendChild(h('p', { class: 'vazio', text: 'Aguardando mais respostas.' })); return; }
+    if (!d.suficiente) { box.appendChild(h('p', { class: 'vazio', text: 'Aguardando mais respostas.' })); return; }
+    if (!d.serie_diaria.length) { box.appendChild(h('p', { class: 'vazio', text: 'Nenhuma resposta neste período ainda.' })); return; }
     // Preenche os dias sem resposta com zero, do primeiro dia com dado até hoje.
     var mapaDias = {}; d.serie_diaria.forEach(function (x) { mapaDias[x.dia] = x.respostas; });
     var fim = new Date(d.gerado_em.slice(0, 10) + 'T00:00:00Z');

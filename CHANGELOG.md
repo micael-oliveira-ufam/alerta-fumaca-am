@@ -12,7 +12,14 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.13.7.
+Nenhuma mudança desde a 1.14.0.
+
+## [1.14.0] - 2026-10-20
+
+### Alterado
+- **Painel público sem mínimo de respostas** (pedido do usuário: o nome da pessoa não é identificado): `MIN_RESPOSTAS_PUBLICAS` passa de 5 para **0**; os gráficos (sintomas, níveis, série diária, perfil, exposição) aparecem sempre, inclusive com 0 respostas, com mensagens de vazio ("Nenhum sintoma relatado no período.", "Nenhuma resposta neste período ainda."). **Mantidos:** área do mapa/bairro só com 3+ respostas e contagens de perfil/contexto menores que 3 como "menos de 3". Quem definir `MIN_RESPOSTAS_PUBLICAS` no `.env` continua valendo (um `.env` antigo com `=5` mantém o comportamento antigo).
+- **Termo LGPD 1.2 → 1.3**: o texto "estatísticas só aparecem com ao menos 5 respostas" deixaria de ser verdadeiro; o app pede nova leitura/aceite após atualizar.
+- Risco residual: com poucas respostas, um gráfico agregado pode permitir inferência sobre um envio isolado (ex.: 1 resposta = 1 pessoa). Sem nome/contato/IP e com localização a ~1 km, o risco é baixo, mas não nulo.
 
 ## [1.13.7] - 2026-10-20
 

@@ -47,7 +47,7 @@ class Settings:
 
     #: Abaixo deste número de respostas no período, as estatísticas não são
     #: divulgadas (evita expor registros individuais em amostras minúsculas).
-    min_respostas_publicas: int = 5
+    min_respostas_publicas: int = 0
 
     #: Uma área (célula de ~1 km) só aparece no mapa coletivo com pelo menos este
     #: número de respostas no período. Impede mostrar a localização de uma pessoa só.
@@ -101,7 +101,7 @@ class Settings:
             cache_seconds=_int("INPE_CACHE_SECONDS", 300),
             cache_max_entries=_int("INPE_CACHE_MAX_ENTRIES", 24),
             rate_limit_per_min=_int("RATE_LIMIT_PER_MIN", 30),
-            min_respostas_publicas=_int("MIN_RESPOSTAS_PUBLICAS", 5),
+            min_respostas_publicas=_int("MIN_RESPOSTAS_PUBLICAS", 0),
             min_respostas_celula=_int("MIN_RESPOSTAS_CELULA", 3),
             admin_token=os.getenv("ADMIN_TOKEN", "").strip(),
             trust_cf_connecting_ip=os.getenv("TRUST_CF_CONNECTING_IP", "").strip().lower()

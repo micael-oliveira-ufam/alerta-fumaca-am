@@ -476,6 +476,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Regra nova: **uma pasta só** (git clone + git pull); parar sobras com `tool/parar_tudo.sh`. `--apagar` é destrutivo e pede confirmação.
 - `uvicorn --no-access-log` (privacidade) faz com que `docker compose logs | grep respostas` **não mostre** envios: use contagem no banco (`select count(*), max(criado_em) from respostas;`).
 
+### 4.37 Painel público sem mínimo de respostas — versão 1.14.0
+- Pedido do usuário (20/10/2026): mostrar os gráficos mesmo com menos de 5 respostas. `min_respostas_publicas` padrão **0** (config.py, docker-compose, .env.example, README). Mantidos `MIN_RESPOSTAS_CELULA`=3 (áreas) e "menos de 3" (perfil). Termo LGPD → 1.3 (re-consentimento). `.env` existente com `=5` sobrepõe o padrão. Testes: `test_publico.py` (min 0 vazio, min 0 com 2 respostas sem área, padrão do `Settings`); conftest segue usando 5 para os testes antigos do modo restrito.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).
