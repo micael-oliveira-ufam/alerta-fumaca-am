@@ -119,7 +119,7 @@ def focos(geojson: bytes, consultado_em: dt.datetime | None) -> bytes:
     """Detecções do INPE como estão no GeoJSON, mais o horário de Manaus e o instante da consulta."""
     cols = [
         "data_hora_utc", "data_hora_manaus", "satelite", "municipio", "estado", "bioma", "latitude", "longitude",
-        "frp_mw", "risco_fogo", "dias_sem_chuva", "consultado_em_utc",
+        "frp_mw", "risco_fogo", "dias_sem_chuva", "consultado_em_utc", "fonte",
     ]
     consulta = None if consultado_em is None else consultado_em.astimezone(dt.timezone.utc).isoformat()
     linhas = []
@@ -134,7 +134,7 @@ def focos(geojson: bytes, consultado_em: dt.datetime | None) -> bytes:
             None if t is None else t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             None if t is None else t.astimezone(MANAUS_UTC).strftime("%Y-%m-%dT%H:%M:%S-04:00"),
             p.get("satelite"), p.get("municipio"), p.get("estado"), p.get("bioma"), lat, lon,
-            p.get("frp"), p.get("risco_fogo"), p.get("numero_dias_sem_chuva"), consulta,
+            p.get("frp"), p.get("risco_fogo"), p.get("numero_dias_sem_chuva"), consulta, p.get("fonte") or "INPE",
         ])
     linhas.sort(key=lambda x: x[0] or "", reverse=True)
     return serializar(cols, linhas)

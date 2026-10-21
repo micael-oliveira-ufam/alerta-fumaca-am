@@ -26,7 +26,11 @@ from typing import Callable, Iterable
 
 import requests
 
-UPSTREAM_URL = "https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/ows"
+import os
+
+#: Endereço do WFS do INPE. Em 20/10/2026 o caminho antigo passou a responder 404 (Tomcat) no servidor do usuário;
+#: o novo NÃO foi confirmado pelo agente. Por isso pode ser trocado por INPE_WFS_URL sem reconstruir o código.
+UPSTREAM_URL = os.getenv("INPE_WFS_URL", "").strip() or "https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/ows"
 #: (conexão, leitura). A camada de 48 h do Amazonas pode ter vários MB e o servidor do INPE às vezes demora.
 UPSTREAM_TIMEOUT_S = (10, 90)
 UPSTREAM_TENTATIVAS = 2
@@ -101,6 +105,8 @@ class FocosCache:
         self._entries: OrderedDict[str, tuple[float, bytes]] = OrderedDict()
         #: Horário (UTC) em que cada resposta foi obtida do INPE: é o "consultado em" mostrado ao público.
         self._obtido_em: dict[str, dt.datetime] = {}
+        #: De qual fonte veio cada resposta guardada ("INPE" ou "FIRMS").
+        self._fonte: dict[str, str] = {}
 
     def fresh(self, key: str) -> bytes | None:
         entry = self._entries.get(key)
@@ -113,32 +119,42 @@ class FocosCache:
         entry = self._entries.get(key)
         return entry[1] if entry else None
 
-    def store(self, key: str, body: bytes) -> None:
+    def store(self, key: str, body: bytes, fonte: str = "INPE") -> None:
         self._entries[key] = (self._clock(), body)
         self._obtido_em[key] = self._wall()
+        self._fonte[key] = fonte
         self._entries.move_to_end(key)
         while len(self._entries) > self.max_entries:
             velha, _ = self._entries.popitem(last=False)  # descarta a mais antiga
             self._obtido_em.pop(velha, None)
+            self._fonte.pop(velha, None)
 
     def obtido_em(self, key: str) -> dt.datetime | None:
         """Quando (UTC) a resposta guardada foi obtida do INPE, ou None se não há resposta."""
         return self._obtido_em.get(key)
 
+    def fonte(self, key: str) -> str:
+        return self._fonte.get(key, "INPE")
+
     def clear(self) -> None:
         self._entries.clear()
         self._obtido_em.clear()
+        self._fonte.clear()
 
     def __len__(self) -> int:
         return len(self._entries)
 
 
-def cache_key(window: str, scope: str, satellites: Iterable[str]) -> str:
-    return f"{window}|{scope}|{','.join(sorted(set(satellites)))}"
+def cache_key(window: str, scope: str, satellites: Iterable[str], fonte: str = "inpe") -> str:
+    base = f"{window}|{scope}|{','.join(sorted(set(satellites)))}"
+    return base if fonte == "inpe" else f"{base}|{fonte}"
 
 
 def motivo(exc: BaseException) -> str:
     """Motivo curto e seguro (sem URL nem dados) para mostrar ao público e registrar no log."""
+    publico = getattr(exc, "motivo_publico", None)
+    if isinstance(publico, str):
+        return publico
     if isinstance(exc, requests.exceptions.SSLError):
         return "falha de certificado HTTPS"
     if isinstance(exc, requests.exceptions.ConnectTimeout):

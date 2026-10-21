@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy import URL
 
@@ -80,6 +80,8 @@ class Settings:
     apk_dir: str = "/srv/dist"
     #: Busca os focos do INPE em segundo plano a cada `cache_seconds` (a página abre já com dados).
     focos_preaquecer: bool = False
+    #: Chave gratuita da NASA FIRMS (segunda fonte de focos). Vazia = só o INPE. É SEGREDO: só no .env.
+    firms_map_key: str = field(default="", repr=False)
     #: Versão mínima do app (X.Y.Z). Abaixo dela o app mostra aviso de atualização obrigatória.
     app_versao_minima: str = ""
 
@@ -110,6 +112,7 @@ class Settings:
             public_url=os.getenv("PUBLIC_URL", "").strip().rstrip("/"),
             tunnel_metrics_url=os.getenv("TUNNEL_METRICS_URL", "").strip().rstrip("/"),
             apk_dir=os.getenv("APK_DIR", "/srv/dist").strip() or "/srv/dist",
+            firms_map_key=os.getenv("FIRMS_MAP_KEY", "").strip(),
             focos_preaquecer=os.getenv("FOCOS_PREAQUECER", "false").strip().lower() in ("1", "true", "yes", "sim"),
             app_versao_minima=os.getenv("APP_VERSAO_MINIMA", "").strip(),
             qualidade_ar_ativa=os.getenv("QUALIDADE_AR_ATIVA", "true").strip().lower() in ("1", "true", "yes", "sim"),

@@ -447,6 +447,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Pesquisado e descartado como reserva: CSV aberto do INPE (`dataserver-coids.inpe.br/.../csv/10min/`, colunas `lat,lon,satelite,data`, inclui satélites geoestacionários e **não traz estado nem município**), então não serve sem recorte geográfico que eu não pude verificar.
 - Logo: arquivos em `server/app/static_publico/` gerados de `assets/icon/app_icon.png` (`logo.png`, `favicon.*`, `apple-touch-icon.png`, `og-imagem.png`). Prévia de compartilhamento usa `{{BASE}}` substituído no servidor. **Não verificado:** como WhatsApp/Telegram/Instagram exibem a prévia (têm cache próprio; usar o depurador de cada um após publicar).
 
+### 4.32 Segunda fonte de focos: NASA FIRMS — versão 1.11.0
+- **Decisão do usuário (20/10/2026):** "Implemente tanto o FIRMS quanto o INPE, é importante ter mais de uma fonte". Ordem: INPE primeiro, FIRMS de reserva (só escopo Amazonas) e opção manual na página.
+- **Diagnóstico real do INPE (saída do usuário):** DNS ok, resposta em 0,2 s, **HTTP 404 em `/queimadas/geoserver/ows`** (página de erro do Tomcat). Causa: o caminho do serviço mudou. Novo endereço **não confirmado** (buscas e `WebFetch` não o mostram; o sandbox não alcança o INPE). Use `bash tool/diagnostico_inpe.sh` (passo 3 testa caminhos candidatos) e defina `INPE_WFS_URL` no `.env` quando achar.
+- **Verificado ao vivo (WebFetch):** formato CSV do FIRMS (colunas VIIRS e MODIS, `acq_time` HHMM UTC). **Não verificado:** termos de uso/atribuição da NASA, precisão da caixa `CAIXA_AMAZONAS` (aproximada, entra território vizinho), comportamento com a cota (5000 transações/10 min), comparação de contagens com o INPE (algoritmos diferentes).
+- **Chave:** vive só em `FIRMS_MAP_KEY` (.env). Nunca vai a log, mensagem de erro ou resposta pública (testado). A chave foi colada em conversa: recomendar gerar outra se quiser.
+- Testes sintéticos: `server/tests/test_focos_firms.py` (15). Página verificada no Chromium com INPE falhando e FIRMS simulado.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

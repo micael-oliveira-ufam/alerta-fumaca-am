@@ -7,7 +7,8 @@
   };
   var MANAUS_MS = -4 * 3600 * 1000; // UTC-4, sem horário de verão
   var janela = 'hoje', modo = 'calor', todos = null, mapa = null, camadaPontos = null, camadaCalor = null;
-  var meta = { consultado: null, cache: '', pagina: null }; // quando o servidor consultou o INPE, e quando esta página atualizou
+  var fonte = 'inpe'; // escolha da pessoa; a origem real vem em meta.origem (X-Fonte)
+  var meta = { consultado: null, cache: '', pagina: null, origem: 'INPE', pedida: 'INPE' }; // quando o servidor consultou o INPE, e quando esta página atualizou
 
   function $(id) { return document.getElementById(id); }
   function h(tag, attrs) {
@@ -51,7 +52,7 @@
 
   var retentar = null;
   function carregar() {
-    fetch('/focos?window=last48h&scope=amazonas', { headers: { Accept: 'application/json' } })
+    fetch('/focos?window=last48h&scope=amazonas&fonte=' + fonte, { headers: { Accept: 'application/json' } })
       .then(function (r) {
         if (!r.ok) {
           return r.json().catch(function () { return {}; }).then(function (j) {
@@ -60,6 +61,7 @@
         }
         var c = r.headers.get('X-Consultado-Em'), t = c ? Date.parse(c) : NaN;
         meta.consultado = isFinite(t) ? t : null; meta.cache = r.headers.get('X-Cache') || ''; meta.pagina = Date.now();
+        meta.origem = r.headers.get('X-Fonte') || 'INPE'; meta.pedida = r.headers.get('X-Fonte-Solicitada') || meta.origem;
         return r.json();
       })
       .then(function (g) {
@@ -81,7 +83,7 @@
       .catch(function (err) {
         var e = $('focos-erro'); e.hidden = false;
         e.textContent = 'Não foi possível obter os focos de calor agora' +
-          (err && err.detalhe ? ' (' + err.detalhe.replace(/^INPE indisponível no momento \(?/, 'motivo: ').replace(/\)?\.?$/, '') + ')' : ' (o servidor do INPE pode estar indisponível)') +
+          (err && err.detalhe ? ' (' + err.detalhe.replace(/^(INPE indisponível|Focos indisponíveis) no momento \(?/, 'motivo: ').replace(/\)?\.?$/, '') + ')' : ' (a fonte dos dados pode estar indisponível)') +
           '. A página tenta de novo sozinha a cada minuto.';
         clearTimeout(retentar); retentar = setTimeout(carregar, 60000);
       });
@@ -97,7 +99,14 @@
     var d = recorte();
     kpis(d); porSatelite(d); porDia(todos); tabela(d); mapaFocos(d);
     atualizacao();
-    $('focos-nota').textContent = 'Fonte: INPE, Programa Queimadas (TerraBrasilis), via cópia em cache do servidor. ' +
+    var firms = meta.origem === 'FIRMS';
+    $('focos-muni-box').hidden = firms; // o FIRMS não informa município
+    $('focos-titulo').textContent = 'Focos de calor · ' + (firms ? 'NASA FIRMS' : 'INPE (Programa Queimadas)');
+    $('focos-nota').textContent = (firms
+      ? 'Fonte: NASA FIRMS (VIIRS e MODIS, tempo quase real), via cópia em cache do servidor. A busca é por caixa geográfica ' +
+        'ao redor do Amazonas, não pelo limite do estado: pode incluir pontos de estados vizinhos, e não há município. ' +
+        'Algoritmos e satélites diferem dos do INPE, então as contagens não são comparáveis. '
+      : 'Fonte: INPE, Programa Queimadas (TerraBrasilis), via cópia em cache do servidor. ') +
       'Um foco indica fogo detectado por satélite, com atraso de passagem e processamento; vários focos podem ser o mesmo incêndio.';
   }
 
@@ -113,14 +122,17 @@
     el.appendChild(chip('Detecção mais recente do satélite',
       ult ? manaus(ult) + ' (Manaus)' : 'nenhuma em 48 h',
       ult ? utcHora(ult) + ' · ' + ha(agora - ult) : 'sem focos no Amazonas nas últimas 48 h'));
-    el.appendChild(chip('Servidor consultou o INPE',
+    el.appendChild(chip('Servidor consultou ' + (meta.origem === 'FIRMS' ? 'a NASA FIRMS' : 'o INPE'),
       meta.consultado ? manaus(meta.consultado) + ' (Manaus)' : 'horário não informado',
       meta.consultado ? ha(agora - meta.consultado) + ' · a consulta é reaproveitada por até 5 min' : ''));
     el.appendChild(chip('Esta página atualizou', manaus(meta.pagina || agora) + ' (Manaus)', 'recarrega sozinha a cada 5 min'));
     var aviso = $('focos-defasagem');
-    if (meta.cache === 'STALE') {
+    if (meta.origem !== meta.pedida && meta.cache !== 'STALE') {
       aviso.hidden = false;
-      aviso.textContent = 'O servidor do INPE não respondeu agora; os focos abaixo são da última consulta bem-sucedida' +
+      aviso.textContent = 'O INPE não respondeu agora; os focos abaixo vêm da NASA FIRMS (fonte de reserva).';
+    } else if (meta.cache === 'STALE') {
+      aviso.hidden = false;
+      aviso.textContent = 'O servidor ' + (meta.origem === 'FIRMS' ? 'da NASA FIRMS' : 'do INPE') + ' não respondeu agora; os focos abaixo são da última consulta bem-sucedida' +
         (meta.consultado ? ' (' + manaus(meta.consultado) + ', horário de Manaus)' : '') + '.';
     } else { aviso.hidden = true; }
   }
@@ -227,6 +239,17 @@
   }
   alternar('focos-janela', 'j', function (v) { janela = v; });
   alternar('focos-modo', 'm', function (v) { modo = v; });
+
+  $('focos-fonte').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-f]'); if (!b || b.getAttribute('data-f') === fonte) return;
+    fonte = b.getAttribute('data-f');
+    Array.prototype.forEach.call($('focos-fonte').children, function (x) {
+      var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on));
+    });
+    carregar();
+  });
+  fetch('/focos/fontes').then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (j) { if (j && j.firms) $('focos-fonte').hidden = false; }).catch(function () {});
 
   carregar();
   setInterval(function () { if (!document.hidden) carregar(); }, 5 * 60 * 1000);

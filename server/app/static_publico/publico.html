@@ -162,8 +162,12 @@
     <section class="card" id="sec-focos">
       <div class="card-h">
         <div>
-          <h2>Focos de calor · INPE (Programa Queimadas)</h2>
-          <p class="sub">Detecções por satélite no Amazonas, últimas 48 h. Dado oficial, não é medição da qualidade do ar.</p>
+          <h2 id="focos-titulo">Focos de calor · INPE (Programa Queimadas)</h2>
+          <p class="sub">Detecções por satélite no Amazonas, últimas 48 h. Não é medição da qualidade do ar.</p>
+        </div>
+        <div class="seg small" id="focos-fonte" role="group" aria-label="Fonte dos focos" hidden>
+          <button type="button" data-f="inpe" class="on" aria-pressed="true">INPE</button>
+          <button type="button" data-f="firms">NASA FIRMS</button>
         </div>
         <div class="seg small" id="focos-janela" role="group" aria-label="Janela dos focos">
           <button type="button" data-j="hoje" class="on" aria-pressed="true">Hoje (Manaus)</button>
@@ -192,10 +196,12 @@
           <h3>Por dia (horário de Manaus)</h3><div id="focos-dia" class="mini"></div>
         </div>
       </div>
+      <div id="focos-muni-box">
       <h3>Municípios com mais focos</h3>
       <div class="tabela-box"><table class="tabela" id="focos-tab">
         <thead><tr><th>Município</th><th>Focos</th><th>FRP total (MW)</th><th>FRP máx. (MW)</th><th>Dias sem chuva (média)</th><th>Risco de fogo (média)</th></tr></thead>
         <tbody></tbody></table></div>
+      </div>
       <p class="sub" id="focos-nota"></p>
     </section>
 

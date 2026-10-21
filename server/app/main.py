@@ -38,7 +38,7 @@ from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from . import bairros, download_app, exportacao, focos, focos_proximos, publico, qualidade_ar as qar, stats
+from . import bairros, download_app, exportacao, focos, focos_firms, focos_proximos, publico, qualidade_ar as qar, stats
 from .config import Settings
 from .db import init_schema, make_engine, make_session_factory
 from .models import Resposta, RespostaSintoma
@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.10.2"
+APP_VERSION = "1.11.0"
 
 
 def create_app(
@@ -66,11 +66,12 @@ def create_app(
     def preaquecer_focos() -> None:
         """Mantém o cache dos focos quente: a página abre já com dados e o INPE é consultado 1 vez por janela."""
         while not parar.is_set():
-            for janela in ("today", "last48h"):
+            pedidos = [("today", "inpe"), ("last48h", "inpe")] + ([("last48h", "firms")] if settings.firms_map_key else [])
+            for janela, fonte in pedidos:
                 try:
-                    obter_focos(app, janela, "amazonas", [])
+                    obter_focos(app, janela, "amazonas", list(focos.SATELLITES), fonte)
                 except Exception as exc:  # noqa: BLE001 - segundo plano nunca derruba o servidor
-                    log.info("Pré-aquecimento dos focos (%s) falhou: %s", janela, focos.motivo(exc))
+                    log.info("Pré-aquecimento dos focos (%s, %s) falhou: %s", janela, fonte, focos.motivo(exc))
             parar.wait(max(60, settings.cache_seconds))
 
     @asynccontextmanager
@@ -238,6 +239,7 @@ def _montar_painel_publico(app: FastAPI) -> None:
         if muni is None:
             raise HTTPException(status_code=404, detail="Município do Amazonas não encontrado.")
         corpo, cache, obtido_em = obter_focos(request.app, "last48h", "amazonas", [])
+        origem = request.app.state.focos_cache.fonte(focos.cache_key("last48h", "amazonas", []))
         resumo = focos_proximos.resumir(corpo, muni.lat, muni.lon, raio_km, dt.datetime.now(dt.timezone.utc))
         response.headers["Cache-Control"] = "public, max-age=60"
         return {
@@ -246,9 +248,14 @@ def _montar_painel_publico(app: FastAPI) -> None:
             **resumo,
             "consultado_em": None if obtido_em is None else obtido_em.astimezone(dt.timezone.utc).isoformat(),
             "desatualizado": cache == "STALE",
-            "fonte": "INPE, Programa Queimadas (focos de calor por satélite, estado do Amazonas)",
+            "fonte": ("NASA FIRMS (reserva; focos de calor por satélite, caixa geográfica do Amazonas)"
+                      if origem == "FIRMS" else
+                      "INPE, Programa Queimadas (focos de calor por satélite, estado do Amazonas)"),
+            "fonte_id": origem,
             "nota": "Foco de calor é detecção por satélite, não incêndio confirmado. Contados só focos registrados no "
-                    "Amazonas, a partir da sede do município.",
+                    "Amazonas, a partir da sede do município."
+                    + (" Dados da NASA FIRMS (o INPE estava indisponível); a área de busca é uma caixa que pode "
+                       "incluir pontos de estados vizinhos." if origem == "FIRMS" else ""),
         }
 
     # ------------------------------------------------------------- download em CSV
@@ -470,6 +477,12 @@ def register_routes(app: FastAPI) -> None:
 
     # ------------------------------------------------------------------------ focos
 
+    @app.get("/focos/fontes")
+    def fontes_de_focos(request: Request, response: Response) -> dict:
+        """Quais fontes de focos este servidor oferece (a chave do FIRMS nunca sai daqui)."""
+        response.headers["Cache-Control"] = "no-cache"
+        return {"inpe": True, "firms": bool(request.app.state.settings.firms_map_key)}
+
     @app.get("/focos")
     def listar_focos(
         request: Request,
@@ -478,17 +491,30 @@ def register_routes(app: FastAPI) -> None:
         satellites: str | None = Query(
             None, description="Lista separada por vírgula. Padrão: todos os conhecidos."
         ),
+        fonte: str = Query("inpe", pattern="^(inpe|firms)$", description="inpe (com reserva NASA FIRMS) ou firms."),
     ) -> Response:
         sats = _parse_satellites(satellites)
-        body, status, obtido_em = obter_focos(request.app, window, scope, sats)
-        return _geojson(body, status, obtido_em)
+        body, status, obtido_em = obter_focos(request.app, window, scope, sats, fonte)
+        origem = request.app.state.focos_cache.fonte(focos.cache_key(window, scope, sats, fonte))
+        return _geojson(body, status, obtido_em, origem, fonte.upper())
 
 
-def obter_focos(app: FastAPI, window: str, scope: str, sats: list[str]) -> tuple[bytes, str, dt.datetime | None]:
-    """Resposta do INPE com cache. Devolve (corpo, HIT|MISS|STALE, quando foi obtida).
-    Lança HTTPException 502 se o INPE falhar e não houver nada guardado."""
-    key = focos.cache_key(window, scope, sats)
+def obter_focos(
+    app: FastAPI, window: str, scope: str, sats: list[str], fonte: str = "inpe",
+) -> tuple[bytes, str, dt.datetime | None]:
+    """Focos com cache. Devolve (corpo, HIT|MISS|STALE, quando foram obtidos).
+
+    `fonte="inpe"` (padrão) consulta o INPE e, se ele falhar e houver chave, a NASA FIRMS como reserva;
+    `fonte="firms"` consulta só a NASA. A origem de fato fica em `app.state.focos_cache.fonte(chave)`.
+    Lança HTTPException 502 se nada responder e não houver cópia guardada."""
+    key = focos.cache_key(window, scope, sats, fonte)
     cache: focos.FocosCache = app.state.focos_cache
+    chave_firms = app.state.settings.firms_map_key
+
+    if fonte == "firms" and not chave_firms:
+        raise HTTPException(status_code=404, detail="A fonte NASA FIRMS não está configurada neste servidor.")
+    if fonte == "firms" and scope != "amazonas":
+        raise HTTPException(status_code=422, detail="A fonte NASA FIRMS só cobre o Amazonas.")
 
     fresh = cache.fresh(key)
     if fresh is not None:
@@ -499,17 +525,31 @@ def obter_focos(app: FastAPI, window: str, scope: str, sats: list[str]) -> tuple
         fresh = cache.fresh(key)
         if fresh is not None:
             return fresh, "HIT", cache.obtido_em(key)
-        try:
-            body = focos.fetch_upstream(window, scope, sats)
-        except (requests.RequestException, ValueError) as exc:
-            motivo = focos.motivo(exc)
-            log.warning("INPE indisponível (%s): %s | %r", key, motivo, str(exc)[:300])
-            stale = cache.last_valid(key)
-            if stale is not None:
-                return stale, "STALE", cache.obtido_em(key)
-            raise HTTPException(status_code=502, detail=f"INPE indisponível no momento ({motivo}).")
-        cache.store(key, body)
-    return body, "MISS", cache.obtido_em(key)
+        origens = ["firms"] if fonte == "firms" else ["inpe"] + (["firms"] if chave_firms and scope == "amazonas" else [])
+        motivos: list[str] = []
+        for origem in origens:
+            try:
+                if origem == "inpe":
+                    body = focos.fetch_upstream(window, scope, sats)
+                else:
+                    body = focos_firms.fetch_geojson(chave_firms, sats)
+            except (requests.RequestException, ValueError, focos_firms.FirmsErro) as exc:
+                motivo = focos.motivo(exc)
+                motivos.append(f"{'INPE' if origem == 'inpe' else 'NASA FIRMS'}: {motivo}")
+                # O texto da exceção do FIRMS é seguro; o de `requests` pode ter URL (com chave) só no FIRMS, que não o usa.
+                detalhe = "" if origem == "firms" else str(exc)[:300]
+                log.warning("Focos (%s, %s) indisponíveis: %s | %r", key, origem, motivo, detalhe)
+                continue
+            cache.store(key, body, fonte="INPE" if origem == "inpe" else "FIRMS")
+            return body, "MISS", cache.obtido_em(key)
+        stale = cache.last_valid(key)
+        if stale is not None:
+            return stale, "STALE", cache.obtido_em(key)
+        if len(motivos) == 1 and origens == ["inpe"]:
+            detalhe_502 = f"INPE indisponível no momento ({motivos[0].split(': ', 1)[1]})."
+        else:
+            detalhe_502 = "Focos indisponíveis no momento (" + "; ".join(motivos) + ")."
+        raise HTTPException(status_code=502, detail=detalhe_502)
 
 
 # ---------------------------------------------------------------------- auxiliares
@@ -550,8 +590,11 @@ def _lock_for(app: FastAPI, key: str) -> threading.Lock:
         return app.state.focos_locks[key]
 
 
-def _geojson(body: bytes, cache_status: str, obtido_em: dt.datetime | None = None) -> Response:
-    headers = {"X-Cache": cache_status, "Cache-Control": "no-store"}
+def _geojson(
+    body: bytes, cache_status: str, obtido_em: dt.datetime | None = None, fonte: str = "INPE", solicitada: str = "INPE",
+) -> Response:
+    # X-Fonte = de onde vieram os dados; X-Fonte-Solicitada = o que o cliente pediu (difere se houve reserva).
+    headers = {"X-Cache": cache_status, "Cache-Control": "no-store", "X-Fonte": fonte, "X-Fonte-Solicitada": solicitada}
     if obtido_em is not None:
         # Quando o servidor obteve estes dados do INPE (UTC); o painel público mostra isso.
         headers["X-Consultado-Em"] = obtido_em.astimezone(dt.timezone.utc).isoformat()

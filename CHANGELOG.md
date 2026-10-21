@@ -12,6 +12,17 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.11.0.
+
+## [1.11.0] - 2026-10-20
+
+### Adicionado
+- **Segunda fonte de focos de calor: NASA FIRMS** (`server/app/focos_firms.py`). Se o INPE falhar, o servidor usa o FIRMS como reserva; no painel público há o seletor *INPE | NASA FIRMS* (só aparece se o servidor tem chave). A página mostra a origem real dos dados, avisa quando houve reserva e, no FIRMS, oculta a tabela de municípios (o FIRMS não informa município). Cabeçalhos `X-Fonte` e `X-Fonte-Solicitada`; `/focos?fonte=inpe|firms`; `/focos/fontes`; CSV de focos com coluna `fonte`; `/app/focos` informa `fonte_id` (os alertas do app também usam a reserva). A chave é configurada em `FIRMS_MAP_KEY` no `.env` (nunca no repositório).
+- `INPE_WFS_URL` (opcional) para trocar o endereço do WFS do INPE sem alterar o código; o diagnóstico (`tool/diagnostico_inpe.sh`) agora procura caminhos candidatos.
+
+### Descoberto
+- Diagnóstico real do usuário (20/10/2026): o INPE respondia **HTTP 404 (Tomcat)** em `/queimadas/geoserver/ows`, com DNS e HTTPS funcionando. Ou seja, o caminho do serviço mudou; o novo endereço **não foi confirmado** (inacessível do ambiente do agente). O FIRMS cobre a lacuna enquanto isso.
+
 Nenhuma mudança desde a 1.10.2.
 
 ## [1.10.2] - 2026-10-20

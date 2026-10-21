@@ -45,6 +45,9 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       INPE_CACHE_SECONDS: ${INPE_CACHE_SECONDS:-300}
       FOCOS_PREAQUECER: ${FOCOS_PREAQUECER:-true}
+      # Segunda fonte de focos (NASA FIRMS). Vazia = só o INPE. A chave fica no .env, nunca no repositório.
+      FIRMS_MAP_KEY: ${FIRMS_MAP_KEY:-}
+      INPE_WFS_URL: ${INPE_WFS_URL:-}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-30}
       MIN_RESPOSTAS_PUBLICAS: ${MIN_RESPOSTAS_PUBLICAS:-5}
       MIN_RESPOSTAS_CELULA: ${MIN_RESPOSTAS_CELULA:-3}

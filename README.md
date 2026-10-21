@@ -30,6 +30,9 @@ Nome exibido do aplicativo: **RespirAR Amazonas** (o script `tool/apply_platform
 
 ## Fontes de dados e o que "tempo real" significa
 
+### Focos de calor — segunda fonte: NASA FIRMS
+Opcional. Gere uma chave gratuita em https://firms.modaps.eosdis.nasa.gov/api/map_key/ e coloque `FIRMS_MAP_KEY=...` no seu `.env` (não vai para o Git). Com a chave, o FIRMS vira reserva automática do INPE e aparece o seletor na página. Limites: busca por caixa geográfica (não por estado), sem município, contagens não comparáveis com as do INPE. Se o INPE mudar o endereço do WFS, use `INPE_WFS_URL`.
+
 ### Focos de calor — INPE / Programa Queimadas (TerraBrasilis, WFS 2.0.0, GeoJSON)
 
 - Camadas `dados_abertos:focos_hoje_br_todosats` e `dados_abertos:focos_48h_br_todosats` (todos os satélites; as camadas `*_satref` trazem só o satélite de referência e não permitem separar por satélite).

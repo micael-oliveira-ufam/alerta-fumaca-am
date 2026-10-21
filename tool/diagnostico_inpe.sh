@@ -34,5 +34,22 @@ try:
 except Exception as e:
     print(f"FALHOU em {time.time()-t:.1f}s:", type(e).__name__, str(e)[:300])
 PY
+
+echo
+echo "== 3) Procura o endereço atual do WFS do INPE (GetCapabilities em caminhos candidatos)"
+"${COMPOSE[@]}" exec -T api python - <<'PY'
+import re, requests
+base = "https://terrabrasilis.dpi.inpe.br"
+candidatos = ["/queimadas/geoserver/ows", "/queimadas/geoserver/wfs", "/geoserver/ows", "/geoserver/wfs",
+              "/queimadas/bdqueimadas/geoserver/ows", "/queimadas/portal/geoserver/ows"]
+for c in candidatos:
+    try:
+        r = requests.get(base + c, params={"service": "WFS", "version": "2.0.0", "request": "GetCapabilities"},
+                         timeout=(10, 60), headers={"User-Agent": "RespirAR-Amazonas/diagnostico"})
+        nomes = sorted(set(re.findall(rb"<(?:wfs:)?Name>([^<]*focos[^<]*)</", r.content)))[:12]
+        print(f"{c}: HTTP {r.status_code}, {len(r.content)} bytes, camadas com 'focos': {[n.decode() for n in nomes]}")
+    except Exception as e:
+        print(f"{c}: FALHOU {type(e).__name__}")
+PY
 echo
 echo "Envie esta saída completa para o suporte. O motivo também aparece na página (aviso amarelo de focos)."
