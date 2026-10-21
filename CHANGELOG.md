@@ -12,7 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.16.1.
+Nenhuma mudança desde a 1.17.0.
+
+## [1.17.0] - 2026-10-21
+
+### Alterado
+- **App: os focos de calor agora são baixados pela internet do próprio celular** (pedido do usuário: o servidor dele não alcança o INPE, o celular em dados móveis alcança). O app baixa direto os CSV diários dos Dados Abertos do INPE (`dataserver-coids.inpe.br/.../focos_diario_br_AAAAMMDD.csv`: hoje, e para 48 h também os dois dias anteriores), em paralelo, filtra Amazonas/satélites/janela no aparelho e guarda a cópia local. Se o download direto falhar e houver servidor próprio, o app usa o servidor como reserva. Cópia com menos de 15 min é reaproveitada para poupar dados móveis (cada arquivo tem 2 a 6 MB; **48 h pode baixar ~10 a 15 MB**). Valores "-999" do INPE viram "sem dado". Dart **não compilado** aqui; testes novos em `test/inpe_csv_test.dart`.
+- **Pergunta do questionário** "O remédio que você costuma usar não está aliviando?" (confusa: dupla negativa) → "Você tomou o seu remédio de costume e os sintomas continuam?", com explicação de quando responder Sim ou Não. O significado do dado não mudou (`medicacao_nao_alivia` = Sim).
 
 ## [1.16.1] - 2026-10-20
 

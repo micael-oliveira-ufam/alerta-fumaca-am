@@ -41,7 +41,7 @@ class OfficialFireTab extends StatefulWidget {
 }
 
 class _OfficialFireTabState extends State<OfficialFireTab> {
-  final _service = InpeFireService();
+  final _service = InpeFireService(phoneDownload: true);
   FireScope _scope = FireScope.amazonas;
   FireWindow _window = FireWindow.today;
   Set<FireSatellite> _satellites = FireSatellite.defaults();

@@ -496,6 +496,11 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.41 Teste do app que bloqueava o APK — versão 1.16.1
 - Saída real do usuário (1.16.0): `flutter analyze` sem problemas; `flutter test` 149 aprovados e 1 falha: `context_test.dart` "toda pergunta cita referências existentes" (o teste ignorava `extraReferences`). Corrigido o teste. Primeira execução real de toda a suíte Dart desde as versões 1.8 a 1.16 e ela passou, exceto esse teste. Não confirmado: se o APK da 1.16.0 foi gerado (a saída termina no aviso do workmanager/KGP, que é informativo).
 
+### 4.42 Focos pelo celular — versão 1.17.0
+- Medição do usuário (21/10/2026): do computador/servidor dele, a conexão com `dataserver-coids.inpe.br` expira (DNS ok; IPv4 sem conectar em 60 e 120 s; sem IPv6); o mesmo endereço abre no celular em dados móveis; eu li a listagem do INPE de fora normalmente. Conclusão: bloqueio/roteamento na rede dele, não defeito do código. Decisão do usuário: o app baixa os focos pelo próprio celular (`InpeFireService(phoneDownload: true)` só na aba de focos; o construtor mantém `false` por padrão para os testes antigos).
+- Alertas de focos por notificação (servidor, `focos_proximos.py`) e a página pública continuam dependendo do servidor alcançar o INPE ou da `FIRMS_MAP_KEY` no `.env` (o `.env` não vem no zip: refazer a cada pasta nova). Não verificado: tamanho real dos CSV por dia a partir de dados móveis, tempo no celular, se o INPE comprime a resposta, desempenho do parse de ~40 mil linhas na thread de interface.
+- Pergunta de medicação reescrita (confirmar o texto com a equipe de saúde).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

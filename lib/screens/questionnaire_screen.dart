@@ -512,8 +512,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           ),
         ),
         _Question(
-          title: 'O remédio que você costuma usar não está aliviando?',
-          help: 'Responda só se usa medicação para falta de ar, asma ou o coração.',
+          title: 'Você tomou o seu remédio de costume e os sintomas continuam?',
+          help: 'Pense no remédio que você já usa para falta de ar, asma, bronquite ou coração. '
+              'Responda "Sim" se tomou e não melhorou. Se você não usa nenhum desses remédios, '
+              'responda "Não".',
           refs: '(critério do projeto)',
           child: YesNoRow(
             value: _medsNotWorking,

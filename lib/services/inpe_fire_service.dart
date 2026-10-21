@@ -115,14 +115,221 @@ enum FireScope {
 /// Se a rede falhar, o app mostra a última resposta válida salva neste aparelho
 /// (somente para o Amazonas; a consulta do Brasil inteiro é grande demais para o cache).
 class InpeFireService {
-  InpeFireService({http.Client? client, SharedPreferences? prefs, String? apiBaseUrl})
-      : _client = client ?? http.Client(),
+  /// [phoneDownload]: baixa os arquivos CSV diários do INPE pela internet do próprio aparelho (padrão
+  /// do app); se isso falhar e houver servidor próprio, usa o servidor como reserva. Com `false`
+  /// (padrão do construtor, usado pelos testes antigos), só usa o servidor próprio ou o WFS.
+  InpeFireService({
+    http.Client? client,
+    SharedPreferences? prefs,
+    String? apiBaseUrl,
+    bool phoneDownload = false,
+  })  : _client = client ?? http.Client(),
         _prefs = prefs,
-        _apiBaseUrl = ApiConfig.normalize(apiBaseUrl ?? ApiConfig.baseUrl);
+        _apiBaseUrl = ApiConfig.normalize(apiBaseUrl ?? ApiConfig.baseUrl),
+        _phoneDownload = phoneDownload;
 
   final http.Client _client;
   SharedPreferences? _prefs;
   final String _apiBaseUrl;
+  final bool _phoneDownload;
+
+  /// Arquivos diários dos "Dados Abertos" do INPE (um por dia UTC, Brasil inteiro, 2 a 6 MB cada).
+  /// Em 20/10/2026 o WFS acima respondia 404 e estes arquivos seguiam publicados.
+  static const csvHost = 'dataserver-coids.inpe.br';
+  static const csvDir = '/queimadas/queimadas/focos/csv/diario/Brasil';
+
+  /// Enquanto o último download tiver menos que isto, o app reaproveita a cópia (poupa dados móveis).
+  static const csvFreshFor = Duration(minutes: 15);
+
+  /// Valores sentinela do INPE para "sem dado" (ex.: -999) viram nulos.
+  static const _noData = -990.0;
+
+  static Uri csvUri(DateTime dayUtc) {
+    final d = dayUtc.toUtc();
+    final stamp = '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}'
+        '${d.day.toString().padLeft(2, '0')}';
+    return Uri.https(csvHost, '$csvDir/focos_diario_br_$stamp.csv');
+  }
+
+  /// Dias (UTC) cujos arquivos cobrem a janela: 48 h = hoje e os dois anteriores; "Hoje" (dia de
+  /// Manaus, que começa às 04:00 UTC) = o dia UTC corrente e, antes das 04:00 UTC, também o anterior.
+  static List<DateTime> csvDays(FireWindow window, DateTime nowUtc) {
+    final today = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+    final count = window == FireWindow.last48h ? 3 : (nowUtc.hour < 4 ? 2 : 1);
+    return [for (var i = 0; i < count; i++) today.subtract(Duration(days: i))];
+  }
+
+  /// Converte o texto de um CSV diário do INPE em feições no formato do WFS (mesmo caminho de
+  /// interpretação e de cache). Cabeçalho esperado: `id,lat,lon,data_hora_gmt,satelite,municipio,
+  /// estado,...,numero_dias_sem_chuva,precipitacao,risco_fogo,bioma,frp`. Aceita `,` ou `;`.
+  static List<Map<String, dynamic>> csvFeatures(
+    String csv, {
+    required DateTime nowUtc,
+    int hours = 48,
+    bool onlyAmazonas = true,
+    Set<String> satelliteNames = const {},
+  }) {
+    final lines = const LineSplitter().convert(csv);
+    if (lines.isEmpty) {
+      throw const InpeException('O arquivo de focos do INPE veio vazio.', kind: InpeErrorKind.format);
+    }
+    final header = lines.first.replaceFirst('\uFEFF', '');
+    final delimiter = ';'.allMatches(header).length > ','.allMatches(header).length ? ';' : ',';
+    final names = _splitCsvLine(header, delimiter).map((e) => e.trim().toLowerCase()).toList();
+    final iLat = names.indexOf('lat');
+    final iLon = names.indexOf('lon');
+    final iTime = names.indexOf('data_hora_gmt');
+    if (iLat < 0 || iLon < 0 || iTime < 0) {
+      throw const InpeException('O arquivo de focos do INPE está em formato inesperado.',
+          kind: InpeErrorKind.format);
+    }
+    final iSat = names.indexOf('satelite');
+    final iCity = names.indexOf('municipio');
+    final iState = names.indexOf('estado');
+    final iBiome = names.indexOf('bioma');
+    final iFrp = names.indexOf('frp');
+    final iRisk = names.indexOf('risco_fogo');
+    final iDry = names.indexOf('numero_dias_sem_chuva');
+    final start = nowUtc.subtract(Duration(hours: hours));
+    final end = nowUtc.add(const Duration(minutes: 10));
+
+    final out = <Map<String, dynamic>>[];
+    for (var n = 1; n < lines.length; n++) {
+      final line = lines[n];
+      if (line.isEmpty) continue;
+      final f = _splitCsvLine(line, delimiter);
+      String field(int i) => i >= 0 && i < f.length ? f[i].trim() : '';
+      double? number(int i) {
+        final v = double.tryParse(field(i).replaceAll(',', '.'));
+        return v == null || v <= _noData ? null : v;
+      }
+
+      final state = field(iState).toUpperCase();
+      if (onlyAmazonas && state != 'AMAZONAS') continue;
+      final satellite = field(iSat);
+      if (satelliteNames.isNotEmpty && !satelliteNames.contains(satellite)) continue;
+      final lat = double.tryParse(field(iLat).replaceAll(',', '.'));
+      final lon = double.tryParse(field(iLon).replaceAll(',', '.'));
+      var raw = field(iTime).replaceFirst(' ', 'T');
+      if (raw.isNotEmpty && !raw.endsWith('Z')) raw = '${raw}Z';
+      final at = DateTime.tryParse(raw)?.toUtc();
+      if (lat == null || lon == null || at == null || at.isBefore(start) || at.isAfter(end)) continue;
+      final dry = number(iDry);
+      out.add({
+        'type': 'Feature',
+        'geometry': null,
+        'properties': {
+          'data_hora_gmt': at.toIso8601String(),
+          'satelite': satellite,
+          'municipio': field(iCity).toUpperCase(),
+          'estado': state,
+          'bioma': field(iBiome),
+          'latitude': lat,
+          'longitude': lon,
+          'frp': number(iFrp),
+          'risco_fogo': number(iRisk),
+          'numero_dias_sem_chuva': dry?.round(),
+        },
+      });
+    }
+    return out;
+  }
+
+  /// Divide uma linha de CSV respeitando aspas.
+  static List<String> _splitCsvLine(String line, String delimiter) {
+    final out = <String>[];
+    final buffer = StringBuffer();
+    var inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      final c = line[i];
+      if (c == '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+          buffer.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c == delimiter && !inQuotes) {
+        out.add(buffer.toString());
+        buffer.clear();
+      } else {
+        buffer.write(c);
+      }
+    }
+    out.add(buffer.toString());
+    return out;
+  }
+
+  /// Baixa um CSV diário. `null` = o arquivo do dia ainda não existe (404). Repete 1 vez em falha de rede.
+  Future<String?> _downloadCsv(Uri uri) async {
+    InpeException? last;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 2));
+      final http.Response response;
+      try {
+        response = await _client.get(uri).timeout(const Duration(seconds: 60));
+      } on SocketException {
+        last = const InpeException(
+          'Sem conexão com o servidor dos focos de calor. Verifique o Wi-Fi ou os dados móveis.',
+          kind: InpeErrorKind.network,
+        );
+        continue;
+      } catch (_) {
+        last = const InpeException(
+          'Não foi possível obter os focos de calor agora. Tente novamente em instantes.',
+          kind: InpeErrorKind.network,
+        );
+        continue;
+      }
+      if (response.statusCode == 404) return null;
+      if (response.statusCode != 200) {
+        last = InpeException(
+          'O servidor dos focos respondeu com erro (código ${response.statusCode}). Tente mais tarde.',
+          kind: InpeErrorKind.server,
+        );
+        continue;
+      }
+      return utf8.decode(response.bodyBytes, allowMalformed: true);
+    }
+    throw last ??
+        const InpeException('Não foi possível obter os focos de calor agora.', kind: InpeErrorKind.network);
+  }
+
+  /// Baixa (em paralelo) os arquivos que cobrem a janela e devolve um GeoJSON no formato do WFS.
+  Future<String> _fetchFromPhone(
+    FireWindow window,
+    FireScope scope,
+    Set<FireSatellite> sats,
+    DateTime nowUtc,
+  ) async {
+    final names = FireSatellite.inpeNamesOf(sats).toSet();
+    final days = csvDays(window, nowUtc);
+    final texts = await Future.wait([
+      for (final day in days)
+        _downloadCsv(csvUri(day)).then<Object?>((t) => t, onError: (Object e) => e),
+    ]);
+    final features = <Map<String, dynamic>>[];
+    var read = 0;
+    InpeException? error;
+    for (final item in texts) {
+      if (item is InpeException) {
+        error = item;
+      } else if (item is String) {
+        read++;
+        features.addAll(csvFeatures(item,
+            nowUtc: nowUtc, onlyAmazonas: scope == FireScope.amazonas, satelliteNames: names));
+      } else if (item != null) {
+        error = const InpeException('Não foi possível obter os focos de calor agora.',
+            kind: InpeErrorKind.network);
+      }
+    }
+    if (read == 0) {
+      throw error ??
+          const InpeException('Os arquivos de focos do INPE ainda não estão disponíveis.',
+              kind: InpeErrorKind.server);
+    }
+    return jsonEncode({'type': 'FeatureCollection', 'features': features});
+  }
 
   static const host = 'terrabrasilis.dpi.inpe.br';
   static const path = '/queimadas/geoserver/ows';
@@ -203,7 +410,22 @@ class InpeFireService {
     final sats = satellites ?? FireSatellite.defaults();
     final onlyState = scope == FireScope.amazonas ? state : null;
     try {
-      final body = await _downloadWithRetry(
+      String? body;
+      if (_phoneDownload) {
+        // Cópia recente (até 15 min): não baixa de novo, para poupar a franquia de dados móveis.
+        if (scope == FireScope.amazonas) {
+          final recent = await _readCache(window, sats);
+          if (recent != null && DateTime.now().toUtc().difference(recent.fetchedAt) < csvFreshFor) {
+            return FireResult(hotspots: recent.hotspots, fetchedAt: recent.fetchedAt, fromCache: false);
+          }
+        }
+        try {
+          body = await _fetchFromPhone(window, scope, sats, DateTime.now().toUtc());
+        } on InpeException {
+          if (_apiBaseUrl.isEmpty) rethrow; // sem servidor próprio: não há reserva
+        }
+      }
+      body ??= await _downloadWithRetry(
         endpointFor(window, scope: scope, satellites: sats),
         timeout: timeout,
         retries: retries,
