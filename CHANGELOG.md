@@ -12,7 +12,14 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.14.0.
+Nenhuma mudança desde a 1.14.1.
+
+## [1.14.1] - 2026-10-20
+
+### Alterado
+- **Sem mínimo por área do mapa e por bairro** (pedido do usuário): `MIN_RESPOSTAS_CELULA` padrão 3 → **1**. Áreas de ~1 km e bairros aparecem com qualquer número de respostas; a contagem de perfil/contexto também deixa de virar "menos de 3". Textos da página pública ajustados ao valor configurado. Um `.env` antigo com `MIN_RESPOSTAS_CELULA=3` continua valendo.
+- **Termo LGPD 1.3 → 1.4** (sem número mínimo de respostas; re-aceite no app).
+- **Risco residual maior:** com 1 resposta, o ponto no mapa mostra a área (~1 km) de uma única pessoa, e o bairro dela fica identificável a quem souber que ela respondeu. Sem nome/contato/IP, mas é a mudança mais sensível até aqui; para reverter, `MIN_RESPOSTAS_CELULA=3` no `.env`.
 
 ## [1.14.0] - 2026-10-20
 

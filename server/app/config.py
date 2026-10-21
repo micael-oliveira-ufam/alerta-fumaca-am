@@ -51,7 +51,7 @@ class Settings:
 
     #: Uma área (célula de ~1 km) só aparece no mapa coletivo com pelo menos este
     #: número de respostas no período. Impede mostrar a localização de uma pessoa só.
-    min_respostas_celula: int = 3
+    min_respostas_celula: int = 1
 
     #: Token do endpoint de exportação CSV e do painel. Vazio = exportação desativada.
     admin_token: str = ""
@@ -102,7 +102,7 @@ class Settings:
             cache_max_entries=_int("INPE_CACHE_MAX_ENTRIES", 24),
             rate_limit_per_min=_int("RATE_LIMIT_PER_MIN", 30),
             min_respostas_publicas=_int("MIN_RESPOSTAS_PUBLICAS", 0),
-            min_respostas_celula=_int("MIN_RESPOSTAS_CELULA", 3),
+            min_respostas_celula=_int("MIN_RESPOSTAS_CELULA", 1),
             admin_token=os.getenv("ADMIN_TOKEN", "").strip(),
             trust_cf_connecting_ip=os.getenv("TRUST_CF_CONNECTING_IP", "").strip().lower()
             in ("1", "true", "yes", "sim"),

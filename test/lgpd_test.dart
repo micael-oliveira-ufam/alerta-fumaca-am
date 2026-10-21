@@ -26,7 +26,7 @@ void main() {
 
   test('o termo declara os pontos essenciais', () {
     final text = kLgpdSections.expand((s) => [s.title, ...s.paragraphs]).join('\n');
-    for (final needle in ['art. 11', 'sensível', 'não podem ser localizados', 'opcional', '3 respostas']) {
+    for (final needle in ['art. 11', 'sensível', 'não podem ser localizados', 'opcional', 'Não há número mínimo']) {
       expect(text, contains(needle));
     }
   });

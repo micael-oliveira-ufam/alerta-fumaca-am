@@ -38,7 +38,7 @@ def test_ranking_soma_por_bairro_e_respeita_o_minimo(engine, make_client):
     })
     assert bairros.resolver_pendentes(fabrica, geo, pausa=0) == 3
     with fabrica() as s:
-        r = bairros.ranking(s, Settings(database_url="sqlite://"), 30)
+        r = bairros.ranking(s, Settings(database_url="sqlite://", min_respostas_celula=3), 30)
     assert r["bairros"] == [{"bairro": "Centro", "respostas": 7, "alto_ou_emergencia": 4}]
     assert r["areas_em_consulta"] == 0
 
@@ -78,7 +78,7 @@ def test_resultado_de_outra_cidade_nao_entra_no_ranking(engine, make_client):
     geo = _falso({(-3.10, -60.02): {"bairro": "Centro", "cidade": "Iranduba"}})
     bairros.resolver_pendentes(fabrica, geo, pausa=0)
     with fabrica() as s:
-        assert bairros.ranking(s, Settings(database_url="sqlite://"), 30)["bairros"] == []
+        assert bairros.ranking(s, Settings(database_url="sqlite://", min_respostas_celula=3), 30)["bairros"] == []
 
 
 def test_endpoint_publico_sem_senha_e_sem_vazar_celula(make_client):

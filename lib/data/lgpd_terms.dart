@@ -7,7 +7,7 @@
 /// redigido pela equipe técnica a partir da LGPD e do comportamento real do app. Antes
 /// de divulgar ao público, a UFAM/FCF deve revisar, designar formalmente o controlador
 /// e o canal do encarregado (art. 41) e definir o prazo de retenção.
-const kLgpdTermsVersion = '1.3';
+const kLgpdTermsVersion = '1.4';
 
 class TermsSection {
   const TermsSection(this.title, this.paragraphs);
@@ -64,10 +64,9 @@ const kLgpdSections = <TermsSection>[
   TermsSection('5. Como protegemos', [
     'Minimização: só pedimos o que a finalidade exige.',
     'Anonimização: não há identificador pessoal; a localização é generalizada a ~1 km.',
-    'Divulgação: as estatísticas agregadas (gráficos) são públicas mesmo com poucas respostas, '
-        'porque não trazem nome nem contato; já uma área do mapa só aparece com ao menos 3 '
-        'respostas, e contagens muito pequenas de perfil aparecem como "menos de 3", para que '
-        'ninguém seja reconhecido por uma amostra pequena.',
+    'Divulgação: as estatísticas agregadas (gráficos, mapa e bairros) são públicas mesmo com '
+        'poucas respostas, porque não trazem nome nem contato; a localização é sempre '
+        'generalizada a ~1 km. Não há número mínimo de respostas para aparecer.',
     'Limitação honesta: nenhum sistema é totalmente seguro, e dados anonimizados podem, em '
         'situações raras (por exemplo, poucas pessoas numa área pequena), permitir inferências. '
         'Por isso a localização é opcional.',

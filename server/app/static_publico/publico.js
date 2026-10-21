@@ -79,8 +79,9 @@
   /* ----------------------------------------------------------------- desenho */
   function desenhar() {
     $('conteudo').setAttribute('aria-busy', 'false');
-    $('min-pub').textContent = dados.minimo_para_divulgar;
-    $('min-area').textContent = dados.minimo_por_area;
+    $('priv-min').textContent = (dados.minimo_para_divulgar > 0 || dados.minimo_por_area > 1)
+      ? 'Há mínimos de divulgação: gráficos com ' + dados.minimo_para_divulgar + '+ respostas e áreas do mapa com ' + dados.minimo_por_area + '+.'
+      : 'Os gráficos e o mapa aparecem mesmo com poucas respostas; como não há identificação pessoal, nenhum mínimo é exigido.';
     $('baixar').setAttribute('href', '/publico/painel?dias=' + dias);
     atualizarRelogio();
     avisoSeInsuficiente();
@@ -126,7 +127,7 @@
     el.appendChild(kpi('Sintoma mais relatado', top ? top.rotulo : '—',
       top ? pct(top.relatos, t) + ' das respostas (' + nf(top.relatos) + ')' : 'sem relatos', '#9CCC65', true));
     el.appendChild(kpi('Áreas no mapa', nf(d.mapa.celulas.length),
-      'com ' + d.minimo_por_area + '+ respostas', '#1565C0'));
+      d.minimo_por_area > 1 ? 'com ' + d.minimo_por_area + '+ respostas' : 'com ao menos 1 resposta', '#1565C0'));
   }
 
   function sintomas() {
@@ -247,8 +248,8 @@
     });
     if (pontos.length) mapa.fitBounds(pontos, { maxZoom: 9, padding: [30, 30] });
     $('mapa-nota').textContent = !d.suficiente ? 'O mapa aparece quando houver respostas suficientes.'
-      : cel.length ? cel.length + ' área(s) com ' + d.minimo_por_area + ' ou mais respostas nas últimas ' + d.mapa.horas + ' h. Os pontos mostram o centro da área de ~1 km, nunca o local exato de alguém.'
-      : 'Nenhuma área tem respostas suficientes nas últimas ' + d.mapa.horas + ' h para ser mostrada.';
+      : cel.length ? cel.length + ' área(s) com ' + (d.minimo_por_area > 1 ? d.minimo_por_area + ' ou mais respostas' : 'respostas') + ' nas últimas ' + d.mapa.horas + ' h. Os pontos mostram o centro da área de ~1 km, nunca o local exato de alguém.'
+      : (d.minimo_por_area > 1 ? 'Nenhuma área tem respostas suficientes' : 'Nenhuma área com respostas') + ' nas últimas ' + d.mapa.horas + ' h.';
     setTimeout(function () { mapa.invalidateSize(); }, 50);
   }
 
@@ -256,8 +257,7 @@
     var box = limpar($('bairros')), b = dados.bairros, nota = $('bairros-nota');
     if (!b || !b.bairros.length) {
       var vazio = h('div', { class: 'mini' });
-      vazio.appendChild(h('p', { class: 'vazio', text: 'Ainda não há bairros com respostas suficientes (mínimo ' +
-        (b ? b.minimo_por_bairro : 3) + ' por bairro).' }));
+      vazio.appendChild(h('p', { class: 'vazio', text: (b && b.minimo_por_bairro > 1) ? 'Ainda não há bairros com respostas suficientes (mínimo ' + b.minimo_por_bairro + ' por bairro).' : 'Ainda não há bairros identificados com respostas.' }));
       box.appendChild(vazio);
       nota.textContent = b && b.areas_em_consulta ? 'Identificando bairros de ' + b.areas_em_consulta + ' área(s)…' : (b ? b.fonte : '');
       return;

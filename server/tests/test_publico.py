@@ -129,10 +129,20 @@ def test_minimo_zero_com_poucas_respostas_mostra_graficos_mas_esconde_area(make_
     d = client.get("/publico/painel?dias=30").json()
     assert d["suficiente"] is True and d["total_respostas"] == 2
     assert {s["id"]: s["relatos"] for s in d["sintomas"]}["cough"] == 2
-    assert d["mapa"]["celulas"] == []  # 2 respostas < 3 por área: a área segue escondida
+    assert d["mapa"]["celulas"] == []  # com mínimo por área = 3 (conftest), 2 respostas ficam escondidas
 
 
 def test_padrao_do_servidor_nao_exige_minimo(monkeypatch):
     from app.config import Settings
     monkeypatch.delenv("MIN_RESPOSTAS_PUBLICAS", raising=False)
     assert Settings.from_env().min_respostas_publicas == 0
+
+
+def test_padrao_sem_minimo_por_area_mostra_area_com_uma_resposta(make_client, monkeypatch):
+    from app.config import Settings
+    monkeypatch.delenv("MIN_RESPOSTAS_CELULA", raising=False)
+    assert Settings.from_env().min_respostas_celula == 1
+    client = make_client(min_respostas_publicas=0, min_respostas_celula=1)
+    _enviar(client, 1)
+    d = client.get("/publico/painel?dias=30").json()
+    assert len(d["mapa"]["celulas"]) == 1
