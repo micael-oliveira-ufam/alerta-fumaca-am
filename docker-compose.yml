@@ -105,7 +105,7 @@ services:
   # link atual ao painel. Atenção: a Cloudflare descreve os túneis rápidos como para testes
   # (sem garantia de disponibilidade); para uso contínuo prefira um túnel nomeado (README).
   tunnel:
-    image: cloudflare/cloudflared:2024.12.2
+    image: cloudflare/cloudflared:2026.10.2
     profiles: ["tunnel"]
     restart: unless-stopped
     depends_on:
@@ -117,7 +117,7 @@ services:
   # Tunnels), com uma rota publicada para o serviço http://api:8000. O TUNNEL_TOKEN vem desse
   # painel. `tool/iniciar_servidor.sh` liga este serviço sozinho quando há TUNNEL_TOKEN.
   tunnel_dominio:
-    image: cloudflare/cloudflared:2024.12.2
+    image: cloudflare/cloudflared:2026.10.2
     profiles: ["dominio"]
     restart: unless-stopped
     depends_on:

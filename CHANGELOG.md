@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.3.
+
+## [1.13.3] - 2026-10-20
+
+### Alterado
+- Imagem do túnel `cloudflare/cloudflared` atualizada de `2024.12.2` para `2026.10.2` (`tunnel` e `tunnel_dominio`), a pedido do usuário. **Verificado:** a tag existe no Docker Hub (`last_updated` 2026-10-20, status ativo). **Não verificado:** que as opções usadas (`--no-autoupdate`, `--metrics`, `run` com `TUNNEL_TOKEN`) continuam aceitas nessa versão; se o túnel não subir, veja `docker compose logs tunnel_dominio` e me envie.
+
 Nenhuma mudança desde a 1.13.2.
 
 ## [1.13.2] - 2026-10-20
