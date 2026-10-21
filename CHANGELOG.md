@@ -12,7 +12,15 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.17.0.
+Nenhuma mudança desde a 1.17.1.
+
+## [1.17.1] - 2026-10-21
+
+### Corrigido
+- **Plataforma: as atualizações automáticas (a cada 15 s) reiniciavam o mapa** de relatos e atrapalhavam quem explorava. Causa: `desenharMapa()` chamava `fitBounds` e recriava todas as bolinhas a cada atualização. Agora o mapa só é enquadrado na primeira vez e ao trocar o período, e as bolinhas só são redesenhadas se os dados mudaram (o mesmo vale para o mapa de qualidade do ar, que atualiza a cada 15 min). Verificado no Chromium: zoom e posição mantidos após atualizações e após um ciclo real de 15 s; trocar o período enquadra de novo uma vez.
+
+### Adicionado
+- **Qualidade do ar: data da última atualização dos dados**, com ano e no horário de Manaus ("Última atualização dos dados do modelo: 20/10/2026 10:00 (horário de Manaus). Consultados pelo servidor em 21/10/2026 00:32."); o quadro "Referência do modelo" também passou a mostrar a data completa. Se o serviço não informar a data do modelo, a página diz isso (não inventa).
 
 ## [1.17.0] - 2026-10-21
 

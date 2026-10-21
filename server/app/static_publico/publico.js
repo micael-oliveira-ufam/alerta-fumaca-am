@@ -34,6 +34,10 @@
   };
 
   var dias = 30, ordem = 'relatos', dados = null, mapa = null, camada = null, ultimoOk = 0, timer = null;
+  // O mapa NÃO é refeito a cada atualização de 15 s: o enquadramento só é calculado na primeira vez (ou ao trocar
+  // o período) e as bolinhas só são redesenhadas se os dados mudaram. Assim o zoom e a posição de quem está
+  // explorando o mapa são preservados.
+  var mapaAjustado = false, assinaturaMapa = null;
 
   function $(id) { return document.getElementById(id); }
   function h(tag, attrs) {
@@ -232,25 +236,29 @@
       RespirarMapas.configurar(mapa, { aviso: $('mapa-aviso'), extras: { 'Áreas com relatos (app)': camada } });
       mapa.on('focus', function () { mapa.scrollWheelZoom.enable(); });
       mapa.on('blur', function () { mapa.scrollWheelZoom.disable(); });
+      setTimeout(function () { mapa.invalidateSize(); }, 50);
     }
-    camada.clearLayers();
     var cel = d.suficiente ? d.mapa.celulas : [];
+    var assinatura = JSON.stringify(cel.map(function (c) { return [c.lat, c.lon, c.respostas, c.pior_nivel]; }));
     var cores = {}; NIVEIS.forEach(function (n) { cores[n[0]] = n[2]; });
     var rot = {}; NIVEIS.forEach(function (n) { rot[n[0]] = n[1]; });
-    var pontos = [];
-    cel.forEach(function (c) {
+    var pontos = cel.map(function (c) { return [c.lat, c.lon]; });
+    if (assinatura !== assinaturaMapa) {
+      assinaturaMapa = assinatura;
+      camada.clearLayers();
+      cel.forEach(function (c) {
       var m = L.circleMarker([c.lat, c.lon], {
         radius: 7 + Math.min(16, 3.2 * Math.log2(c.respostas + 1)),
         color: cores[c.pior_nivel] || '#555', fillColor: cores[c.pior_nivel] || '#555', fillOpacity: .45, weight: 2
       });
       m.bindTooltip(c.respostas + ' resposta(s) · pior nível: ' + (rot[c.pior_nivel] || c.pior_nivel));
-      m.addTo(camada); pontos.push([c.lat, c.lon]);
-    });
-    if (pontos.length) mapa.fitBounds(pontos, { maxZoom: 9, padding: [30, 30] });
+      m.addTo(camada);
+      });
+    }
+    if (pontos.length && !mapaAjustado) { mapaAjustado = true; mapa.fitBounds(pontos, { maxZoom: 9, padding: [30, 30] }); }
     $('mapa-nota').textContent = !d.suficiente ? 'O mapa aparece quando houver respostas suficientes.'
       : cel.length ? cel.length + ' área(s) com ' + (d.minimo_por_area > 1 ? d.minimo_por_area + ' ou mais respostas' : 'respostas') + ' nas últimas ' + d.mapa.horas + ' h. Os pontos mostram o centro da área de ~1 km, nunca o local exato de alguém.'
       : (d.minimo_por_area > 1 ? 'Nenhuma área tem respostas suficientes' : 'Nenhuma área com respostas') + ' nas últimas ' + d.mapa.horas + ' h.';
-    setTimeout(function () { mapa.invalidateSize(); }, 50);
   }
 
   function bairros() {
@@ -329,6 +337,7 @@
   $('periodo').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-dias]'); if (!b) return;
     dias = Number(b.getAttribute('data-dias'));
+    mapaAjustado = false; // novo período: enquadra de novo uma vez
     Array.prototype.forEach.call($('periodo').children, function (x) {
       var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on));
     });

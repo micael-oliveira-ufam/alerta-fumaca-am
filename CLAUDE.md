@@ -501,6 +501,9 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - Alertas de focos por notificação (servidor, `focos_proximos.py`) e a página pública continuam dependendo do servidor alcançar o INPE ou da `FIRMS_MAP_KEY` no `.env` (o `.env` não vem no zip: refazer a cada pasta nova). Não verificado: tamanho real dos CSV por dia a partir de dados móveis, tempo no celular, se o INPE comprime a resposta, desempenho do parse de ~40 mil linhas na thread de interface.
 - Pergunta de medicação reescrita (confirmar o texto com a equipe de saúde).
 
+### 4.43 Mapa estável nas atualizações e data do ar — versão 1.17.1
+- Bug do usuário (21/10/2026): atualizações constantes reiniciavam os mapas da plataforma. Causa: `fitBounds` + `clearLayers` a cada 15 s em `publico.js`. Correção por assinatura dos dados (`assinaturaMapa`) e `mapaAjustado`; `ar.js` idem. Só o mapa de relatos tinha `fitBounds` repetido; o da Amazônia não atualiza. Data do ar: `referencia_modelo` (hora do modelo, UTC no JSON) e `consultado_em`, exibidas em Manaus com ano.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

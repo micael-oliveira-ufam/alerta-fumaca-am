@@ -514,3 +514,11 @@ def test_arquivos_do_painel_levam_a_versao_na_url_contra_cache_antigo(client):
         assert f"/assets/{arq}?v=" in html, arq
     assert 'id="mapa-amazonia" style="height:460px"' in html  # o mapa nunca colapsa se o CSS estiver velho
     assert client.get("/assets/publico.css?v=1.0").status_code == 200
+
+
+def test_pagina_preserva_o_mapa_nas_atualizacoes_e_mostra_a_data_do_ar(client):
+    js = client.get("/assets/publico.js").text
+    assert "mapaAjustado" in js and js.count("fitBounds") == 1  # enquadra uma vez, não a cada atualização de 15 s
+    ar = client.get("/assets/ar.js").text
+    assert "assinatura" in ar and "Última atualização dos dados do modelo" in ar
+    assert 'id="ar-atualizacao"' in client.get("/").text

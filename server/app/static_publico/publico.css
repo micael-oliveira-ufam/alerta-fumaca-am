@@ -214,3 +214,4 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 .leg-img{max-width:100%;height:auto;background:#fff;border-radius:6px;padding:4px;margin-top:4px}
 @media (prefers-reduced-motion:reduce){.prog-barra{transition:none}}
 .app-nota a{color:#fff;font-weight:600;text-decoration:underline}.app-meta code{font-size:.82em;word-break:break-all}
+.ar-atualizacao{margin:6px 0 10px;font-weight:600;color:var(--ink)}
