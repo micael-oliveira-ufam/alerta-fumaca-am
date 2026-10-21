@@ -458,3 +458,15 @@ def test_pagina_tem_logo_icone_e_previa_de_compartilhamento(client):
     for caminho in ["/assets/logo.png", "/assets/og-imagem.png", "/assets/apple-touch-icon.png", "/favicon.ico"]:
         r = client.get(caminho)
         assert r.status_code == 200 and len(r.content) > 500, caminho
+
+
+def test_secao_amazonia_camadas_e_csp(client):
+    html = client.get("/").text
+    assert 'id="sec-amazonia"' in html and "/assets/amazonia.js" in html
+    csp = client.get("/").headers["content-security-policy"]
+    assert "https://terrabrasilis.dpi.inpe.br" in csp and "script-src 'self'" in csp
+    js = client.get("/assets/amazonia.js")
+    assert js.status_code == 200
+    for camada in ["deter-amz:deter_amz", "prodes-amazon-nb:yearly_deforestation_biome",
+                   "prodes-amazon-nb:indigenous_area_amazon_biome", "prodes-amazon-nb:conservation_units_amazon_biome"]:
+        assert camada in js.text

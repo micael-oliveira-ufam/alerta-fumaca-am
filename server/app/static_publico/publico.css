@@ -193,3 +193,13 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 .marca h1{margin:0}
 .logo{width:64px;height:64px;border-radius:16px;flex:0 0 auto;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 @media (max-width:520px){.logo{width:52px;height:52px;border-radius:13px}}
+
+/* Amazônia · camadas */
+#mapa-amazonia{height:460px;border-radius:14px;border:1px solid var(--line);margin:8px 0;z-index:0}
+.camadas{display:flex;flex-direction:column;gap:10px;margin:8px 0}
+.camadas .grupo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.camadas .grupo>b{font-size:.8rem;color:var(--muted,#5f6b66);min-width:100%}
+.camadas button{font:inherit;font-size:.88rem;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer;min-height:36px}
+.camadas button[aria-pressed="true"]{background:var(--brand-d);color:#fff;border-color:var(--brand-d)}
+.camadas button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+@media (max-width:600px){#mapa-amazonia{height:380px}}

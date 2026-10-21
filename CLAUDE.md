@@ -454,6 +454,12 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Chave:** vive só em `FIRMS_MAP_KEY` (.env). Nunca vai a log, mensagem de erro ou resposta pública (testado). A chave foi colada em conversa: recomendar gerar outra se quiser.
 - Testes sintéticos: `server/tests/test_focos_firms.py` (15). Página verificada no Chromium com INPE falhando e FIRMS simulado.
 
+### 4.33 Camadas da Amazônia — versão 1.12.0
+- **Pedido (20/10/2026):** "Esqueça a parte de focos de incêndio, foque em tudo que abranja a Amazônia, criando botões para que o usuário possa acessar as diferentes camadas." Interpretação minha (confirmar): não mexer mais no WFS de focos do INPE; criar um mapa com botões de camadas da Amazônia. A seção de focos (FIRMS) foi mantida.
+- **Verificado (saída do usuário):** `https://terrabrasilis.dpi.inpe.br/geoserver/ows` responde (HTTP 200) e lista 93 camadas: DETER/PRODES (`deter-amz:*`, `prodes-amazon-nb:*`, `prodes-legal-amz:*` etc.) e vegetação do Cerrado; **nenhuma de focos**. O serviço de focos mudou de lugar e o novo endereço segue desconhecido.
+- **Não verificado:** WMS dessas camadas (nome do parâmetro, CRS, estilo padrão, desempenho de `municipalities_amazon_biome`), atribuição/licença, GIBS. Testado no Chromium só a mecânica dos botões e as requisições emitidas.
+- Teste `test_bairros::test_disparo_em_segundo_plano_resolve_as_celulas` é intermitente (falha ~1 em 10, também antes desta mudança; corrida de thread). Dívida conhecida, não corrigida.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

@@ -12,6 +12,14 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.12.0.
+
+## [1.12.0] - 2026-10-20
+
+### Adicionado
+- **Seção "Amazônia · camadas oficiais"** no painel público: mapa com botões para ligar/desligar camadas (desmatamento DETER e PRODES, bioma, Amazônia Legal, estados, municípios, hidrografia, unidades de conservação, terras indígenas, aerossóis e anomalias térmicas da NASA) e três mapas de fundo. Os nomes das camadas vêm do catálogo do GeoServer do TerraBrasilis lido na máquina do usuário em 20/10/2026; o carregamento por WMS **não foi verificado** (INPE inacessível do ambiente do agente). A política de segurança da página passou a permitir imagens de `terrabrasilis.dpi.inpe.br`.
+- Decisão do usuário (20/10/2026): parar de insistir no WFS de focos do INPE (caminho antigo retorna 404 e o catálogo novo só traz desmatamento) e priorizar camadas da Amazônia. Os focos seguem pela NASA FIRMS.
+
 Nenhuma mudança desde a 1.11.0.
 
 ## [1.11.0] - 2026-10-20

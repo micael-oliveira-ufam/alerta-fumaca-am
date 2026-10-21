@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.11.0"
+APP_VERSION = "1.12.0"
 
 
 def create_app(
@@ -126,7 +126,7 @@ PUBLICO_CACHE_SEGUNDOS = 10
 
 _CSP_PUBLICO = (
     "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org https://*.tile.opentopomap.org "
-    "https://gibs.earthdata.nasa.gov; "
+    "https://gibs.earthdata.nasa.gov https://terrabrasilis.dpi.inpe.br; "
     "style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; "
     "frame-ancestors 'none'; base-uri 'none'"
 )
