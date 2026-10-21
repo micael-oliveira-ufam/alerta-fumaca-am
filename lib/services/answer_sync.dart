@@ -34,13 +34,23 @@ class AnswerSync {
 
   bool get isConfigured => _api.isConfigured;
 
+  /// Motivo técnico da última falha de [send] (para a tela mostrar em "Detalhes técnicos"), ou null.
+  String? lastDetail;
+
   Future<SyncResult> send(Map<String, dynamic> payload) async {
+    lastDetail = null;
     if (!_api.isConfigured) return SyncResult.notConfigured;
-    await flush(); // entrega primeiro o que ficou pendente
+    try {
+      await flush(); // entrega primeiro o que ficou pendente
+    } catch (e) {
+      // A fila local não pode impedir o envio desta resposta.
+      lastDetail = 'fila local: ${e.runtimeType}: $e';
+    }
     try {
       await _api.postAnswer(payload);
       return SyncResult.sent;
     } on ApiException catch (e) {
+      lastDetail = e.detail ?? e.message;
       if (e.permanent) return SyncResult.rejected;
       await _enqueue(payload);
       return SyncResult.queued;

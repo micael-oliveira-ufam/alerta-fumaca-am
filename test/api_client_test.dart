@@ -115,6 +115,7 @@ void main() {
         fail('deveria ter lançado ApiException');
       }
 
+      expect((await failWith(422)).detail, allOf(contains('HTTP 422'), contains('erro')));
       expect((await failWith(422)).permanent, isTrue);
       expect((await failWith(429)).permanent, isFalse);
       expect((await failWith(503)).permanent, isFalse);
@@ -124,7 +125,9 @@ void main() {
       final mock = MockClient((_) async => throw const SocketException('sem rede'));
       await expectLater(
         clientFor(mock).postAnswer(_payload()),
-        throwsA(isA<ApiException>().having((e) => e.permanent, 'permanent', false)),
+        throwsA(isA<ApiException>()
+            .having((e) => e.permanent, 'permanent', false)
+            .having((e) => e.detail, 'detail', contains('SocketException'))),
       );
     });
 

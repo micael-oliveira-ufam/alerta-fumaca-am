@@ -17,9 +17,12 @@ import 'api_config.dart';
 ///
 /// [permanent] = o servidor recusou o conteúdo (ex.: 422); reenviar o mesmo envio não adianta.
 class ApiException implements Exception {
-  const ApiException(this.message, {this.permanent = false});
+  const ApiException(this.message, {this.permanent = false, this.detail});
   final String message;
   final bool permanent;
+
+  /// Texto técnico (tipo do erro, código HTTP, trecho da resposta). Só para diagnóstico, nunca com dados pessoais.
+  final String? detail;
   @override
   String toString() => 'ApiException(permanent: $permanent): $message';
 }
@@ -158,19 +161,21 @@ class ApiClient {
             body: jsonEncode(payload),
           )
           .timeout(timeout);
-    } on SocketException {
-      throw const ApiException('Sem conexão com o servidor.');
-    } catch (_) {
-      throw const ApiException('Não foi possível falar com o servidor agora.');
+    } on SocketException catch (e) {
+      throw ApiException('Sem conexão com o servidor.', detail: 'SocketException: ${e.message}');
+    } catch (e) {
+      throw ApiException('Não foi possível falar com o servidor agora.', detail: '${e.runtimeType}: $e');
     }
     if (response.statusCode == 200 || response.statusCode == 201) return;
     // 4xx (exceto 429) = conteúdo recusado: não adianta reenviar o mesmo envio.
     final permanent = response.statusCode >= 400 &&
         response.statusCode < 500 &&
         response.statusCode != 429;
+    final corpo = response.body.length > 160 ? response.body.substring(0, 160) : response.body;
     throw ApiException(
       'O servidor recusou o envio (código ${response.statusCode}).',
       permanent: permanent,
+      detail: 'HTTP ${response.statusCode}: $corpo',
     );
   }
 

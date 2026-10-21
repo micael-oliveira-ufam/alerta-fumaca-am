@@ -12,6 +12,13 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.5.
+
+## [1.13.5] - 2026-10-20
+
+### Corrigido
+- **Questionário: o app mostrava "Não foi possível enviar agora" sem dizer o motivo.** Agora a falha vem acompanhada de **"Detalhes técnicos"** (etapa, tipo do erro, código HTTP e trecho da resposta do servidor, mais o servidor usado), selecionável para copiar. Sem isso era impossível distinguir erro de rede, de fila local ou de servidor. O envio também não é mais interrompido por falha na fila local de reenvio. Nenhum dado pessoal entra nesse texto. Dart **não compilado**; testes novos em `test/api_client_test.dart` ainda sem execução.
+
 Nenhuma mudança desde a 1.13.4.
 
 ## [1.13.4] - 2026-10-20
