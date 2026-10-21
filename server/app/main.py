@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.9.0"
 
 
 def create_app(
@@ -173,6 +173,30 @@ def _montar_painel_publico(app: FastAPI) -> None:
         response.headers["Cache-Control"] = "public, max-age=60"
         response.headers["Access-Control-Allow-Origin"] = "*"
         return dados
+
+    @app.get("/app/ar")
+    def ar_para_o_app(request: Request, response: Response, cod: int = Query(..., ge=1300000, le=1399999)) -> dict:
+        """Leitura compacta de UM município, para os alertas do aplicativo (consulta frequente e leve)."""
+        q: qar.QualidadeAr | None = request.app.state.qualidade_ar
+        if q is None:
+            raise HTTPException(status_code=404, detail="Consulta de qualidade do ar desativada.")
+        try:
+            dados = q.obter()
+        except (requests.RequestException, ValueError) as exc:
+            log.warning("Qualidade do ar indisponível: %s", exc.__class__.__name__)
+            raise HTTPException(status_code=502, detail="Serviço de qualidade do ar indisponível no momento.")
+        linha = next((m for m in dados["municipios"] if m["codigo_ibge"] == cod), None)
+        if linha is None:
+            raise HTTPException(status_code=404, detail="Município do Amazonas não encontrado.")
+        response.headers["Cache-Control"] = "public, max-age=60"
+        return {
+            **linha,
+            "estimativa": True,
+            "resolucao_km": dados["resolucao_km"],
+            "consultado_em": dados["consultado_em"],
+            "desatualizado": dados["desatualizado"],
+            "escala": dados["escala"],
+        }
 
     # ------------------------------------------------------------- download em CSV
 

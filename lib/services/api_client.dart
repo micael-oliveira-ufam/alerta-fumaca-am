@@ -8,6 +8,7 @@ import '../data/app_info.dart';
 import '../logic/risk_assessment.dart';
 import '../logic/symptom_stats.dart';
 import '../models/smoke_context.dart';
+import '../logic/air_alert.dart';
 import '../logic/app_update.dart';
 import '../models/smoke_report.dart';
 import 'api_config.dart';
@@ -215,6 +216,31 @@ class ApiClient {
       return NeighborhoodsData.fromJson(body);
     } catch (_) {
       throw const ApiException('Os bairros vieram em formato inesperado.');
+    }
+  }
+
+  /// Leitura compacta de um município (`GET /app/ar`), para os alertas de qualidade do ar.
+  Future<AirAlertReading> fetchAirReading(int municipalityCode) async {
+    final body = await _getJson('/app/ar', {'cod': '$municipalityCode'});
+    try {
+      return AirAlertReading.fromJson(body as Map<String, dynamic>);
+    } catch (_) {
+      throw const ApiException('A leitura de qualidade do ar veio em formato inesperado.');
+    }
+  }
+
+  /// Municípios do Amazonas com código IBGE, a partir da lista que o servidor já publica.
+  Future<List<({int code, String name})>> fetchAirMunicipalities() async {
+    final body = await _getJson('/publico/qualidade-ar', const {});
+    try {
+      final list = (body as Map<String, dynamic>)['municipios'] as List<dynamic>;
+      final result = [
+        for (final m in list)
+          (code: (m['codigo_ibge'] as num).toInt(), name: m['municipio'] as String),
+      ]..sort((a, b) => a.name.compareTo(b.name));
+      return result;
+    } catch (_) {
+      throw const ApiException('A lista de municípios veio em formato inesperado.');
     }
   }
 

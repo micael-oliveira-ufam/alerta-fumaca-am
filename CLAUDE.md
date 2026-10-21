@@ -429,6 +429,13 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 - **Atualização:** o app consulta `/app/versao` (sem dados pessoais). Sem loja, o Android exige confirmação do usuário; não prometer atualização silenciosa. Para forçar o aviso, defina `APP_VERSAO_MINIMA` no `.env`. Fluxo: `tool/gerar_apk.sh` (grava `dist/VERSION.txt`) e o servidor passa a anunciar a versão nova sem reiniciar.
 - **Tela de sintomas:** regra de projeto: tela de dados nunca depende só da rede; mostrar local primeiro, servidor depois, cópia local em falha.
 
+### 4.29 Alertas de qualidade do ar — versão 1.9.0
+- **Decisão do usuário (20/10/2026):** "Gere notificações no celular com alertas sobre qualidade do ar". Limiares padrão (US AQI ≥101) e repetição de 12 h foram escolha minha, ajustável pelo usuário no app; **validar com a equipe de saúde**.
+- **Fontes de medição real pesquisadas (sem integrar):** SELVA (UEA/MPAM, sensores PurpleAir de baixo custo, PM2,5; o site não mostra API, termos nem dados abertos e desaconselha uso científico/regulatório); IQAir (comercial). Sem autorização, **não raspar** esses dados. Caminho correto: pedir à UEA/MPAM (projeto EducAIR).
+- **Pacotes (conferidos na documentação do pub.dev em 20/10/2026, não compilados):** `flutter_local_notifications` 22.3.2 (`initialize(settings:)`, `show(id:, title:, body:, notificationDetails:)`) e `workmanager` 0.10.10 (`initialize(callback)`, `registerPeriodicTask(..., frequency, constraints, existingWorkPolicy)`; mínimo 15 min). **Se o build do APK falhar por causa deles**, remova as duas linhas do `pubspec.yaml` e o uso em `lib/services/air_alert_*.dart`, `lib/main.dart` e `home_screen.dart`, e me envie o erro.
+- **Não verificado:** compilação Dart, build Gradle com os plugins, entrega da notificação em aparelho real, comportamento do segundo plano com economia de bateria, permissão POST_NOTIFICATIONS no Android 13+.
+- `RadioListTile` evitado de propósito (parâmetros obsoletos geram *info* no `flutter analyze`, que bloqueia `gerar_apk.sh`).
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

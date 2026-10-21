@@ -7,6 +7,7 @@ import '../widgets/cit_card.dart';
 import '../widgets/ui.dart';
 import '../widgets/update_banner.dart';
 import 'about_screen.dart';
+import 'air_alert_screen.dart';
 import '../data/pdf_content.dart';
 import 'guidance_screen.dart';
 import 'info_screen.dart';
@@ -139,6 +140,14 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          ModuleCard(
+            icon: Icons.notifications_active_rounded,
+            color: const Color(0xFF00838F),
+            title: 'Alertas de qualidade do ar',
+            subtitle: 'Receba uma notificação quando o ar piorar na sua cidade.',
+            onTap: () => _open(context, const AirAlertScreen()),
           ),
           const SizedBox(height: 20),
           _SamuCard(),

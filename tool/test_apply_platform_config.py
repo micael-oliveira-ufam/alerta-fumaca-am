@@ -9,7 +9,7 @@ import xml.dom.minidom as minidom
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from apply_platform_config import patch_manifest, patch_plist  # noqa: E402
+from apply_platform_config import patch_gradle, patch_manifest, patch_plist  # noqa: E402
 
 # Modelo equivalente ao gerado por `flutter create` (com o <queries> padrão).
 MANIFEST_WITH_QUERIES = """<manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -122,6 +122,55 @@ class PlistTests(unittest.TestCase):
         again, added_again = patch_plist(patched)
         self.assertEqual(added_again, [])
         self.assertEqual(patched, again)
+
+
+GRADLE_KTS = """plugins { id("com.android.application") }
+
+android {
+    namespace = "br.ufam.fcf.respirar_amazonas"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+flutter {
+    source = "../.."
+}
+"""
+
+GRADLE_GROOVY = """android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'x:y:1'
+}
+"""
+
+
+class GradleDesugaring(unittest.TestCase):
+    def test_kts_sem_bloco_dependencies(self):
+        patched, added = patch_gradle(GRADLE_KTS, kts=True)
+        self.assertEqual(len(added), 2)
+        self.assertIn("isCoreLibraryDesugaringEnabled = true", patched)
+        self.assertIn('coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")', patched)
+        again, added_again = patch_gradle(patched, kts=True)
+        self.assertEqual(added_again, [])
+        self.assertEqual(patched, again)
+
+    def test_groovy_com_bloco_dependencies(self):
+        patched, added = patch_gradle(GRADLE_GROOVY, kts=False)
+        self.assertEqual(len(added), 2)
+        self.assertIn("coreLibraryDesugaringEnabled true", patched)
+        self.assertIn("    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'", patched)
+        self.assertEqual(patch_gradle(patched, kts=False)[1], [])
+
+    def test_sem_compileoptions_falha_claramente(self):
+        with self.assertRaises(ValueError):
+            patch_gradle("android { }", kts=True)
 
 
 if __name__ == "__main__":

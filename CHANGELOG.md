@@ -12,7 +12,18 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.8.0.
+Nenhuma mudança desde a 1.9.0.
+
+## [1.9.0] - 2026-10-20
+
+### Adicionado
+- **App: alertas de qualidade do ar por notificação** (Android). Tela "Alertas de qualidade do ar" (início do app): liga/desliga, escolha do município (62) e do limite (Moderada ≥51, Ruim para grupos sensíveis ≥101 [padrão], Ruim ≥151). O app confere cerca de 1 vez por hora em segundo plano (`workmanager`) e ao ser aberto, e notifica (`flutter_local_notifications`, notificações locais; sem Firebase). Só avisa na primeira vez, se a faixa piorar ou após 12 h com o índice ainda alto; não avisa com dado desatualizado. A notificação diz que é estimativa de modelo (~45 km).
+- Servidor: `GET /app/ar?cod=<IBGE>` (leitura compacta de um município, usa o mesmo cache de 30 min).
+- `tool/apply_platform_config.py` liga o *core library desugaring* no Gradle do app (exigido pelo `flutter_local_notifications`), de forma idempotente e testada.
+
+### Limites conhecidos
+- O Android (e a economia de bateria de cada fabricante) decide quando executar a checagem em segundo plano; o aviso pode atrasar. Não há aviso por servidor (push), que exigiria Firebase.
+- Alertas só no Android; no iPhone a tela informa que ainda não há suporte.
 
 ## [1.8.0] - 2026-10-20
 

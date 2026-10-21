@@ -95,6 +95,34 @@ def patch_manifest(text: str) -> tuple[str, list[str]]:
     return text, added
 
 
+DESUGAR_LIB = "com.android.tools:desugar_jdk_libs:2.1.4"
+
+
+def patch_gradle(text: str, kts: bool) -> tuple[str, list[str]]:
+    """Liga o "core library desugaring" exigido pelo flutter_local_notifications (alertas do app).
+
+    Sem isto o build do APK falha ("requires core library desugaring"). Idempotente.
+    """
+    added: list[str] = []
+    flag_on = "isCoreLibraryDesugaringEnabled" if kts else "coreLibraryDesugaringEnabled"
+    if flag_on not in text:
+        linha = "isCoreLibraryDesugaringEnabled = true" if kts else "coreLibraryDesugaringEnabled true"
+        achou = re.search(r"compileOptions\s*\{", text)
+        if achou is None:
+            raise ValueError("build.gradle do app sem bloco compileOptions.")
+        text = text[: achou.end()] + f"\n        {linha}" + text[achou.end():]
+        added.append("coreLibraryDesugaringEnabled")
+    if "coreLibraryDesugaring(" not in text and "coreLibraryDesugaring '" not in text:
+        dep = f'coreLibraryDesugaring("{DESUGAR_LIB}")' if kts else f"coreLibraryDesugaring '{DESUGAR_LIB}'"
+        achou = re.search(r"^dependencies\s*\{", text, re.M)
+        if achou is not None:
+            text = text[: achou.end()] + f"\n    {dep}" + text[achou.end():]
+        else:
+            text = text.rstrip("\n") + f"\n\ndependencies {{\n    {dep}\n}}\n"
+        added.append("coreLibraryDesugaring dependency")
+    return text, added
+
+
 def patch_plist(text: str) -> tuple[str, list[str]]:
     added: list[str] = []
     entries = ""
@@ -152,8 +180,11 @@ def main() -> int:
     args = parser.parse_args()
 
     root = Path(args.root)
+    gradle_kts = root / "android/app/build.gradle.kts"
+    gradle = gradle_kts if gradle_kts.exists() else root / "android/app/build.gradle"
     results = [
         process(root / MANIFEST, patch_manifest, args.check),
+        process(gradle, lambda t: patch_gradle(t, kts=gradle.suffix == ".kts"), args.check),
         process(root / PLIST, patch_plist, args.check),
     ]
     if any(r is None for r in results):

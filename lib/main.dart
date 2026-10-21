@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/splash_screen.dart';
+import 'services/air_alert_background.dart';
+import 'services/air_alert_service.dart';
 import 'services/api_config.dart';
 import 'theme/app_theme.dart';
 
@@ -16,7 +18,21 @@ Future<void> main() async {
   // Tela cheia: esconde as barras do sistema (voltam com um deslize na borda).
   await _enterFullscreen();
   await ApiConfig.load();
+  _startAirAlerts();
   runApp(const AlertaFumacaApp());
+}
+
+/// Reativa os alertas de qualidade do ar (se a pessoa os ligou) e confere uma vez ao abrir.
+/// Qualquer falha é ignorada: alerta nunca impede o app de abrir.
+void _startAirAlerts() {
+  () async {
+    try {
+      final settings = await AirAlertStore().loadSettings();
+      if (!settings.enabled) return;
+      await AirAlertBackground.sync(enabled: true);
+      await AirAlertService().check();
+    } catch (_) {}
+  }();
 }
 
 class AlertaFumacaApp extends StatefulWidget {

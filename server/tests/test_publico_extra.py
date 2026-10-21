@@ -334,3 +334,22 @@ def test_pagina_tem_secoes_e_scripts_novos(client):
     for arq in re.findall(r'src="/assets/([^"]+)"', html):
         assert (pasta / arq).is_file(), arq
         assert client.get(f"/assets/{arq}").status_code == 200
+
+
+def test_app_ar_devolve_so_o_municipio_pedido(make_client):
+    servico, _ = _servico(_resposta_modelo())
+    client = make_client()
+    client.app.state.qualidade_ar = servico
+    r = client.get("/app/ar", params={"cod": 1302603})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["municipio"] == "Manaus" and d["us_aqi"] == 42 and d["estimativa"] is True
+    assert "municipios" not in d and d["resolucao_km"] == 45
+    assert client.get("/app/ar", params={"cod": 1399999}).status_code == 404
+    assert client.get("/app/ar", params={"cod": 5}).status_code == 422
+    assert client.get("/app/ar").status_code == 422
+
+
+def test_app_ar_sem_servico_e_desativado(make_client):
+    client = make_client(qualidade_ar_ativa=False)
+    assert client.get("/app/ar", params={"cod": 1302603}).status_code == 404
