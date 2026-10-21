@@ -13,14 +13,44 @@ import re
 from pathlib import Path
 from typing import Any
 
-APK_NOME = "Alerta-Fumaca-AM.apk"
+APK_NOME = "Alerta-Fumaca-AM.apk"  # nome antigo (aceito se não houver arquivo com versão)
+_APK_VERSIONADO = re.compile(r"^RespirAR-Amazonas-v(\d+)\.(\d+)\.(\d+)\.apk$")
+MANUAL_NOME = "Manual-RespirAR-Amazonas.pdf"
+MANUAL_EMBUTIDO = Path(__file__).resolve().parent / "manual" / "Manual_Instalacao_RespirAR_Amazonas.pdf"
 _VERSAO = re.compile(r"^\d+\.\d+\.\d+$")
 _HOST = re.compile(r"^[A-Za-z0-9.-]+(:\d{1,5})?$")
 _hashes: dict[tuple[str, int, int], str] = {}
 
 
 def caminho(apk_dir: str) -> Path:
-    return Path(apk_dir) / APK_NOME
+    """APK a servir: o `RespirAR-Amazonas-vX.Y.Z.apk` de maior versão; senão o nome antigo.
+
+    Comparação por números (1.10.0 > 1.9.0). Só considera nomes exatos, então nada fora do
+    padrão (nem caminhos com `..`) é servido.
+    """
+    pasta = Path(apk_dir)
+    melhor: tuple[tuple[int, int, int], Path] | None = None
+    try:
+        for arq in pasta.iterdir():
+            m = _APK_VERSIONADO.match(arq.name)
+            if m and arq.is_file():
+                chave = (int(m[1]), int(m[2]), int(m[3]))
+                if melhor is None or chave > melhor[0]:
+                    melhor = (chave, arq)
+    except OSError:
+        pass
+    return melhor[1] if melhor else pasta / APK_NOME
+
+
+def caminho_manual(apk_dir: str) -> Path | None:
+    """Manual em PDF: o de `dist/` (gerado junto com o APK) ou, se faltar, o embutido na imagem."""
+    for c in (Path(apk_dir) / MANUAL_NOME, MANUAL_EMBUTIDO):
+        try:
+            if c.is_file() and c.stat().st_size > 0:
+                return c
+        except OSError:
+            pass
+    return None
 
 
 def _sha256(path: Path, st) -> str:  # noqa: ANN001
@@ -52,12 +82,13 @@ def info(apk_dir: str) -> dict[str, Any]:
     return {
         "disponivel": True,
         "plataforma": "Android",
-        "arquivo": "RespirAR-Amazonas.apk",
+        "arquivo": path.name if _APK_VERSIONADO.match(path.name) else "RespirAR-Amazonas.apk",
         "tamanho_bytes": st.st_size,
         "sha256": _sha256(path, st),
         "versao": versao,
         "atualizado_em": dt.datetime.fromtimestamp(st.st_mtime, dt.timezone.utc).isoformat(),
         "url": "/baixar/app.apk",
+        "manual_url": "/baixar/manual.pdf" if caminho_manual(apk_dir) else None,
     }
 
 

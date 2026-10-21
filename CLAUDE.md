@@ -482,6 +482,11 @@ Pedido: “Implemente tudo o que foi anexado no pdf.” Implementado em `lib/dat
 ### 4.38 Sem mínimo por área — versão 1.14.1
 - Pedido do usuário (20/10/2026): remover também o mínimo 3 por área/bairro. `min_respostas_celula` padrão **1**; `_ocultar(n,1)` nunca esconde. Termo LGPD 1.4. Testes de bairros fixam `min_respostas_celula=3` explicitamente (testam a regra opcional); conftest segue com 5/3 para o modo restrito.
 
+### 4.39 APK versionado, entrega ao servidor e manual — versão 1.15.0
+- Sintoma do usuário: "O download do aplicativo ainda não está disponível neste endereço." Causa provável: o servidor lê `/srv/dist` (= `./dist` da pasta onde o `docker compose` foi iniciado) e o APK foi gerado em outra pasta/máquina, ou ainda não existia. Não verificado no ambiente do usuário. Solução: `tool/publicar_apk.sh` (copia para `APK_HOST_DIR` e para as montagens `/srv/dist` de contêineres em execução). Não funciona se o servidor roda em outra máquina (aí copiar manualmente `dist/*` para a pasta montada) nem com Docker Desktop cujo `Source` é um caminho da VM.
+- Nome `RespirAR-Amazonas-vX.Y.Z.apk`; `download_app.caminho()` escolhe a maior versão por tupla numérica e só aceita o padrão exato; nome antigo `Alerta-Fumaca-AM.apk` ainda aceito como reserva.
+- Manual: `tool/gerar_manual.py` (reportlab), imagens em `assets/manual/` (splash enviada pelo usuário; capturas reaproveitadas do PDF antigo, reordenadas porque no original a imagem de cada etapa vinha na página seguinte). Autores/data de elaboração (18/10/2026) preservados do manual original do usuário.
+
 ### 4.10 Pendências e dívidas conhecidas
 - **Rodar `flutter pub get`, `flutter analyze` e `flutter test`** após a 1.2.0 e enviar a saída (todo o Dart novo é não compilado pelo agente).
 - `git push origin v1.0.0 v1.1.0 v1.2.0` (tags locais).

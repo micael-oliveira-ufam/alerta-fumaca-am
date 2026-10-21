@@ -63,7 +63,9 @@ services:
       QUALIDADE_AR_ATIVA: ${QUALIDADE_AR_ATIVA:-true}
       QUALIDADE_AR_CACHE_SECONDS: ${QUALIDADE_AR_CACHE_SECONDS:-1800}
     volumes:
-      - ./dist:/srv/dist:ro
+      # Pasta no computador com o APK. Padrão ./dist; tool/gerar_apk.sh também copia para as pastas
+      # montadas em /srv/dist pelos servidores em execução (tool/publicar_apk.sh).
+      - ${APK_HOST_DIR:-./dist}:/srv/dist:ro
     ports:
       - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
 

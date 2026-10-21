@@ -213,3 +213,4 @@ main{display:grid;gap:16px;padding:18px 0 8px;margin-top:-4px}
 .leg-item{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .leg-img{max-width:100%;height:auto;background:#fff;border-radius:6px;padding:4px;margin-top:4px}
 @media (prefers-reduced-motion:reduce){.prog-barra{transition:none}}
+.app-nota a{color:#fff;font-weight:600;text-decoration:underline}.app-meta code{font-size:.82em;word-break:break-all}

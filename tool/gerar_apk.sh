@@ -57,17 +57,27 @@ flutter test
 flutter build apk --release ${DEFINES[@]+"${DEFINES[@]}"}
 
 APK="build/app/outputs/flutter-apk/app-release.apk"
-DEST="dist/Alerta-Fumaca-AM.apk"
+NOME="RespirAR-Amazonas-v$(tr -d '[:space:]' < VERSION).apk"
+DEST="dist/$NOME"
 mkdir -p dist
+rm -f dist/RespirAR-Amazonas-v*.apk dist/Alerta-Fumaca-AM.apk   # só a versão nova fica
 cp "$APK" "$DEST"
 if command -v sha256sum >/dev/null; then
-  ( cd dist && sha256sum Alerta-Fumaca-AM.apk > SHA256SUMS.txt )
+  ( cd dist && sha256sum "$NOME" > SHA256SUMS.txt )
 else
-  ( cd dist && shasum -a 256 Alerta-Fumaca-AM.apk > SHA256SUMS.txt )  # macOS
+  ( cd dist && shasum -a 256 "$NOME" > SHA256SUMS.txt )  # macOS
 fi
 # O painel público e o app instalado leem a versão daqui (GET /app/versao, /publico/app).
 cp VERSION dist/VERSION.txt
+
+# Manual de instalação em PDF (precisa de reportlab; sem ele, o servidor usa o manual embutido).
+python3 tool/gerar_manual.py --saida dist/Manual-RespirAR-Amazonas.pdf \
+  || echo "AVISO: manual não gerado (pip install reportlab pillow); o servidor usará o manual embutido."
+
 echo
 echo "APK pronto: $DEST"
 echo "Versão: $(cat VERSION)"
 echo "SHA-256: $(cut -d' ' -f1 dist/SHA256SUMS.txt)"
+
+# Entrega ao servidor publicado: copia para a pasta que os contêineres em execução montam.
+bash tool/publicar_apk.sh

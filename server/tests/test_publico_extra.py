@@ -265,6 +265,27 @@ def test_app_disponivel_com_hash_tamanho_e_versao(make_client, tmp_path):
     assert "RespirAR-Amazonas.apk" in r.headers["content-disposition"]
 
 
+def test_apk_versionado_maior_versao_e_nome_no_download(make_client, tmp_path):
+    (tmp_path / "RespirAR-Amazonas-v1.9.0.apk").write_bytes(b"velho")
+    (tmp_path / "RespirAR-Amazonas-v1.10.2.apk").write_bytes(b"novo")
+    (tmp_path / "RespirAR-Amazonas-vX.apk").write_bytes(b"ignorado")
+    client = make_client(apk_dir=str(tmp_path))
+    info = client.get("/publico/app").json()
+    assert info["arquivo"] == "RespirAR-Amazonas-v1.10.2.apk"  # 1.10.2 > 1.9.0 (números, não texto)
+    r = client.get("/baixar/app.apk")
+    assert r.content == b"novo" and "RespirAR-Amazonas-v1.10.2.apk" in r.headers["content-disposition"]
+
+
+def test_manual_embutido_e_o_de_dist_tem_prioridade(make_client, tmp_path):
+    client = make_client(apk_dir=str(tmp_path))
+    r = client.get("/baixar/manual.pdf")
+    assert r.status_code == 200 and r.headers["content-type"] == "application/pdf" and r.content[:4] == b"%PDF"
+    (tmp_path / "Manual-RespirAR-Amazonas.pdf").write_bytes(b"%PDF-1.4 de dist")
+    assert client.get("/baixar/manual.pdf").content == b"%PDF-1.4 de dist"
+    (tmp_path / "RespirAR-Amazonas-v1.0.0.apk").write_bytes(b"x")
+    assert client.get("/publico/app").json()["manual_url"] == "/baixar/manual.pdf"
+
+
 def test_app_versao_invalida_e_ignorada_e_arquivo_vazio_nao_conta(make_client, tmp_path):
     (tmp_path / "Alerta-Fumaca-AM.apk").write_bytes(b"x")
     (tmp_path / "VERSION.txt").write_text("<script>alert(1)</script>")

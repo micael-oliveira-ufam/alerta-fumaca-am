@@ -12,7 +12,15 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.14.1.
+Nenhuma mudança desde a 1.15.0.
+
+## [1.15.0] - 2026-10-20
+
+### Adicionado
+- **APK com nome e versão** (`dist/RespirAR-Amazonas-vX.Y.Z.apk`); o servidor serve o de maior versão (comparação numérica) e o download já sai com esse nome. O quadro "Baixe o aplicativo" mostra o nome do arquivo.
+- **Entrega automática ao servidor publicado:** `tool/publicar_apk.sh` (chamado no fim de `tool/gerar_apk.sh`) copia o APK, `VERSION.txt`, `SHA256SUMS.txt` e o manual para `APK_HOST_DIR` e para a pasta montada em `/srv/dist` por contêineres em execução, remove APKs antigos e confere dentro do contêiner. Corrige o caso "o download ainda não está disponível" quando o APK foi gerado numa pasta e o servidor roda noutra. `docker-compose.yml`: volume `${APK_HOST_DIR:-./dist}`.
+- **Manual de instalação em PDF** (`GET /baixar/manual.pdf`, link no quadro de download): nome RespirAR Amazonas, versão e tela de abertura (splash) na capa; etapas refeitas para baixar pela plataforma. Gerado por `tool/gerar_manual.py` (assets em `assets/manual/`); cópia embutida em `server/app/manual/` como reserva.
+- Limitações: as capturas de tela do Android (etapas 2 a 7) são de uma versão anterior (mostram `alerta_fumaca_AM_v0.7.1.apk`/`alerta_fumaca_am`) e estão legendadas assim; a captura da plataforma é uma ilustração gerada com um APK de teste; a splash anexada mostra "Versão 1.13.6".
 
 ## [1.14.1] - 2026-10-20
 

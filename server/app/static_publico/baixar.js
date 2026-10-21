@@ -34,8 +34,10 @@
         var qr = h('img', { src: '/publico/qr.svg?alvo=app', alt: 'QR code para baixar o aplicativo no celular', width: '132', height: '132' });
         var texto = h('div', { class: 'app-txt' },
           h('a', { class: 'btn', href: i.url, download: i.arquivo }, 'Baixar para Android'),
+          h('p', { class: 'app-meta' }, h('code', { text: i.arquivo })),
           h('p', { class: 'app-meta', text: meta }),
           h('p', { class: 'app-nota', text: 'Aponte a câmera do celular para o QR code. Ao abrir o arquivo, o Android pode pedir permissão para instalar apps desta origem. Versão para iPhone: ainda não disponível.' }),
+          (i.manual_url ? h('p', { class: 'app-nota' }, h('a', { href: i.manual_url, download: 'Manual-Instalacao-RespirAR-Amazonas.pdf' }, 'Baixar o manual de instalação (PDF, com imagens)')) : null),
           h('details', {}, h('summary', { text: 'Conferir a integridade (SHA-256)' }), h('code', { class: 'hash', text: i.sha256 })));
         var linha = h('div', { class: 'app-linha' }, h('div', { class: 'qr' }, qr), texto);
         limpar($('app-conteudo')).appendChild(linha);

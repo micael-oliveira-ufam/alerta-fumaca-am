@@ -47,7 +47,7 @@ from .schemas import CONTEXTO_CAMPOS, Estatisticas, MapaColetivo, RespostaIn, Re
 
 log = logging.getLogger("alerta.api")
 
-APP_VERSION = "1.14.1"
+APP_VERSION = "1.15.0"
 
 
 def create_app(
@@ -348,7 +348,19 @@ def _montar_painel_publico(app: FastAPI) -> None:
         return FileResponse(
             download_app.caminho(apk_dir),
             media_type="application/vnd.android.package-archive",
-            filename="RespirAR-Amazonas.apk",
+            filename=download_app.info(apk_dir)["arquivo"],
+            headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-cache"},
+        )
+
+    @app.get("/baixar/manual.pdf")
+    def baixar_manual(request: Request) -> FileResponse:
+        caminho = download_app.caminho_manual(request.app.state.settings.apk_dir)
+        if caminho is None:
+            raise HTTPException(status_code=404, detail="O manual ainda não está disponível.")
+        return FileResponse(
+            caminho,
+            media_type="application/pdf",
+            filename="Manual-Instalacao-RespirAR-Amazonas.pdf",
             headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-cache"},
         )
 

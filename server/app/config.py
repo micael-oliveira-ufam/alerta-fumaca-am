@@ -76,7 +76,7 @@ class Settings:
     #: Servidor de métricas do `cloudflared`, de onde se lê o link do túnel rápido.
     tunnel_metrics_url: str = ""
 
-    #: Pasta (dentro do contêiner) onde está o APK para download (`Alerta-Fumaca-AM.apk`).
+    #: Pasta (dentro do contêiner) onde está o APK para download (`RespirAR-Amazonas-vX.Y.Z.apk`; o de maior versão é servido).
     apk_dir: str = "/srv/dist"
     #: Busca os focos do INPE em segundo plano a cada `cache_seconds` (a página abre já com dados).
     focos_preaquecer: bool = False
