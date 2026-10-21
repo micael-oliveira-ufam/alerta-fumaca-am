@@ -12,6 +12,14 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
+Nenhuma mudança desde a 1.13.6.
+
+## [1.13.6] - 2026-10-20
+
+### Corrigido
+- 11 avisos do `flutter analyze` (saída real do usuário na 1.13.4; todos *info*: `unnecessary_const` e `prefer_const_constructors`) em `about_screen`, `guidance_screen`, `home_screen`, `air_quality_tab`, `questionnaire_screen` e `splash_screen`. Mudança só de `const`, sem efeito visual. **Não executei `flutter analyze` de novo** (sem Flutter aqui); conferir.
+- Aviso do Flutter sobre o plugin `workmanager_android` aplicar o Kotlin Gradle Plugin: é aviso de futuras versões do Flutter, não erro; o build da 1.13.4 seguiu. Nada alterado.
+
 Nenhuma mudança desde a 1.13.5.
 
 ## [1.13.5] - 2026-10-20

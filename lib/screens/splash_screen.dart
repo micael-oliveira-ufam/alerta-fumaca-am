@@ -143,19 +143,19 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   const Spacer(flex: 2),
                   _Reveal(
                     animation: _footer,
-                    child: Column(
+                    child: const Column(
                       children: [
-                        const Text(
+                        Text(
                           'Faculdade de Ciências Farmacêuticas · UFAM',
                           style: TextStyle(color: Color(0xFFA5D6A7), fontSize: 12),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
+                        SizedBox(height: 4),
+                        Text(
                           'Versão $kAppVersion',
                           style: TextStyle(color: Color(0xFF81C784), fontSize: 11),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
+                        SizedBox(height: 4),
+                        Text(
                           'Orientação educativa. Não substitui atendimento médico.',
                           style: TextStyle(color: Color(0xFF81C784), fontSize: 11),
                         ),

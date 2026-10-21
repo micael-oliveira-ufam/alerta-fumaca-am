@@ -49,7 +49,7 @@ class GuidanceScreen extends StatelessWidget {
           const Text(
             kDisclaimer,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
+            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
           ),
         ],
       ),

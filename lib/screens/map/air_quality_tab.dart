@@ -127,8 +127,8 @@ class _AirNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppCard(
-      color: const Color(0xFFFFF8E1),
-      child: const Row(
+      color: Color(0xFFFFF8E1),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.info_outline_rounded, color: Color(0xFFB7791F)),
