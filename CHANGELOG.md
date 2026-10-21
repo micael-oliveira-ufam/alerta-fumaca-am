@@ -12,7 +12,12 @@ Cada versão aponta para o commit de release (tag `vX.Y.Z`). Como publicar: `too
 
 ## [Não lançado]
 
-Nenhuma mudança desde a 1.10.1.
+Nenhuma mudança desde a 1.10.2.
+
+## [1.10.2] - 2026-10-20
+
+### Adicionado
+- O rodapé do painel público mostra a **versão do servidor** que entregou a página ("servidor v1.10.2"), para confirmar se o contêiner foi reconstruído depois de uma atualização (os arquivos da página ficam dentro da imagem: é preciso `docker compose up -d --build`).
 
 ## [1.10.1] - 2026-10-20
 

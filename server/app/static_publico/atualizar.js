@@ -29,6 +29,8 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
         if (!j || !j.build) return;
+        var v = document.getElementById('versao-servidor');
+        if (v && j.servidor) v.textContent = 'servidor v' + j.servidor;
         if (inicial === null) inicial = j.build;
         else if (j.build !== inicial) aviso();
       })
